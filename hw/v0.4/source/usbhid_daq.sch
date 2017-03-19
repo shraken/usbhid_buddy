@@ -1,0 +1,208 @@
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:usb
+LIBS:ldo
+LIBS:tactile
+LIBS:leds
+LIBS:reference
+LIBS:switching_charge_pump
+LIBS:dac_spi
+LIBS:silabs
+LIBS:esd_protection
+LIBS:digital_switches
+LIBS:smd_crystals
+LIBS:ferrite
+LIBS:polyfuse
+LIBS:sram
+LIBS:tristate
+LIBS:samtec
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 3
+Title "usbhid_daq"
+Date "2017-01-16"
+Rev "v0.4"
+Comp "Wiggle Labs"
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Sheet
+S 4150 2000 1350 2050
+U 56F4B8A3
+F0 "mcu" 60
+F1 "mcu.sch" 60
+F2 "ADC0_IN" I R 5500 2900 60 
+F3 "UART_TX" O L 4150 3450 60 
+F4 "UART_RX" I L 4150 3550 60 
+F5 "SPI_SCLK" O R 5500 2100 60 
+F6 "SPI_MOSI" O R 5500 2200 60 
+F7 "MCU_LDAC" O R 5500 2700 60 
+F8 "ADC1_IN" I R 5500 3000 60 
+F9 "ADC2_IN" I R 5500 3100 60 
+F10 "ADC3_IN" I R 5500 3200 60 
+F11 "ADC4_IN" I R 5500 3300 60 
+F12 "ADC5_IN" I R 5500 3400 60 
+F13 "ADC6_IN" I R 5500 3500 60 
+F14 "ADC7_IN" I R 5500 3600 60 
+F15 "SPI_DAC_CS" O R 5500 2400 60 
+F16 "SPI_MISO" I R 5500 2300 60 
+F17 "SPI_MEM_CS" O R 5500 2500 60 
+F18 "REF_V2_5" I R 5500 3850 60 
+$EndSheet
+$Sheet
+S 6350 2000 1250 2050
+U 56F4BB54
+F0 "periph" 60
+F1 "periph.sch" 60
+F2 "ADC0_IN" I L 6350 2900 60 
+F3 "ADC1_IN" I L 6350 3000 60 
+F4 "ADC2_IN" I L 6350 3100 60 
+F5 "ADC3_IN" I L 6350 3200 60 
+F6 "ADC4_IN" I L 6350 3300 60 
+F7 "ADC5_IN" I L 6350 3400 60 
+F8 "ADC6_IN" I L 6350 3500 60 
+F9 "ADC7_IN" I L 6350 3600 60 
+F10 "SPI_SCLK" I L 6350 2100 60 
+F11 "SPI_SIMO" I L 6350 2200 60 
+F12 "MCU_LDAC" I L 6350 2700 60 
+F13 "SPI_CS_DAC" I L 6350 2400 60 
+F14 "SPI_CS_MEM" I L 6350 2500 60 
+F15 "REF_V2_5" O L 6350 3850 60 
+F16 "SPI_SOMI" O L 6350 2300 60 
+$EndSheet
+Wire Wire Line
+	5500 2200 6350 2200
+Wire Wire Line
+	6350 2100 5500 2100
+Wire Wire Line
+	5500 2400 6350 2400
+$Comp
+L R R11
+U 1 1 56F7D28A
+P 5650 1600
+F 0 "R11" V 5730 1600 50  0000 C CNN
+F 1 "0R_NM" V 5650 1600 50  0000 C CNN
+F 2 "Resistors_SMD:R_0603_HandSoldering" V 5580 1600 50  0001 C CNN
+F 3 "" H 5650 1600 50  0000 C CNN
+	1    5650 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R10
+U 1 1 56F7D3AD
+P 5900 1600
+F 0 "R10" V 5980 1600 50  0000 C CNN
+F 1 "10k" V 5900 1600 50  0000 C CNN
+F 2 "Resistors_SMD:R_0603_HandSoldering" V 5830 1600 50  0001 C CNN
+F 3 "" H 5900 1600 50  0000 C CNN
+	1    5900 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R7
+U 1 1 56F7D546
+P 6150 1600
+F 0 "R7" V 6230 1600 50  0000 C CNN
+F 1 "10k" V 6150 1600 50  0000 C CNN
+F 2 "Resistors_SMD:R_0603_HandSoldering" V 6080 1600 50  0001 C CNN
+F 3 "" H 6150 1600 50  0000 C CNN
+	1    6150 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR01
+U 1 1 56F7D66F
+P 5650 1250
+F 0 "#PWR01" H 5650 1000 50  0001 C CNN
+F 1 "GND" H 5650 1100 50  0000 C CNN
+F 2 "" H 5650 1250 50  0000 C CNN
+F 3 "" H 5650 1250 50  0000 C CNN
+	1    5650 1250
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	5650 1450 5650 1250
+Wire Wire Line
+	5900 1750 5900 2100
+Connection ~ 5900 2100
+Wire Wire Line
+	6150 1750 6150 2200
+Connection ~ 6150 2200
+$Comp
+L +3.3V #PWR02
+U 1 1 56F7F240
+P 6150 900
+F 0 "#PWR02" H 6150 750 50  0001 C CNN
+F 1 "+3.3V" H 6150 1040 50  0000 C CNN
+F 2 "" H 6150 900 50  0000 C CNN
+F 3 "" H 6150 900 50  0000 C CNN
+	1    6150 900 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6150 1450 6150 900 
+Wire Wire Line
+	5900 1450 5900 1300
+Wire Wire Line
+	5900 1300 6150 1300
+Connection ~ 6150 1300
+Wire Wire Line
+	6350 2300 5500 2300
+Wire Wire Line
+	6350 2900 5500 2900
+Wire Wire Line
+	5500 3000 6350 3000
+Wire Wire Line
+	6350 3100 5500 3100
+Wire Wire Line
+	5500 3200 6350 3200
+Wire Wire Line
+	6350 3300 5500 3300
+Wire Wire Line
+	5500 3400 6350 3400
+Wire Wire Line
+	6350 3500 5500 3500
+Wire Wire Line
+	5500 3600 6350 3600
+Wire Wire Line
+	6350 2700 5500 2700
+Wire Wire Line
+	5650 1750 5650 2700
+Connection ~ 5650 2700
+Wire Wire Line
+	6350 2500 5500 2500
+Wire Wire Line
+	5500 3850 6350 3850
+$EndSCHEMATC

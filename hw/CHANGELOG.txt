@@ -1,0 +1,77 @@
+v0.1:
+* frist!!! release
+----
+
+v0.2:
+x1. shrink size back down a bit
+x2. see if can get away with a 2 layer with GND and +3.3V pour on TOP/BTTM
+x3. footprint fixes
+   a. 10 pin header needs a silkscreen outline for pins. center and move over.
+x4. fix C8051F380 bad pin 12 with 100R to GND when it really should go
+   to VBUS.
+x5. footprint for the ESD protection diode is bad needs to be fixed
+x6. footprint for +5V regulator/reference should be widened for pads
+x7. the location of the 10-pin 2 row header is wacky and should be centered
+x8. look into mechanical enclosure for entire unit with eye to remove 
+  dual row headers.
+
+  alternatively adopt the bus pirate mech footprint standard.
+
+**RESIZED to BUS PIRATE V3.6 FOOTPRINT**
+
+XX9. (potentially use ADG1414BRUZ-REEL7 as an octal SPST switch to isolate DAC
+       and ADC so they can coexist on same pins) or MAX335 or MAX395.
+
+** ATTEMPT IN SOFTWARE TO VERIFY IF DAC CAN BE POWERED OFF AND SAME ATTACHED
+  CHANNEL USED AS ADC WITH EXTERNAL VOLTAGE STIMULUS **
+
+not required, will not be implemented in v0.2
+
+x10. USB VBUS power LED indicator
+x11. change the micro USB connector out for the EOL Hirose to a a standard SMD
+   mount with a non-reversed connector
+
+Amphenol-FCI 10118192-0001LF
+609-4613-1-ND
+http://www.digikey.com/product-detail/en/10118192-0001LF/609-4613-1-ND/2785378?WT.z_cid=ref_octopart_dkc_buynow&site=us
+
+https://github.com/open-project/kicadlibrary
+----
+
+v0.3:
+1. rearrange buttons and LEDs to fit the existing enclosure footprint
+x2. move 10 pin header back 1.1 mm to fit into enclosure.  size check
+x3. fix the USBDP and USBDN routing issue
+x4. make footprint for TPS 5V reference larger
+-?5. make footprint for dual color LED slightly larger
+x6. rounded edge corners
+x7. make corner holes larger, 2.7mm -> 3.2mm+ **(made to 3.2mm PAD)
+x8. make red/green bicolor LED active low
+x9. move ADC0_IN and ADC1_IN to P0.6 and P0.7 for interrupt capability
+x10. look into benefit of additional crystal oscillator for timing tolerance improvement
+ (added a 32.768 kHz watch crystal for millis timer and ADC sampling trigger clock)
+----
+
+v0.4:
+x1. add SPI SRAM buffer
+?2. fix bad GND pour DRC issued with pin 6 on chip U2.
+-3. make USB1 connector to use slotted holes for mechanical robustness (not this revision)
+x4. add protection diodes to ADC and DAC channels
+x5. add picoblade programming header on bottom of board to mate to C2 adapter board
+x6. switch ADC0_IN and ADC1_IN from P0.6 and P0.7 as they can't be allocated for ADC
+x7. add a USB polyfuse
+x8. add SPI testpads on backside of board
+x9. add health indicator LED for 1 second interval flashing
+-10. add testpoint for spare GPIO
+NO 11. switch red and green bicolor LED back to active high cfg
+x12. remove watch crystal
+x13. make VREF (P1.5) connected to a 2.5V reference
+x14. add MISO connection to read out TLV563x parameters
+x15. add tristate buffer to MISO/SOMI lines for TLV563x and 23LC1024 module 
+x16. fix incorrect naming scheme, DAC_OUTA = ADC0_IN
+NO 17. consider backside mezzanine connector to mate for mating to a breakout DB
+	or bulk screw-terminal board.
+x18. add 10 uF and 100 pF decoupling cap on PIN16 of TLV563X for internal voltage ref
+  as recommended by the datasheet. 
+x19. add 4.8 uF and 0.1 uF bypass capacitor on P1.5 reference pin on C8051F380 chip
+----
