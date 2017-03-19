@@ -1,0 +1,3 @@
+v0.5:
+
+ * make micro USB footprint with slotted holes and replace Molex part
