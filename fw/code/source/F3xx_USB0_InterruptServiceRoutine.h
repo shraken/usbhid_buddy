@@ -177,6 +177,7 @@ void Force_Stall(void);                // Forces a procedural stall on
 void Handle_In1(void);                 // used by SetConfiguration in
                                        // USB_STD_REQ to initialize
                                        // ReadyToTransfer
+void Enable_Out1(void);
 
 // Standard Requests
 void Get_Status(void);                 // These are called for each specific

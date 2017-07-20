@@ -27,5 +27,6 @@ void Sysclk_Init(void);
 void Port_Init(void);
 void Usb_Init(void);
 void Delay(void);
+void DelayLong(void);
 
 #endif

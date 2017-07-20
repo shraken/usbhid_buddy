@@ -16,7 +16,7 @@ extern uint8_t adc_channel_count;
 extern uint8_t adc_mux_tbl[MAX_ANALOG_INPUTS];
 
 uint8_t timer0_flag = 0;
-uint32_t timer2_count = 0;
+uint8_t timer2_count = 0;
 
 uint8_t timer0_low_set;
 uint8_t timer0_high_set;
@@ -36,7 +36,7 @@ void Timer0_Init (void)
 		TL0 = timer0_low_set;
 	
 		// Mode1: 16-bit counter/timer
-		TMOD = 0x01;
+		TMOD |= 0x01;
 	
 		// Timer0 uses SYSCLK / 12
 		CKCON &= ~(0x07);
@@ -46,7 +46,7 @@ void Timer0_Init (void)
 		ET0 = 1;
 	
 		// Timer0 ON
-		TCON = 0x10;
+		TCON |= 0x10;
 }
 
 void Timer0_Set_Period (uint32_t period)
@@ -152,6 +152,7 @@ void Timer0_ISR (void) interrupt 1
         }
     }
 		
+		/*
 		if (timer0_state)  {
 				gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
 				timer0_state = 0;
@@ -159,4 +160,23 @@ void Timer0_ISR (void) interrupt 1
 				gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
 				timer0_state = 1;
 		}
+		*/
 }
+
+/*
+void Timer2_ISR (void) interrupt 5
+{
+	if (timer2_count >= TIMER2_LOOPS) {
+		if (gpio_get_pin_value(HEARTBEAT_PIN)) {
+			gpio_set_pin_value(HEARTBEAT_PIN, GPIO_VALUE_LOW);
+		} else {
+			gpio_set_pin_value(HEARTBEAT_PIN, GPIO_VALUE_HIGH);
+		}
+		
+		timer2_count = 0;
+	}
+	
+	timer2_count++;
+	TF2H = 0;                           // Reset Interrupt
+}
+*/

@@ -2,7 +2,7 @@
 #define  _BUDDY_H_
 
 #include <stdint.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 
 #if defined(C8051)
 #include <globals.h>
@@ -32,6 +32,11 @@
 #define BUDDY_BIT_SIZE 8
 #define BUDDY_MAX_COUNTER 0x7F
 
+//typedef int bool;
+#define bool int
+#define false 0
+#define true 1
+
 /**
  * \enum APP_CODE 
  * \brief action code specified by either the
@@ -44,6 +49,7 @@ typedef enum _APP_CODE {
 	APP_CODE_PWM,
 	APP_CODE_ADC,
 	APP_CODE_TRIGGER,
+	APP_CODE_INFO,
 } APP_CODE;
 
 /**
@@ -100,7 +106,8 @@ typedef enum _OPER_CTRL {
  */
 typedef enum _QUEUE_CTRL {
 	QUEUE_CTRL_SATURATE = 0,
-	QUEUE_CTRL_WRAP
+	QUEUE_CTRL_WRAP,
+	QUEUE_CTRL_WAIT
 } QUEUE_CTRL;
 
 /**
@@ -169,14 +176,14 @@ typedef enum _BUDDY_RESPONSE {
  *				 scheme.
  */
 typedef enum _BUDDY_CHANNELS {
-	BUDDY_CHAN_7 = 0,
-	BUDDY_CHAN_6,
-	BUDDY_CHAN_5,
-	BUDDY_CHAN_4,
-	BUDDY_CHAN_3,
-	BUDDY_CHAN_2,
+	BUDDY_CHAN_0 = 0,
 	BUDDY_CHAN_1,
-	BUDDY_CHAN_0
+	BUDDY_CHAN_2,
+	BUDDY_CHAN_3,
+	BUDDY_CHAN_4,
+	BUDDY_CHAN_5,
+	BUDDY_CHAN_6,
+	BUDDY_CHAN_7,
 } BUDDY_CHANNELS;
 
 /**
@@ -194,8 +201,25 @@ typedef enum _BUDDY_CHANNELS_MASK {
 	BUDDY_CHAN_7_MASK = (1 << BUDDY_CHAN_7),
 } BUDDY_CHANNELS_MASK;
 
-#define BUDDY_CHAN_ALL_MASK (BUDDY_CHAN_0_MASK | BUDDY_CHAN_1_MASK | BUDDY_CHAN_2_MASK | BUDDY_CHAN_3_MASK | \
-							 BUDDY_CHAN_4_MASK | BUDDY_CHAN_5_MASK | BUDDY_CHAN_6_MASK | BUDDY_CHAN_7_MASK)
+#ifdef SWIG
+%constant int BUDDY_CHAN_ALL_MASK = (BUDDY_CHAN_0_MASK | 
+							 		 BUDDY_CHAN_1_MASK | 
+							 		 BUDDY_CHAN_2_MASK | 
+							 		 BUDDY_CHAN_3_MASK |
+							 		 BUDDY_CHAN_4_MASK | 
+							 		 BUDDY_CHAN_5_MASK | 
+							 		 BUDDY_CHAN_6_MASK | 
+							 		 BUDDY_CHAN_7_MASK);
+#else
+#define BUDDY_CHAN_ALL_MASK (BUDDY_CHAN_0_MASK | \
+							 BUDDY_CHAN_1_MASK | \
+							 BUDDY_CHAN_2_MASK | \
+							 BUDDY_CHAN_3_MASK | \
+							 BUDDY_CHAN_4_MASK | \
+							 BUDDY_CHAN_5_MASK | \
+							 BUDDY_CHAN_6_MASK | \
+							 BUDDY_CHAN_7_MASK)
+#endif
 
 /**
  * \enum CODEC_BIT_WIDTH
@@ -214,6 +238,39 @@ typedef enum _CODEC_BIT_WIDTH {
 	CODEC_BIT_WIDTH_11 = 11,
 	CODEC_BIT_WIDTH_12 = 12,
 } CODEC_BIT_WIDTH;
+
+typedef enum _FIRMWARE_INFO_DAC_TYPE {
+	FIRMWARE_INFO_DAC_TYPE_NONE = 0x0,			// No DAC
+	FIRMWARE_INFO_DAC_TYPE_TLV5630 = 0x01,		// TI TLV5630 12-bit
+	FIRMWARE_INFO_DAC_TYPE_TLV5631 = 0x02,		// TI TLV5631 10-bit
+	FIRMWARE_INFO_DAC_TYPE_TLV5632 = 0x03,		// TI TLV5632 8-bit
+	FIRMWARE_INFO_DAC_TYPE_LENGTH
+} FIRMWARE_INFO_DAC_TYPE;
+
+typedef enum _FIRMWARE_INFO_MEM_TYPE {
+	FIRMWARE_INFO_MEM_TYPE_NONE = 0x00,			// No External Memory
+	FIRMWARE_INFO_MEM_TYPE_23LC1024 = 0x01,		// Microchip SRAM 23LC1024
+	FIRMWARE_INFO_MEM_TYPE_LENGTH
+} FIRMWARE_INFO_MEM_TYPE;
+
+/**
+ * \enum firmware_info_t
+ * \brief Firmware info structure that is retrieved by host application
+ *			on boot to determine serial number, revision, and the
+ *			DAC and memory types supported.
+ */
+typedef struct _firmware_info_t {
+	uint32_t serial;
+	uint32_t flash_datetime;
+	uint8_t fw_rev_major;
+	uint8_t fw_rev_minor;
+	uint8_t fw_rev_tiny;
+	uint8_t bootl_rev_major;
+	uint8_t bootl_rev_minor;
+	uint8_t bootl_rev_tiny;
+	uint8_t type_dac;
+	uint8_t type_ext_memory;
+} firmware_info_t;
 
 /**
  * \enum ctrl_general_t

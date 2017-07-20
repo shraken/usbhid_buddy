@@ -1,21 +1,19 @@
 #ifndef  _SPI_H_
 #define  _SPI_H_
 
-void SPI0_Init(void);
-void SPI_Byte_Write (void);
-void SPI_Byte_Read (void);
-void SPI_Array_Write (void);
-void SPI_Array_Read (void);
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 //-----------------------------------------------------------------------------
 // Global Constants
 //-----------------------------------------------------------------------------
-#define SPI_CLOCK          1000000      // Maximum SPI clock
+#define SPI_CLOCK          10000000      // Maximum SPI clock
                                         // The SPI clock is a maximum of 250 kHz
                                         // when this example is used with
                                         // the SPI0_Slave code example.
 
-#define MAX_BUFFER_SIZE    2           // Maximum buffer Master will send
+#define SPI_MAX_BUFFER_SIZE    32      // Maximum buffer Master will send
 
 // Instruction Set
 #define  SPI_WRITE         0x04        // Send a byte from the Master to the
@@ -28,4 +26,22 @@ void SPI_Array_Read (void);
                                        // to the Master
 #define  ERROR_OCCURRED    0x40        // Indicator for the Slave to tell the
 
-#endif
+typedef enum _SPI_DEVICE_TYPE {
+	SPI_DEVICE_TYPE_TLV563x = 0,
+	SPI_DEVICE_TYPE_23LC1024,
+} SPI_DEVICE_TYPE;
+
+/**
+ * @brief Configures SPI0 to use 4-wire Single Master mode. The SPI timing is
+ *		  configured for Mode 0,0 (data centered on first edge of clock phase and
+ *		  SCK line low in idle state).
+ *
+ * @return Void.
+ */
+void SPI0_Init(void);
+void SPI_Array_Write (void);
+void SPI_Array_Read (void);
+void SPI_Array_ReadWrite (void);
+void SPI_Select(uint8_t chip_select);
+
+#endif /* _SPI_H_ */

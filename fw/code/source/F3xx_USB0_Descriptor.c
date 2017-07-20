@@ -77,7 +77,7 @@ code const hid_configuration_descriptor HIDCONFIGDESC =
    0x81,                               // bEndpointAddress
    0x03,                               // bmAttributes
    EP1_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
-   10                                   // bInterval
+   1                                   // bInterval
 },
 
 // OUT endpoint (optional for HID)
@@ -87,7 +87,7 @@ code const hid_configuration_descriptor HIDCONFIGDESC =
    0x01,                               // bEndpointAddress
    0x03,                               // bmAttributes
    EP2_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
-   10                                   // bInterval
+   1                                   // bInterval
 }
 
 };

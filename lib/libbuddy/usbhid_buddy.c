@@ -1,17 +1,50 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <wchar.h>
 #include <string.h>
 #include <stdlib.h>
+#include <usbhid_buddy.h>
 #include <utility.h>
 #include <support.h>
 #include <buddy.h>
-#include <usbhid_buddy.h>
+#include <utility.h>
 
 static bool _stream_mode = false;
 static uint8_t _chan_mask = 0;
 static uint8_t _res_mask = 0;
+
+char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH] = {
+	"None",
+	"TI TLV5630 (12-bit)",
+	"TI TLV5631 (10-bit)",
+	"TI TLV5632 (8-bit)",
+};
+
+char *fw_info_mem_type_names[FIRMWARE_INFO_MEM_TYPE_LENGTH] = {
+	"None",
+	"Microchip 23LC1024 (1024K bits)",
+};
+
+void print_fw_info_dac_types(void)
+{
+	int i;
+
+	printf("print_fw_info_dac_types()\n");
+	for (i = 0; i < FIRMWARE_INFO_DAC_TYPE_LENGTH; i++) {
+		printf("%s\n", fw_info_dac_type_names[i]);
+	}
+}
+
+void print_fw_info_mem_types(void)
+{
+	int i;
+
+	printf("print_fw_info_dac_types()\n");
+	for (i = 0; i < FIRMWARE_INFO_MEM_TYPE_LENGTH; i++) {
+		printf("%s\n", fw_info_mem_type_names[i]);
+	}
+}
 
 void print_buffer(uint8_t *buffer, uint8_t length)
 {
@@ -40,12 +73,14 @@ void print_buffer_simple(uint16_t *buffer)
 	printf("\n\n");
 }
 
-hid_device* hidapi_init()
+hid_device* hidapi_init(buddy_hid_info_t *hid_info)
 {
 	hid_device *handle;
+	char str_buffer[128];
 	wchar_t wstr[MAX_STR];
-	struct hid_device_info *devs, *cur_dev;
 	int res;
+
+	//debugf("hidapi_init entered\n");
 
 	if (hid_init() == -1) {
 		critical(("hidapi_init(): unable to init using hid_init()\n"))
@@ -60,38 +95,58 @@ hid_device* hidapi_init()
 		return NULL;
 	}
 
+	// allocate hidinfo_t strings for USB device information
+	hid_info->str_mfr = (char *) malloc(MAX_CHAR_LENGTH);
+	hid_info->str_product = (char *) malloc(MAX_CHAR_LENGTH);
+	hid_info->str_serial = (char *) malloc(MAX_CHAR_LENGTH);
+	hid_info->str_index_1 = (char *) malloc(MAX_CHAR_LENGTH);
+
 	/*
+	sprintf(str_buffer, "hid_info->str_mfr = %p\n", hid_info->str_mfr);
+	debugf(str_buffer);
+	sprintf(str_buffer, "hid_info->str_product = %p\n", hid_info->str_product);
+	debugf(str_buffer);
+	sprintf(str_buffer, "hid_info->str_serial = %p\n", hid_info->str_serial);
+	debugf(str_buffer);
+	sprintf(str_buffer, "hid_info->str_index_1 = %p\n", hid_info->str_index_1);
+	debugf(str_buffer);
+	*/
+
 	// Read the Manufacturer String
 	wstr[0] = 0x0000;
 	res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
-	if (res < 0) {
-		critical(("hidapi_init(): Unable to read manufacturer string\n"));
+	if (res >= 0) {
+		wcstombs(hid_info->str_mfr, wstr, MAX_CHAR_LENGTH);
+	} else {
+		strcpy(hid_info->str_mfr, "");
 	}
-	debug(("hidapi_init(): Manufacturer String: %ls\n", wstr));
 
 	// Read the Product String
 	wstr[0] = 0x0000;
 	res = hid_get_product_string(handle, wstr, MAX_STR);
-	if (res < 0) {
-		critical(("hidapi_init(): Unable to read product string\n"));
+	if (res >= 0) {
+		wcstombs(hid_info->str_product, wstr, MAX_CHAR_LENGTH);
+	} else {
+		strcpy(hid_info->str_product, "");
 	}
-	debug(("hidapi_init(): Product String: %ls\n", wstr));
 
 	// Read the Serial Number String
 	wstr[0] = 0x0000;
 	res = hid_get_serial_number_string(handle, wstr, MAX_STR);
-	if (res < 0) {
-		critical(("hidapi_init(): Unable to read serial number string\n"));
+	if (res >= 0) {
+		wcstombs(hid_info->str_serial, wstr, MAX_CHAR_LENGTH);
+	} else {
+		strcpy(hid_info->str_serial, "");
 	}
-	debug(("hidapi_init(): Serial Number String: (%d) %ls\n", wstr[0], wstr));
 
 	// Read Indexed String 1
 	wstr[0] = 0x0000;
 	res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
-	if (res < 0)
-		critical(("Unable to read indexed string 1\n"));
-	debug(("Indexed String 1: %ls\n", wstr));
-	*/
+	if (res >= 0) {
+		wcstombs(hid_info->str_index_1, wstr, MAX_CHAR_LENGTH);
+	} else {
+		strcpy(hid_info->str_index_1, "");
+	}
 
 	// Set the hid_read() function to be non-blocking.
 	hid_set_nonblocking(handle, 1);
@@ -109,13 +164,14 @@ int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *ra
 	out_buf[BUDDY_APP_INDIC_OFFSET] = indic;
 
 	copy_length = (length > (MAX_OUT_SIZE - 3)) ? (MAX_OUT_SIZE - 3) : length;
-	debug(("buddy_write_raw: copy_length = %d\r\n", copy_length));
+	//debug(("buddy_write_raw: copy_length = %d\r\n", copy_length));
 
 	if (raw) {
 		memcpy(&out_buf[BUDDY_APP_VALUE_OFFSET], raw, copy_length);
 	}
 	
 	if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
+		printf("buddy_write_raw: buddy_write_packet() failed\n");
 		return BUDDY_ERROR_GENERAL;
 	}
 
@@ -124,14 +180,24 @@ int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *ra
 
 int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 {
+	static int count = 0;
 	int res;
 
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
+		/*
 		critical(("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
 					hid_error(handle), handle));
+		*/
+		printf("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
+					hid_error(handle), handle);
 		return BUDDY_ERROR_GENERAL;
+	} 
+	/*
+	else {
+		printf("buddy_write_packet successful, count = %d\n", count++);
 	}
+	*/
 
 	return BUDDY_ERROR_OK;
 }
@@ -146,8 +212,31 @@ int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 
 int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 {
+	char str_buffer[256];
 	unsigned char out_buf[MAX_OUT_SIZE] = { 0 };
 	uint8_t err_code;
+	int i;
+
+	/*
+	debugf("buddy_send_dac entered\n");
+
+	sprintf(str_buffer, "packet->channels[0] = %d\n", packet->channels[0]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[1] = %d\n", packet->channels[1]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[2] = %d\n", packet->channels[2]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[3] = %d\n", packet->channels[3]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[4] = %d\n", packet->channels[4]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[5] = %d\n", packet->channels[5]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[6] = %d\n", packet->channels[6]);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet->channels[7] = %d\n", packet->channels[7]);
+	debugf(str_buffer);
+	*/
 
 	err_code = encode_packet(packet);
 
@@ -156,7 +245,14 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 
 		out_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
 		out_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
-		memcpy(&out_buf[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
+		memcpy(&out_buf[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 2));
+
+		/*
+		for (i = 0; i < 64; i++) {
+			printf("%02x:", out_buf[i]);
+		}
+		printf("\r\n");
+		*/
 
 		if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
 			critical(("buddy_send_dac: buddy_write_packet call failed\n"));
@@ -166,11 +262,24 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 		codec_reset();
 		codec_clear();
 
+		// sent the previous codec buffer so try and re-encode packet that could
+		// not fit
+		err_code = encode_packet(packet);
+
+		if (err_code == CODEC_STATUS_CONTINUE) {
+			return BUDDY_ERROR_OK;
+		} else {
+			return BUDDY_ERROR_GENERAL;
+		}
+
+		//debugf("buddy_send_dac exited 1\n");
 		return BUDDY_ERROR_OK;
 	} else if (err_code == CODEC_STATUS_CONTINUE) {
 		//printf("encode_packet: continue\r\n");
+		//debugf("buddy_send_dac exited 2\n");
 		return BUDDY_ERROR_OK;
 	} else {
+		//debugf("buddy_send_dac exited 3\n");
 		return BUDDY_ERROR_GENERAL;
 	}
 }
@@ -181,7 +290,16 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int err_code;
 	int res;
-	int i;
+	char str_buffer[128];
+
+	/*
+	debugf("buddy_read_adc entered\n");
+
+	sprintf(str_buffer, "handle = %p\n", handle);
+	debugf(str_buffer);
+	sprintf(str_buffer, "packet = %p\n", packet);
+	debugf(str_buffer);
+	*/
 
 	// 
 	// 1. if streaming off/immediate on then read a HID IN packet and decode
@@ -198,20 +316,26 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 
 			if (res < 0) {
 				critical(("buddy_read_adc: could not buddy_read_packet\n"));
+
+				//debugf("res < 0: failed on buddy_read_packet\n");
 				return -1;
 			}
 		}
 
+		/*
+		printf("in_counter (valid) = %d\n", in_buf[1] & 0x7F);
+		print_buffer(in_buf, MAX_IN_SIZE);
+		*/
+		
 		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_VALID) {
-			printf("in_counter (valid) = %d\n", in_buf[1] & 0x7F);
-			print_buffer(in_buf, MAX_IN_SIZE);
-
 			codec_reset();
 			codec_clear();
 
 			encode_status = decode_packet( (buddy_frame_t *) (in_buf + BUDDY_APP_INDIC_OFFSET), 
 											packet);
 		} else {
+			// filler packet was detected
+			//debugf("filler packet detected!  BUDDY_ERROR_INVALID returned\n");
 			err_code = BUDDY_ERROR_INVALID;
 		}
 	}
@@ -220,8 +344,10 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 									    packet);
 	} else {
 		err_code = BUDDY_ERROR_GENERAL;
+		//debugf("BUDDY_ERROR_GENERAL returned\n");
 	}
 
+	//debugf("BUDDY_ERROR_OK returned\n");
 	return err_code;
 }
 
@@ -229,17 +355,21 @@ int buddy_flush(hid_device *handle)
 {
 	unsigned char out_buf[MAX_OUT_SIZE] = { 0 };
 
-	out_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-	out_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
-	memcpy(&out_buf[BUDDY_APP_VALUE_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
+	if (!codec_buffer_empty()) {
+		printf("flushing the buffer\r\n");
+		
+		out_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
+		out_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
+		memcpy(&out_buf[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
 
-	if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
-		critical(("buddy_flush: buddy_write_packet call failed\n"));
-		return BUDDY_ERROR_GENERAL;
+		if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
+			critical(("buddy_flush: buddy_write_packet call failed\n"));
+			return BUDDY_ERROR_GENERAL;
+		}
+
+		codec_reset();
+		codec_clear();
 	}
-
-	codec_reset();
-	codec_clear();
 
 	return BUDDY_ERROR_OK;
 }
@@ -249,7 +379,7 @@ int buddy_count_channels(uint8_t chan_mask)
 	int i;
 	int adc_channel_count = 0;
 
-	for (i = BUDDY_CHAN_7; i <= BUDDY_CHAN_0; i++) {
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (chan_mask & (1 << i)) {
 			adc_channel_count++;
 		}
@@ -258,55 +388,133 @@ int buddy_count_channels(uint8_t chan_mask)
 	return adc_channel_count;
 }
 
-hid_device* buddy_init(ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing)
+int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing)
 {
-	hid_device* handle;
-	unsigned char out_buf[MAX_OUT_SIZE] = { 0 };
+	char str_buffer[128];
 
-	_chan_mask = general->channel_mask;
-	_res_mask = general->resolution;
+	sprintf(str_buffer, "handle = %p, general = %p, runtime = %p, timing = %p\n", 
+		handle, general, runtime, timing);
 
-	printf("buddy_init: _chan_mask = %02x\r\n", general->channel_mask);
-	printf("buddy_init: _res_mask = %02x\r\n", general->resolution);
+	/*
+	debugf("buddy_configure entered\n");
+	debugf(str_buffer);
+
+	sprintf(str_buffer, "general->function = %d\n", general->function);
+	debugf(str_buffer);
+	sprintf(str_buffer, "general->mode = %d\n", general->mode);
+	debugf(str_buffer);
+	sprintf(str_buffer, "general->operation = %d\n", general->operation);
+	debugf(str_buffer);
+	sprintf(str_buffer, "general->queue = %d\n", general->queue);
+	debugf(str_buffer);
+	sprintf(str_buffer, "general->channel_mask = %d\n", general->channel_mask);
+	debugf(str_buffer);
+	sprintf(str_buffer, "general->resolution = %d\n", general->resolution);
+	debugf(str_buffer);
+	*/
+
+	if ((!handle) || (!general) || (!runtime) || (!timing)) {
+		return BUDDY_ERROR_MEMORY;
+	}
+
+	printf("buddy_configure: _chan_mask = %02x\r\n", general->channel_mask);
+	printf("buddy_configure: _res_mask = %02x\r\n", general->resolution);
 
 	if (!is_codec_initialized()) {
-		if (codec_init(general->mode == MODE_CTRL_STREAM, _chan_mask, _res_mask) != CODEC_STATUS_NOERR) {
-			printf("buddy_init: codec_init call failed\n");
+		printf("is_codec_initialized = false\n");
+
+		if (codec_init(general->mode == MODE_CTRL_STREAM, general->channel_mask, general->resolution) != CODEC_STATUS_NOERR) {
+			printf("buddy_configure: codec_init call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}
 	}
+
+	printf("setting _chan_mask and _res_mask\n");
+	_chan_mask = general->channel_mask;
+	_res_mask = general->resolution;
 
 	// scale the input sample rate by the number of channels so that all
 	// ADC channels are sampling at the requested rate
 	timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
 
-	handle = hidapi_init();
-
-	if (!handle) {
-		return NULL;
-	}
-
 	// registers
 	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_RUNTIME, 
 			(uint8_t *) runtime, sizeof(ctrl_runtime_t)) != BUDDY_ERROR_OK) {
-		return NULL;
+		return BUDDY_ERROR_GENERAL;
 	}
 	short_sleep(100);
 
 	// timing
 	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_TIMING, 
 			(uint8_t *) timing, sizeof(ctrl_timing_t)) != BUDDY_ERROR_OK) {
-		return NULL;
+		return BUDDY_ERROR_GENERAL;
 	}
 	short_sleep(100);
 
 	// general
 	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_GENERAL, 
 			(uint8_t *) general, sizeof(ctrl_general_t)) != BUDDY_ERROR_OK) {
-		return NULL;
+		return BUDDY_ERROR_GENERAL;
 	}
 	short_sleep(100);
+
+	return BUDDY_ERROR_OK; 
+}
+
+int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
+{
+	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
+	int res;
+	int err_code = BUDDY_ERROR_OK;
 	
+	// request firmware info block
+	if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *) NULL, 0) == BUDDY_ERROR_OK) {
+		short_sleep(100);
+
+		res = 0;
+		while (res == 0) {
+			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE - 1);
+		}
+
+		/*
+		printf("buddy_get_firmware_info():\n");
+		printf("res = %d\n", res);
+		for (i = 0; i < MAX_IN_SIZE; i++) {
+			printf("%02x:", in_buf[i]);
+		}
+		*/
+
+		memcpy(fw_info, &in_buf[BUDDY_APP_INDIC_OFFSET], sizeof(firmware_info_t));
+
+		// adjust for endian conversion
+		fw_info->flash_datetime = swap_uint32(fw_info->flash_datetime);
+		fw_info->serial = swap_uint32(fw_info->serial);
+	} else {
+		printf("buddy_get_firmware_info(): failed on buddy_write_raw\n");
+	}
+
+	return err_code;
+}
+
+hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
+{
+	char str_buffer[128];
+	hid_device* handle;
+
+	//debugf("buddy_init entered\n");
+
+	handle = hidapi_init(hid_info);
+	if (!handle) {
+		printf("Could not open USB HID connection the Buddy device\n");
+		return NULL;
+	}
+
+	/*
+	sprintf(str_buffer, "handle = %p\n", handle);
+	debugf(str_buffer);
+	*/
+
+	buddy_get_firmware_info(handle, fw_info);
 	return handle;
 }
 
@@ -316,9 +524,47 @@ int buddy_trigger(hid_device *handle)
 				(uint8_t *) NULL, 0);
 }
 
-int buddy_cleanup(hid_device *handle)
+int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info)
 {
+	char str_buffer[128];
 	ctrl_general_t general_settings = { 0 };
+
+	//debugf("buddy_cleanup entered\n");
+
+	/*
+	sprintf(str_buffer, "hid_info->str_mfr = %p\n", hid_info->str_mfr);
+	debugf(str_buffer);
+	sprintf(str_buffer, "hid_info->str_product = %p\n", hid_info->str_product);
+	debugf(str_buffer);
+	sprintf(str_buffer, "hid_info->str_serial = %p\n", hid_info->str_serial);
+	debugf(str_buffer);
+	sprintf(str_buffer, "hid_info->str_index_1 = %p\n", hid_info->str_index_1);
+	debugf(str_buffer);
+	*/
+
+#if !defined(LABVIEW_BUILD)
+	// free the strings from the USB HID device info structure
+	if (hid_info->str_serial) {
+		free(hid_info->str_serial);
+	}
+
+	if (hid_info->str_product) {
+		free(hid_info->str_product);
+	}
+
+	if (hid_info->str_mfr) {
+		free(hid_info->str_mfr);
+	}
+
+	if (hid_info->str_index_1) {
+		free(hid_info->str_index_1);
+	}
+
+	hid_info->str_serial = NULL;
+	hid_info->str_product = NULL;
+	hid_info->str_mfr = NULL;
+	hid_info->str_index_1 = NULL;
+#endif
 
 	general_settings.function = GENERAL_CTRL_NONE;
 

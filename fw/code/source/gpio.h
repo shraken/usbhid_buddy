@@ -10,6 +10,9 @@
 
 #define TEST_STATUS_PIN GPIO_P3_6
 
+#define SPI_DAC_CS_PIN GPIO_P1_3
+#define SPI_MEM_CS_PIN GPIO_P1_4
+
 // prototypes
 error_t gpio_init();
 error_t gpio_deactivate_all_channels();

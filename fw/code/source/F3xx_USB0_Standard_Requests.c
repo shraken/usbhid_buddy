@@ -3,6 +3,7 @@
 #include <F3xx_USB0_Descriptor.h>
 #include <F3xx_USB0_ReportHandler.h>
 #include <c8051f3xx.h>
+#include <stdio.h>
 
 //-----------------------------------------------------------------------------
 // Variables
@@ -152,7 +153,8 @@ void Get_Status (void)                 // This routine returns a two byte
 //-----------------------------------------------------------------------------
 void Clear_Feature ()                  // This routine can clear Halt Endpoint
 {                                      // features on endpoint 1
-
+   //printf("Clear_Feature invoked\r\n");
+	
    // Send procedural stall if device isn't configured
    if ( (USB0_STATE != DEV_CONFIGURED) ||
    // Or request is made to host(remote wakeup not supported)
@@ -210,7 +212,8 @@ void Clear_Feature ()                  // This routine can clear Halt Endpoint
 //-----------------------------------------------------------------------------
 void Set_Feature (void)                // This routine will set the EP Halt
 {                                      // feature for endpoint 1
-
+   //printf("Set_Feature invoked\r\n");
+	
    // Make sure device is configured, SETUP data
    if ((USB0_STATE != DEV_CONFIGURED) ||
    // is all valid and that request is directed at an endpoint

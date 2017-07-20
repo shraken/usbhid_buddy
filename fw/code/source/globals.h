@@ -5,6 +5,8 @@
 
 //#define SYSCLK             12000000    // SYSCLK frequency in Hz
 
+//#define ADC_TEST
+
 // C8051F380 48-pin ADC pin macros
 // see pg. 60 of C8051F38x datasheet
 #define ADC_P0_3 0x11 // 010001b
@@ -152,7 +154,14 @@ typedef enum _gpio_pin_value gpio_value;
 typedef enum _gpio_major_type gpio_major_pin;
 typedef enum _gpio_minor_type gpio_minor_pin;
 
+/*
 #define STATUS_TX_LED_PIN GPIO_P1_6
 #define STATUS_RX_LED_PIN GPIO_P1_5
+*/
+
+#define STATUS_TX_LED_PIN GPIO_P3_4
+#define STATUS_RX_LED_PIN GPIO_P3_5
+#define HEARTBEAT_PIN GPIO_P4_7
+#define TLV563X_LDAC_PIN GPIO_P1_7
 
 #endif
