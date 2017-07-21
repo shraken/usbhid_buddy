@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <buddy.h>
 
-#define BUDDY_QUEUE_SIZE 40
+#define BUDDY_QUEUE_SIZE 3
 
 typedef struct _queue {
 		int32_t head;
@@ -15,8 +15,9 @@ typedef struct _queue {
 
 void queue_init();
 void queue_clear();
-int32_t queue_remain_items();
-void queue_enqueue(buddy_frame_t *p);
+int16_t queue_number_items(void);
+int16_t queue_remain_items(void);
+int8_t queue_enqueue(buddy_frame_t *p);
 buddy_frame_t *queue_dequeue();
 int8_t queue_is_empty();
 int8_t queue_is_full();

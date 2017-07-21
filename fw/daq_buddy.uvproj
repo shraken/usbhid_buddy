@@ -10,6 +10,7 @@
       <TargetName>Target 1</TargetName>
       <ToolsetNumber>0x0</ToolsetNumber>
       <ToolsetName>MCS-51</ToolsetName>
+      <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>C8051F380</Device>
@@ -30,6 +31,7 @@
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
           <SFDFile></SFDFile>
+          <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
           <IncludePath></IncludePath>
@@ -71,6 +73,8 @@
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+            <nStopB1X>0</nStopB1X>
+            <nStopB2X>0</nStopB2X>
           </BeforeMake>
           <AfterMake>
             <RunUserProg1>0</RunUserProg1>
@@ -79,6 +83,8 @@
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+            <nStopA1X>0</nStopA1X>
+            <nStopA2X>0</nStopA2X>
           </AfterMake>
           <SelectedForBatchBuild>0</SelectedForBatchBuild>
           <SVCSIdString></SVCSIdString>
@@ -97,6 +103,7 @@
           <StopOnExitCode>3</StopOnExitCode>
           <CustomArgument></CustomArgument>
           <IncludeLibraryModules></IncludeLibraryModules>
+          <ComprImg>1</ComprImg>
           <BankNo>65535</BankNo>
         </CommonProperty>
         <DllOption>
@@ -127,6 +134,7 @@
             <RestoreFunctions>1</RestoreFunctions>
             <RestoreToolbox>1</RestoreToolbox>
             <LimitSpeedToRealTime>0</LimitSpeedToRealTime>
+            <RestoreSysVw>1</RestoreSysVw>
           </Simulator>
           <Target>
             <UseTarget>1</UseTarget>
@@ -138,9 +146,10 @@
             <RestoreFunctions>0</RestoreFunctions>
             <RestoreToolbox>1</RestoreToolbox>
             <RestoreTracepoints>1</RestoreTracepoints>
+            <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>9</TargetSelection>
+          <TargetSelection>10</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -164,11 +173,16 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>0</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>4101</DriverSelection>
+            <DriverSelection>4102</DriverSelection>
           </Flash1>
+          <bUseTDR>0</bUseTDR>
           <Flash2>BIN\SiC8051F.dll</Flash2>
           <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
+          <pFcarmOut></pFcarmOut>
+          <pFcarmGrp></pFcarmGrp>
+          <pFcArmRoot></pFcArmRoot>
+          <FcArmLst>0</FcArmLst>
         </Utilities>
         <Target51>
           <Target51Misc>
@@ -298,7 +312,7 @@
               <MiscControls></MiscControls>
               <Define>C8051, NDEBUG</Define>
               <Undefine></Undefine>
-              <IncludePath>.\code\include;.\code\A51;.\code\source;.\code\source\drivers;..\common\;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
+              <IncludePath>.\code\include;.\code\A51;.\code\source;.\code\source\drivers;..\lib\libbuddy;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -401,11 +415,6 @@
               <FilePath>.\code\source\spi.c</FilePath>
             </File>
             <File>
-              <FileName>tlv563x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\drivers\tlv563x.c</FilePath>
-            </File>
-            <File>
               <FileName>action.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\code\source\action.c</FilePath>
@@ -438,7 +447,22 @@
             <File>
               <FileName>buddy.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\common\buddy.c</FilePath>
+              <FilePath>..\lib\libbuddy\buddy.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers</GroupName>
+          <Files>
+            <File>
+              <FileName>tlv563x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\code\source\drivers\tlv563x.c</FilePath>
+            </File>
+            <File>
+              <FileName>23lc1024.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\code\source\drivers\23lc1024.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -10,6 +10,7 @@ fw/build/*
 *.exe
 *.o
 *.so
+*.obj
 
 # Packages #
 ############
@@ -51,3 +52,13 @@ sw/windows/daq_buddy_test/ipch/*
 
 # Python
 *.pyd
+
+# Project-specific
+lib/libbuddy/bindings/python/build/*
+lib/libbuddy/bindings/python/buddy.py
+lib/libbuddy/bindings/python/*.pyc
+lib/libbuddy/bindings/python/*_wrap.c
+lib/libbuddy/bindings/labview/buddy/Debug/*
+lib/libbuddy/bindings/labview/buddy/ipch/*
+lib/libbuddy/bindings/labview/buddy/x64/*
+examples/C/simple/build/*

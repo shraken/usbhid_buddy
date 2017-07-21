@@ -26,14 +26,14 @@ uint16_t adc_results[MAX_ANALOG_INPUTS];
 uint8_t adc_mux_tbl[MAX_ANALOG_INPUTS] = { 0 };
 
 uint8_t adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
-		ADC_P2_7,	// ADC7_IN
-		ADC_P2_6,	// ADC6_IN
-		ADC_P2_5,	// ADC5_IN
-		ADC_P2_4,	// ADC4_IN
-		ADC_P2_3,	// ADC3_IN
-		ADC_P2_2,	// ADC2_IN
+		ADC_P2_0,	// ADC0_IN
 		ADC_P2_1,	// ADC1_IN
-		ADC_P2_0	// ADC0_IN		
+		ADC_P2_2,	// ADC2_IN
+		ADC_P2_3,	// ADC3_IN
+		ADC_P2_4,	// ADC4_IN
+		ADC_P2_5,	// ADC5_IN
+		ADC_P2_6,	// ADC6_IN
+		ADC_P2_7,	// ADC7_IN
 };
 
 void ADC0_Enable(void)

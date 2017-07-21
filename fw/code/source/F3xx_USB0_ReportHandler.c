@@ -5,6 +5,8 @@
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
 
+extern uint8_t processed_out;
+
 // ----------------------------------------------------------------------------
 // Local Function Prototypes
 // ----------------------------------------------------------------------------
@@ -104,7 +106,7 @@ BufferStructure IN_BUFFER, OUT_BUFFER;
 void IN_DATA_ROUTINE(void){
    IN_PACKET[0] = IN_DATA;
 	
-	 IN_BUFFER.Ptr = IN_PACKET;
+   IN_BUFFER.Ptr = IN_PACKET;
    IN_BUFFER.Length = IN_DATA_SIZE + 1;
 }
 
@@ -125,6 +127,8 @@ void IN_DATA_ROUTINE(void){
 void OUT_DATA_ROUTINE(void)
 {
    flag_usb_out = 1;
+   processed_out = 0;
+   //printf("disable USBHID out\r\n");
 }
 
 // ----------------------------------------------------------------------------

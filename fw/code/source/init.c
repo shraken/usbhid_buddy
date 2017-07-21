@@ -3,6 +3,7 @@
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_Register.h>
 #include <C8051F3xx.h>
+#include <gpio.h>
 #include <globals.h>
 
 // ----------------------------------------------------------------------------
@@ -85,20 +86,30 @@ void Sysclk_Init(void)
 // Routine configure the Crossbar and GPIO ports.
 //
 void Port_Init(void)
-{
+{	
     P2MDIN    = 0x00;
-    P4MDIN    = 0x00;
-    
+
     P0MDOUT   = 0x10;
-		P1MDOUT   = 0x6D;
-		P3MDOUT   = 0xFF;
+
+	//P1MDOUT   = 0x9D;
+	P1MDOUT   = 0x85;
+	
+	P3MDOUT   = 0x30;
+	
+	P4MDOUT   = 0x80;
 	
     P0SKIP    = 0xCF;
-    P1SKIP    = 0xF0;
-		P2SKIP    = 0xFF;
-    
+    //P1SKIP    = 0xF0;
+	P1SKIP = 0x00;
+	P2SKIP    = 0xFF;
+    P3SKIP    = 0x30;
+	
     XBR0      = 0x03;
     XBR1      = 0x40;
+	
+	// set SPI chip select DAC and external memory to be disabled by default
+	gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
+	gpio_set_pin_value(SPI_MEM_CS_PIN, GPIO_VALUE_HIGH);
 }
 
 //-----------------------------------------------------------------------------
@@ -155,5 +166,11 @@ void Delay(void)
    int x;
    for(x = 0;x < 500;x)
       x++;
+}
 
+void DelayLong(void)
+{
+   int x;
+   for(x = 0;x < 5000;x)
+      x++;
 }

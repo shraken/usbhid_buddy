@@ -20,17 +20,25 @@
  */
 error_t gpio_init()
 {
-		// init red and green LEDs used to indicate RX/TX
-		gpio_set_pin_mode(STATUS_TX_LED_PIN, GPIO_MODE_PUSH_PULL);
+	// red and green LEDs used to indicate RX/TX
+	gpio_set_pin_mode(STATUS_TX_LED_PIN, GPIO_MODE_PUSH_PULL);
     gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_HIGH);
     
-		gpio_set_pin_mode(STATUS_RX_LED_PIN, GPIO_MODE_PUSH_PULL);
+	gpio_set_pin_mode(STATUS_RX_LED_PIN, GPIO_MODE_PUSH_PULL);
     gpio_set_pin_value(STATUS_RX_LED_PIN, GPIO_VALUE_HIGH);
 	
-		gpio_set_pin_mode(TEST_STATUS_PIN, GPIO_MODE_PUSH_PULL);
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
+	// heartbeat LED used to indicate if fw is running
+	gpio_set_pin_mode(HEARTBEAT_PIN, GPIO_MODE_PUSH_PULL);
+    gpio_set_pin_value(HEARTBEAT_PIN, GPIO_VALUE_LOW);
 	
-    // otherwise, success
+	// TLV563x LDAC low
+	gpio_set_pin_mode(TLV563X_LDAC_PIN, GPIO_MODE_PUSH_PULL);
+    gpio_set_pin_value(TLV563X_LDAC_PIN, GPIO_VALUE_LOW);
+	
+	// test/debug GPIO for measuring execution time
+	gpio_set_pin_mode(TEST_STATUS_PIN, GPIO_MODE_PUSH_PULL);
+	gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
+	
     return E_SUCCESS;
 }
 

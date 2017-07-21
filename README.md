@@ -21,16 +21,16 @@ The pin mapping for the standard Bus Pirate 10-pin harness is provided below:
 
 | Color         | Mapping   | Pin #  |
 | ------------- |:---------:|:------:|
-| Brown         | IN6       |     2  |
+| Brown         | IN7       |     2  |
 | Red           | GND       |     1  |
-| Orange        | IN7       |     4  |
+| Orange        | IN6       |     4  |
 | Yellow        | IN5       |     3  |
 | Green         | IN0       |     6  |
 | Blue          | IN4       |     5  |
-| Purple        | IN1       |     8  |
-| Grey          | IN3       |     7  |
+| Purple        | IN2       |     8  |
+| Grey          | IN1       |     7  |
 | White         | 3.3V      |    10  |
-| Black         | IN2       |     9  |
+| Black         | IN3       |     9  |
 
 ## Software
 

@@ -34,7 +34,7 @@ int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution)
 	}
 
 	m_channels_count = 0;
-	for (i = BUDDY_CHAN_7; i <= BUDDY_CHAN_0; i++) {
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_channels_mask & (1 << i)) {
 			m_channels_count++;
 		}
@@ -67,10 +67,13 @@ int encode_packet(general_packet_t *packet)
 	int i;
 	int overflow_index;
 	
-	codec_frame.count++;
+	//printf("encode_packet() entered\n");
+	//printf("m_channels_mask = %02x\n", m_channels_mask);
+
+	//printf("codec_frame.count = %d\n", codec_frame.count);
 	overflow_index = m_resolution - BUDDY_BIT_SIZE;
 
-	for (i = BUDDY_CHAN_7; i <= BUDDY_CHAN_0; i++) {
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		// check if channel value passed is active
 		if (m_channels_mask & (1 << i)) {
 			norm_div_base_index = (codec_bit_offset / BUDDY_BIT_SIZE);
@@ -130,9 +133,10 @@ int encode_packet(general_packet_t *packet)
 	//printf("encode codec_bit_offset = %d\r\n", codec_bit_offset);
 
 	// check if the next packet can fit in the packed array
-	if ((codec_bit_offset + (m_resolution * m_channels_count)) > ((MAX_REPORT_SIZE - 2) * BUDDY_BIT_SIZE)) {
+	if ((codec_bit_offset + (m_resolution * m_channels_count)) > ((MAX_REPORT_SIZE - 3) * BUDDY_BIT_SIZE)) {
 		status_code = CODEC_STATUS_FULL;
 	} else {
+		codec_frame.count++;
 		status_code = CODEC_STATUS_CONTINUE;
 	}
 	
@@ -149,12 +153,12 @@ int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
 	uint8_t hi_byte;
 	int i;
 	int overflow_index;
-
+	
 	//printf("frame->count = %bd\r\n", frame->count);
 	overflow_index = m_resolution - BUDDY_BIT_SIZE;
 	//printf("overflow_index = %d\r\n", overflow_index);
 	
-	for (i = BUDDY_CHAN_7; i <= BUDDY_CHAN_0; i++) {
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		// check if channel value passed is active
 		if (!(m_channels_mask & (1 << i))) {
 				continue;
