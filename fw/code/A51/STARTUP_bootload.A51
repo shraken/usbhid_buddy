@@ -124,7 +124,7 @@ PCA0MD	DATA	0D9H
                 EXTRN CODE (?C_START)
                 PUBLIC  ?C_STARTUP
 
-                CSEG    AT  0000h
+                CSEG    AT  0400h
 ?C_STARTUP:     LJMP    STARTUP1
 
                 RSEG    ?C_C51STARTUP
