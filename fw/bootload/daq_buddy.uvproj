@@ -307,12 +307,12 @@
             <SizeSpeed>1</SizeSpeed>
             <ObjectExtend>1</ObjectExtend>
             <ACallAJmp>0</ACallAJmp>
-            <InterruptVectorAddress>0</InterruptVectorAddress>
+            <InterruptVectorAddress>1024</InterruptVectorAddress>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define>C8051, NDEBUG</Define>
               <Undefine></Undefine>
-              <IncludePath>.\code\include;.\code\A51;.\code\source;.\code\source\drivers;..\lib\libbuddy;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
+              <IncludePath>..\code\include;..\code\A51;..\code\source;..\code\source\drivers;..\..\lib\libbuddy;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -352,7 +352,7 @@
             <IDataBaseAddress></IDataBaseAddress>
             <Precede></Precede>
             <Stack></Stack>
-            <CodeSegmentName></CodeSegmentName>
+            <CodeSegmentName>0x0400</CodeSegmentName>
             <XDataSegmentName></XDataSegmentName>
             <BitSegmentName></BitSegmentName>
             <DataSegmentName></DataSegmentName>
@@ -365,9 +365,9 @@
           <GroupName>ASM</GroupName>
           <Files>
             <File>
-              <FileName>STARTUP.A51</FileName>
+              <FileName>STARTUP_bootload.A51</FileName>
               <FileType>2</FileType>
-              <FilePath>.\code\A51\STARTUP.A51</FilePath>
+              <FilePath>..\code\A51\STARTUP_bootload.A51</FilePath>
             </File>
           </Files>
         </Group>
@@ -375,79 +375,79 @@
           <GroupName>Main</GroupName>
           <Files>
             <File>
-              <FileName>F3xx_USB0_ReportHandler.c</FileName>
+              <FileName>action.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\code\source\F3xx_USB0_ReportHandler.c</FilePath>
-            </File>
-            <File>
-              <FileName>F3xx_USB0_InterruptServiceRoutine.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\F3xx_USB0_InterruptServiceRoutine.c</FilePath>
-            </File>
-            <File>
-              <FileName>F3xx_USB0_Descriptor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\F3xx_USB0_Descriptor.c</FilePath>
-            </File>
-            <File>
-              <FileName>F3xx_USB0_Standard_Requests.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\F3xx_USB0_Standard_Requests.c</FilePath>
-            </File>
-            <File>
-              <FileName>init.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\init.c</FilePath>
-            </File>
-            <File>
-              <FileName>uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\uart.c</FilePath>
+              <FilePath>..\code\source\action.c</FilePath>
             </File>
             <File>
               <FileName>adc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\code\source\adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>spi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\spi.c</FilePath>
-            </File>
-            <File>
-              <FileName>action.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\action.c</FilePath>
-            </File>
-            <File>
-              <FileName>main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>gpio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>support.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\support.c</FilePath>
-            </File>
-            <File>
-              <FileName>timers.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\timers.c</FilePath>
+              <FilePath>..\code\source\adc.c</FilePath>
             </File>
             <File>
               <FileName>data.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\code\source\data.c</FilePath>
+              <FilePath>..\code\source\data.c</FilePath>
+            </File>
+            <File>
+              <FileName>F3xx_USB0_Descriptor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\F3xx_USB0_Descriptor.c</FilePath>
+            </File>
+            <File>
+              <FileName>F3xx_USB0_InterruptServiceRoutine.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\F3xx_USB0_InterruptServiceRoutine.c</FilePath>
+            </File>
+            <File>
+              <FileName>F3xx_USB0_ReportHandler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\F3xx_USB0_ReportHandler.c</FilePath>
+            </File>
+            <File>
+              <FileName>F3xx_USB0_Standard_Requests.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\F3xx_USB0_Standard_Requests.c</FilePath>
+            </File>
+            <File>
+              <FileName>gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\init.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>support.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\support.c</FilePath>
+            </File>
+            <File>
+              <FileName>timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\uart.c</FilePath>
             </File>
             <File>
               <FileName>buddy.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\lib\libbuddy\buddy.c</FilePath>
+              <FilePath>..\..\lib\libbuddy\buddy.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -455,14 +455,14 @@
           <GroupName>Drivers</GroupName>
           <Files>
             <File>
-              <FileName>tlv563x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\code\source\drivers\tlv563x.c</FilePath>
-            </File>
-            <File>
               <FileName>23lc1024.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\code\source\drivers\23lc1024.c</FilePath>
+              <FilePath>..\code\source\drivers\23lc1024.c</FilePath>
+            </File>
+            <File>
+              <FileName>tlv563x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\drivers\tlv563x.c</FilePath>
             </File>
           </Files>
         </Group>

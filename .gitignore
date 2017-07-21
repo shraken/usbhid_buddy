@@ -62,3 +62,5 @@ lib/libbuddy/bindings/labview/buddy/Debug/*
 lib/libbuddy/bindings/labview/buddy/ipch/*
 lib/libbuddy/bindings/labview/buddy/x64/*
 examples/C/simple/build/*
+fw/bootload/build/*
+fw/standard/build/*

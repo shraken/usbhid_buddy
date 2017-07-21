@@ -1,3 +1,6 @@
 [submodule "lib/hidapi"]
 	path = lib/hidapi
 	url = https://github.com/signal11/hidapi.git
+[submodule "bootloader"]
+	path = bootloader
+	url = https://github.com/shraken/gboot.git
