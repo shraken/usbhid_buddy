@@ -7,20 +7,30 @@
 #include <gpio.h>
 #endif
 
-static buddy_frame_t codec_frame;
-static uint16_t codec_bit_offset;
+#if defined(C8051)
+#define XDATA_TYPE xdata
+#define DATA_TYPE data
+#else
+#define XDATA_TYPE
+#define DATA_TYPE
+#endif
 
-static bool m_codec_initialized;
-static uint8_t m_resolution_byte_size;
-static uint8_t m_resolution;
-static uint16_t m_mask_resolution;
-static uint8_t m_channels_mask;
-static uint8_t m_channels_count;
-static bool m_codec_stream = false;
+static XDATA_TYPE buddy_frame_t codec_frame;
+static uint16_t DATA_TYPE codec_bit_offset;
+
+static bool XDATA_TYPE m_codec_initialized;
+static uint8_t XDATA_TYPE m_resolution_byte_size;
+static uint8_t DATA_TYPE m_resolution;
+static uint16_t XDATA_TYPE m_mask_resolution;
+static uint8_t XDATA_TYPE m_channels_mask;
+static uint8_t DATA_TYPE m_channels_count;
+static bool XDATA_TYPE m_codec_stream = false;
+
+uint8_t DATA_TYPE m_codec_chan_enable[BUDDY_CHAN_LENGTH];
 
 int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution)
 {
-	int i;
+	int XDATA_TYPE i;
 
 	m_codec_initialized = true;
 
@@ -36,7 +46,10 @@ int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution)
 	m_channels_count = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_channels_mask & (1 << i)) {
+			m_codec_chan_enable[i] = 1;
 			m_channels_count++;
+    } else {
+			m_codec_chan_enable[i] = 0;
 		}
  	}
 
@@ -57,30 +70,32 @@ int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution)
 
 int encode_packet(general_packet_t *packet)
 {
-	uint16_t channel_temp;
-	uint8_t future_div_base_index;
-	uint8_t norm_div_base_index;
-	uint8_t mod_base_index;
-	uint8_t lo_byte;
-	uint8_t hi_byte;
-	int status_code;
-	int i;
-	int overflow_index;
+	uint16_t DATA_TYPE channel_temp;
+	uint8_t DATA_TYPE future_div_base_index;
+	uint8_t DATA_TYPE norm_div_base_index;
+	uint8_t DATA_TYPE mod_base_index;
+	uint8_t DATA_TYPE lo_byte;
+	uint8_t DATA_TYPE hi_byte;
+	int XDATA_TYPE status_code;
+	uint8_t DATA_TYPE i;
+	int16_t DATA_TYPE overflow_index;
 	
 	//printf("encode_packet() entered\n");
 	//printf("m_channels_mask = %02x\n", m_channels_mask);
 
 	//printf("codec_frame.count = %d\n", codec_frame.count);
+
 	overflow_index = m_resolution - BUDDY_BIT_SIZE;
 
+    //P3 = P3 & ~0x40; 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		// check if channel value passed is active
-		if (m_channels_mask & (1 << i)) {
+		//if (m_channels_mask & (1 << i)) {
+    if (m_codec_chan_enable[i]) {
 			norm_div_base_index = (codec_bit_offset / BUDDY_BIT_SIZE);
 			future_div_base_index = ((codec_bit_offset + BUDDY_BIT_SIZE) / BUDDY_BIT_SIZE);
 			
 			mod_base_index = (codec_bit_offset % BUDDY_BIT_SIZE);
-			
 			channel_temp = (packet->channels[i] << mod_base_index);
 			
 			//printf("packet->channels[%d] = %d\r\n", i, packet->channels[i]);
@@ -129,30 +144,34 @@ int encode_packet(general_packet_t *packet)
 			codec_bit_offset += m_resolution;
 		}
 	}
+    //P3 = P3 | 0x40;
 	
 	//printf("encode codec_bit_offset = %d\r\n", codec_bit_offset);
 
+	codec_frame.count++;
+
+    //P3 = P3 & ~0x40; 
 	// check if the next packet can fit in the packed array
 	if ((codec_bit_offset + (m_resolution * m_channels_count)) > ((MAX_REPORT_SIZE - 3) * BUDDY_BIT_SIZE)) {
 		status_code = CODEC_STATUS_FULL;
 	} else {
-		codec_frame.count++;
 		status_code = CODEC_STATUS_CONTINUE;
 	}
+    //P3 = P3 | 0x40;
 	
 	return status_code;
 }
 
 int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
 {
-	uint16_t channel_temp;
-	uint8_t future_div_base_index;
-	uint8_t norm_div_base_index;
-	uint8_t mod_base_index;
-	uint8_t lo_byte;
-	uint8_t hi_byte;
-	int i;
-	int overflow_index;
+	uint16_t XDATA_TYPE channel_temp;
+	uint8_t XDATA_TYPE future_div_base_index;
+	uint8_t XDATA_TYPE norm_div_base_index;
+	uint8_t XDATA_TYPE mod_base_index;
+	uint8_t XDATA_TYPE lo_byte;
+	uint8_t XDATA_TYPE hi_byte;
+	uint8_t DATA_TYPE i;
+	int DATA_TYPE overflow_index;
 	
 	//printf("frame->count = %bd\r\n", frame->count);
 	overflow_index = m_resolution - BUDDY_BIT_SIZE;
@@ -202,15 +221,21 @@ int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
 			//printf("channel_temp = %x\r\n", channel_temp);
 		}
 
+		//printf("channel_temp = %d\r\n", channel_temp);
 		packet->channels[i] = channel_temp;
 		codec_bit_offset += m_resolution;
 	}
 
+	//printf("check = %d\r\n", (codec_bit_offset + (m_resolution * m_channels_count)));
+	//printf("against = %d\r\n", (m_channels_count * m_resolution * frame->count));
+
 	// check if the next packet can fit in the packed array
 	if ( (codec_bit_offset + (m_resolution * m_channels_count)) > 
 			 (m_channels_count * m_resolution * frame->count)) {
+		//printf("full\r\n");
 		return CODEC_STATUS_FULL;
 	} else {
+		//printf("continue\r\n");
 		return CODEC_STATUS_CONTINUE;
 	}
 }
@@ -233,7 +258,7 @@ void codec_clear(void)
 
 void codec_dump(void)
 {
-	int i;
+	int XDATA_TYPE i;
 
 	printf("codec_frame.payload = ");
 	for (i = 0; i < (MAX_REPORT_SIZE - 1); i++) {

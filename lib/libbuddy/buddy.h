@@ -21,9 +21,9 @@
 #define BUDDY_IN_DATA_ID  0x02
 
 #define BUDDY_TYPE_OFFSET 0        // USB HID (IN/OUT)
-#define BUDDY_APP_CODE_OFFSET 1   // APP (Application)
-#define BUDDY_APP_INDIC_OFFSET 2  // CTRL (Control) Type
-#define BUDDY_APP_VALUE_OFFSET 3  // CTRL (Control) Value
+#define BUDDY_APP_CODE_OFFSET 1    // APP (Application)
+#define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type
+#define BUDDY_APP_VALUE_OFFSET 3   // CTRL (Control) Value
 
 #define DEFAULT_ADC0CN 0x01
 #define DEFAULT_REF0CN 0x8F
@@ -79,8 +79,9 @@ typedef enum _CTRL_CONTROL {
 /**
  * \enum MODE_CTRL 
  * \brief defines how the packets are processed.  Immediate
- *				 packets are processed immediately but stream will
- *				 buffer packets in a queue.
+ *		  packets are processed as they arrive but stream will
+ *		  buffer packets in a queue.  
+ * @see ctrl_general_t
  */
 typedef enum _MODE_CTRL {
 	MODE_CTRL_IMMEDIATE = 0,
@@ -88,21 +89,12 @@ typedef enum _MODE_CTRL {
 } MODE_CTRL;
 
 /**
- * \enum OPER_CTRL
- * \brief defines if frames are continuously processed or if
- *				 a trigger message must be received before triggering
- *				 an operation.
- */
-typedef enum _OPER_CTRL {
-	OPER_CTRL_ONESHOT = 0,
-	OPER_CTRL_CONTINUOUS,
-} OPER_CTRL;
-
-/**
  * \enum QUEUE_CTRL
- * \brief defines if stream messages being pushed on the queue are
- *				 dropped if the queue is full (saturate) or if wrapping
- *				 occurs (drop oldest frame).
+ * \brief defines how the queue operates on the device when encountering
+ *		  a full buffer situation.  The frame is dropped if the queue is
+ *		  full (saturate), the first item on queue deleted (wrapped), or
+ *		  the USB communicated halt (wait).  
+ * @see ctrl_general_t
  */
 typedef enum _QUEUE_CTRL {
 	QUEUE_CTRL_SATURATE = 0,
@@ -112,7 +104,9 @@ typedef enum _QUEUE_CTRL {
 
 /**
  * \enum CODEC_STATUS
- * \brief codec internal status error codes.
+ * \brief codec internal status error codes.  
+ * @see encode_packet
+ * @see decode_packet
  */
 typedef enum _CODEC_STATUS {
 	CODEC_STATUS_CONTINUE = 2,
@@ -124,6 +118,7 @@ typedef enum _CODEC_STATUS {
 /**
  * \enum RUNTIME_DAC_POWER 
  * \brief TLV563x power state
+ * @see ctrl_runtime_t
  */
 typedef enum _RUNTIME_DAC_POWER {
 	RUNTIME_DAC_POWER_OFF = 0,
@@ -133,6 +128,7 @@ typedef enum _RUNTIME_DAC_POWER {
 /**
  * \enum RUNTIME_DAC_REF 
  * \brief TLV563x DAC reference voltage
+ * @see ctrl_runtime_t
  */
 typedef enum _RUNTIME_DAC_REF {
 	RUNTIME_DAC_REF_EXT = 0,
@@ -143,6 +139,7 @@ typedef enum _RUNTIME_DAC_REF {
 /**
  * \enum RUNTIME_ADC_REF 
  * \brief C8051 ADC reference voltage
+ * @see ctrl_runtime_t
  */
 typedef enum _RUNTIME_ADC_REF {
 	RUNTIME_ADC_REF_EXT = 0,
@@ -153,6 +150,7 @@ typedef enum _RUNTIME_ADC_REF {
 /**
  * \enum RUNTIME_ADC_GAIN 
  * \brief C8051 ADC internal reference gain
+ * @see ctrl_runtime_t
  */
 typedef enum _RUNTIME_ADC_GAIN {
 	RUNTIME_ADC_GAIN_1X = 0,
@@ -172,8 +170,7 @@ typedef enum _BUDDY_RESPONSE {
 
 /**
  * \enum BUDDY_CHANNELS
- * \brief list of channel numbers used in the encoding
- *				 scheme.
+ * \brief list of channel number sequentially indexed.
  */
 typedef enum _BUDDY_CHANNELS {
 	BUDDY_CHAN_0 = 0,
@@ -184,11 +181,14 @@ typedef enum _BUDDY_CHANNELS {
 	BUDDY_CHAN_5,
 	BUDDY_CHAN_6,
 	BUDDY_CHAN_7,
+    BUDDY_CHAN_LENGTH,
 } BUDDY_CHANNELS;
 
 /**
  * \enum BUDDY_CHANNELS_MASK
- * \brief bitmask of the BUDDY_CHANNEL values
+ * \brief bitmask used in setting the channel_mask field of the
+ *		  ctrl_general_t structure.  Indicates what channels are
+ *		  active and being requested for DAC or ADC operations.  
  */
 typedef enum _BUDDY_CHANNELS_MASK {
 	BUDDY_CHAN_0_MASK = (1 << BUDDY_CHAN_0),
@@ -223,7 +223,9 @@ typedef enum _BUDDY_CHANNELS_MASK {
 
 /**
  * \enum CODEC_BIT_WIDTH
- * \brief codec bit widths used by the encoder.
+ * \brief codec bit widths of the ADC and DAC values communicated
+ *		  through the internal packet.  Used by the codec to encode
+ *		  and decode values between host and device.  
  */
 typedef enum _CODEC_BIT_WIDTH {
 	CODEC_BIT_WIDTH_2 = 2,
@@ -239,6 +241,12 @@ typedef enum _CODEC_BIT_WIDTH {
 	CODEC_BIT_WIDTH_12 = 12,
 } CODEC_BIT_WIDTH;
 
+/**
+ * \enum FIRMWARE_INFO_DAC_TYPE
+ * \brief Indicates the type of type of DAC device.  DAC devices have
+ *		  different internal bit resolutions so incoming values must
+ *		  be bit-shifted down/up.  
+ */
 typedef enum _FIRMWARE_INFO_DAC_TYPE {
 	FIRMWARE_INFO_DAC_TYPE_NONE = 0x0,			// No DAC
 	FIRMWARE_INFO_DAC_TYPE_TLV5630 = 0x01,		// TI TLV5630 12-bit
@@ -247,14 +255,8 @@ typedef enum _FIRMWARE_INFO_DAC_TYPE {
 	FIRMWARE_INFO_DAC_TYPE_LENGTH
 } FIRMWARE_INFO_DAC_TYPE;
 
-typedef enum _FIRMWARE_INFO_MEM_TYPE {
-	FIRMWARE_INFO_MEM_TYPE_NONE = 0x00,			// No External Memory
-	FIRMWARE_INFO_MEM_TYPE_23LC1024 = 0x01,		// Microchip SRAM 23LC1024
-	FIRMWARE_INFO_MEM_TYPE_LENGTH
-} FIRMWARE_INFO_MEM_TYPE;
-
 /**
- * \enum firmware_info_t
+ * \struct firmware_info_t
  * \brief Firmware info structure that is retrieved by host application
  *			on boot to determine serial number, revision, and the
  *			DAC and memory types supported.
@@ -269,12 +271,11 @@ typedef struct _firmware_info_t {
 	uint8_t bootl_rev_minor;
 	uint8_t bootl_rev_tiny;
 	uint8_t type_dac;
-	uint8_t type_ext_memory;
 } firmware_info_t;
 
 /**
- * \enum ctrl_general_t
- * \brief CTRL_GENERAL structure used for basic configuration
+ * \struct ctrl_general_t
+ * \brief ctrl_general_t structure used for basic configuration
  *				 of the buddy device.  Allows configuration of basic
  *				 mode (DAC, ADC, etc.), immediate/stream mode, oneshot/
  *				 continuous, saturate/wrap, channel mask, and bit
@@ -283,15 +284,14 @@ typedef struct _firmware_info_t {
 typedef struct _ctrl_general_t {
 	uint8_t function;
 	uint8_t mode;
-	uint8_t operation;
 	uint8_t queue;
 	uint8_t channel_mask;
 	uint8_t resolution;
 } ctrl_general_t;
 
 /**
- * \enum ctrl_runtime_t
- * \brief CTRL_RUNTIME structure used for DAC and ADC-specific
+ * \struct ctrl_runtime_t
+ * \brief ctrl_runtime_t structure used for DAC and ADC-specific
  *					configuration settings.  Allows control of ADC
  *					reference voltage and gain.  Allows control of DAC
  *					power mode and reference voltage.
@@ -304,8 +304,8 @@ typedef struct _ctrl_runtime_t {
 } ctrl_runtime_t;
 
 /**
- * \enum ctrl_timing_t
- * \brief CTRL_TIMING structure used for controlling Timer
+ * \struct ctrl_timing_t
+ * \brief ctrl_timing_t structure used for controlling Timer
  *				 interrupt frequency and ADC averaging.  The Timer
  *				 interrupt frequency dictates the sampling frequency
  *				 for both the DAC and ADC when operating in stream
@@ -317,7 +317,7 @@ typedef struct _ctrl_timing_t {
 } ctrl_timing_t;
 
 /**
- * \enum general_packet_t
+ * \struct general_packet_t
  * \brief General-purpose encoder packet type.  Channel values
  *				 represent either DAC or ADC values before they are
  *				 are encoded into a frame.
@@ -327,7 +327,7 @@ typedef struct _general_packet_t {
 } general_packet_t;
 
 /**
- * \enum buddy_frame_t
+ * \struct buddy_frame_t
  * \brief Encoded packet representing one or more encoded
  *				 packets.  The header `count` field specifies
  *				 the number of packets in the frame and is used by
@@ -335,7 +335,7 @@ typedef struct _general_packet_t {
  */
 typedef struct _buddy_frame_t {
 		uint8_t count;
-		uint8_t payload[MAX_REPORT_SIZE - 1];
+		uint8_t payload[MAX_REPORT_SIZE - 3];
 } buddy_frame_t;
 
 /** @brief initializes the codec for encoding/decoding.  Must be called

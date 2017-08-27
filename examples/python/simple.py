@@ -6,14 +6,15 @@ import datetime
 import argparse
 import time
 import signal
+import csv
 
 BUDDY_TEST_ADC_FREQ = 1000      # 1 kHz
-BUDDY_TEST_DAC_FREQ = 1000      # 5 Hz
+BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 
 hid_handle = None
 hid_info = None
 
-def test_seq_dac(handle, fw_info, sample_rate, streaming, oneshot):
+def test_seq_dac(handle, fw_info, sample_rate, streaming):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -21,12 +22,11 @@ def test_seq_dac(handle, fw_info, sample_rate, streaming, oneshot):
     general_settings.function = bt.GENERAL_CTRL_DAC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.operation = \
-        bt.OPER_CTRL_ONESHOT if oneshot else bt.OPER_CTRL_CONTINUOUS
     general_settings.queue = bt.QUEUE_CTRL_WAIT
-    general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
+    #general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
     general_settings.resolution = bt.CODEC_BIT_WIDTH_12
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
@@ -47,7 +47,7 @@ def test_seq_dac(handle, fw_info, sample_rate, streaming, oneshot):
     test_seq_dac_count = 0
 
     for k in range(0, ((1 << general_settings.resolution) - 1)):
-        for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7):
+        for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.uint16_t_ptr_setitem(packet.channels, i, k)
 
         print 'test_seq_dac, sending %d packet with value %d' % \
@@ -68,14 +68,9 @@ def test_seq_dac(handle, fw_info, sample_rate, streaming, oneshot):
         bt.buddy_flush(handle)
     time.sleep(0.1)
 
-    if oneshot:
-        if bt.buddy_trigger(handle) != bt.BUDDY_ERROR_OK:
-            return -1
-        time.sleep(0.1)
-
     return 0
 
-def test_seq_adc(handle, fw_info, sample_rate, streaming, oneshot):
+def test_seq_adc(handle, fw_info, sample_rate, streaming, log_file):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -84,12 +79,12 @@ def test_seq_adc(handle, fw_info, sample_rate, streaming, oneshot):
     general_settings.function = bt.GENERAL_CTRL_ADC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.operation = \
-        bt.OPER_CTRL_ONESHOT if oneshot else bt.OPER_CTRL_CONTINUOUS
     general_settings.queue = bt.QUEUE_CTRL_SATURATE
-    general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_6_MASK
-    general_settings.resolution = bt.CODEC_BIT_WIDTH_12
+    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
+
+    general_settings.resolution = bt.CODEC_BIT_WIDTH_8
+    #general_settings.resolution = bt.CODEC_BIT_WIDTH_10
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
     timing_settings.averaging = 1
@@ -97,6 +92,22 @@ def test_seq_adc(handle, fw_info, sample_rate, streaming, oneshot):
     runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
 
     print 'timing_settings.period = %d (0x%x)' % (timing_settings.period, timing_settings.period)
+
+    # write CSV header
+    if log_file:
+        header = []
+        header.append('time')
+        header.append('index')
+
+        for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
+            if (general_settings.channel_mask & (1 << j)):
+                header.append('sensor %d' % j)
+
+        try:
+            log_file.writerow(header)
+        except csv.Error as e:
+            raise NameError('Coud not write into CSV writer object')
+            return False
 
     if (bt.buddy_configure(handle,
                            general_settings,
@@ -107,27 +118,41 @@ def test_seq_adc(handle, fw_info, sample_rate, streaming, oneshot):
 
     time.sleep(0.1)
 
-    if oneshot:
-        if bt.buddy_trigger(handle) != bt.BUDDY_ERROR_OK:
-            return -1
-        time.sleep(0.1)
-
     recv_packets = 0;
-    for i in range(0, 1200):
+    first_packet = True
+    for i in range(0, 1000):
         err_code = bt.buddy_read_adc(handle, packet, streaming)
 
         if err_code == bt.BUDDY_ERROR_OK:
+            if first_packet:
+                test_time_start = time.time()
+                first_packet = False
+
+            entry = []
+            entry.append('%f' % (time.time() - test_time_start))
+            entry.append('%d' % recv_packets)
+
             print 'test_seq_adc: received packet %d' % recv_packets
             for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
                 if (general_settings.channel_mask & (1 << j)):
-                    print 'packet.channels[%d] = %d' % \
-                        (j, bt.uint16_t_ptr_getitem(packet.channels, j))
-
+                    value = bt.uint16_t_ptr_getitem(packet.channels, j)
+                    print 'packet.channels[%d] = %d' % (j, value)
+                    entry.append('%d' % value)
             recv_packets += 1
+
+            if log_file:
+                try:
+                    log_file.writerow(entry)
+                except csv.Error as e:
+                    raise NameError('Coud not write into CSV writer object')
+                    return False
+
         elif err_code == bt.BUDDY_ERROR_GENERAL:
             print 'test_seq_adc: could not read ADC packet'
             print 'err_code = %d' % err_code
             return -1
+        else:
+            print 'unknown error code, err_code = %d' % err_code
     
     return 0;
 
@@ -156,13 +181,6 @@ def display_fw_info(fw_info):
     else:
         print 'Firmware DAC type: %d' % fw_info.type_dac
 
-    if (fw_info.type_ext_memory < bt.FIRMWARE_INFO_MEM_TYPE_LENGTH):
-        print 'Firmware External Memory type: %d - %s' % \
-            (fw_info.type_ext_memory,
-             bt.char_ptr_getitem(bt.cvar.fw_info_mem_type_names, fw_info.type_ext_memory))
-    else:
-        print 'Firmware External Memory type: %d' % fw_info.type_ext_memory
-
     print ''
 
 
@@ -185,17 +203,37 @@ if __name__ == '__main__':
                         help='enable dual DAC and ADC conversion')
     parser.add_argument('-s,--stream', action='store_true', dest='stream_mode',
                         help='enable streaming for higher throughput')
-    parser.add_argument('-o,--oneshot', action='store_true', dest='oneshot_mode',
-                        help='enable oneshot mode for triggered conversion')
+    parser.add_argument('-f,--file', nargs=1, dest="output_file",
+                        help="CSV log file to be created", required=False)
     args = parser.parse_args()
 
     if args.dac_mode and args.adc_mode:
         print 'ERROR: must select either DAC or ADC mode, not both'
+        parser.print_help()
         sys.exit()
 
     if (not args.dac_mode) and (not args.adc_mode) and (not args.dual_mode):
         print 'ERROR: must select DAC, ADC, or dual mode'
+        parser.print_help()
         sys.exit()
+
+    if args.output_file:
+        try:
+            log_file = open(args.output_file[0], 'wb')
+        except (OSError, IOError) as e:
+            raise NameError('Could not open CSV file for writing')
+            sys.exit()
+
+        try:
+            log_file_writer = csv.writer(log_file,
+                                         quoting=csv.QUOTE_NONE,
+                                         delimiter=',')
+        except csv.Error as e:
+            raise NameError('Could not open CSV writer object')
+            sys.exit()
+    else:
+        log_file = None
+        log_file_writer = None
 
     hid_info = bt.buddy_hid_info_t()
     fw_info = bt.firmware_info_t()
@@ -216,8 +254,7 @@ if __name__ == '__main__':
         err_code = test_seq_dac(hid_handle,
                                 fw_info,
                                 BUDDY_TEST_DAC_FREQ,
-                                args.stream_mode,
-                                args.oneshot_mode)
+                                args.stream_mode)
 
     if args.adc_mode:
         print 'running a ADC mode test'
@@ -225,10 +262,13 @@ if __name__ == '__main__':
                                 fw_info,
                                 BUDDY_TEST_ADC_FREQ,
                                 args.stream_mode,
-                                args.oneshot_mode)
+                                log_file_writer)
 
     time_end = time.time()
     time_diff = time_end - time_start
     print 'Test took (%f) seconds  to run' % time_diff
 
     bt.buddy_cleanup(hid_handle, hid_info)
+
+    if log_file:
+        log_file.close()

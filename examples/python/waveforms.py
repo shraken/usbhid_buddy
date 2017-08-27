@@ -10,13 +10,13 @@ import numpy as np
 from scipy import signal as scisig
 
 BUDDY_TEST_DAC_FREQ = 2000     # 1000 Hz
-WAVEFORM_TIME = 20              # 20 seconds
-WAVEFORM_FREQUENCY = 1         # 1 Hz
+WAVEFORM_TIME = 20             # 20 seconds
+WAVEFORM_FREQUENCY = 100         # 1 Hz
 
 hid_handle = None
 hid_info = None
 
-def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming, oneshot):
+def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -24,11 +24,9 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming, onesho
     general_settings.function = bt.GENERAL_CTRL_DAC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.operation = \
-        bt.OPER_CTRL_ONESHOT if oneshot else bt.OPER_CTRL_CONTINUOUS
     general_settings.queue = bt.QUEUE_CTRL_WAIT
-    general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
     general_settings.resolution = bt.CODEC_BIT_WIDTH_12
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
@@ -45,19 +43,11 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming, onesho
 
     time.sleep(0.1)
 
-    print 'sample_rate = '
-    print sample_rate
-    
     packet = bt.general_packet_t()
     test_seq_dac_count = 0
     
     y_mag = ((1 << general_settings.resolution) - 1)
     t = np.linspace(0, WAVEFORM_TIME, sample_rate * WAVEFORM_TIME, endpoint=False)
-
-    '''
-    print 't'
-    print t
-    '''
 
     if wave_type == 'square':    
         y = ((scisig.square(np.pi * 2 * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
@@ -89,11 +79,6 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming, onesho
         bt.buddy_flush(handle)
     time.sleep(0.1)
 
-    if oneshot:
-        if bt.buddy_trigger(handle) != bt.BUDDY_ERROR_OK:
-            return -1
-        time.sleep(0.1)
-
     return 0
 
 def display_usb_info(hid_info):
@@ -122,13 +107,6 @@ def display_fw_info(fw_info):
     else:
         print 'Firmware DAC type: %d' % fw_info.type_dac
 
-    if (fw_info.type_ext_memory < bt.FIRMWARE_INFO_MEM_TYPE_LENGTH):
-        print 'Firmware External Memory type: %d - %s' % \
-            (fw_info.type_ext_memory,
-             bt.char_ptr_getitem(bt.cvar.fw_info_mem_type_names, fw_info.type_ext_memory))
-    else:
-        print 'Firmware External Memory type: %d' % fw_info.type_ext_memory
-
     print ''
 
 
@@ -145,8 +123,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-s,--stream', action='store_true', dest='stream_mode',
                         help='enable streaming for higher throughput')
-    parser.add_argument('-o,--oneshot', action='store_true', dest='oneshot_mode',
-                        help='enable oneshot mode for triggered conversion')
     parser.add_argument('-t,--type', action='store', dest='wave_type',
                         help='specify type of waveform to generate (sine, square, triangle, noise, etc.)')
     args = parser.parse_args()
@@ -173,8 +149,7 @@ if __name__ == '__main__':
                                 fw_info,
                                 BUDDY_TEST_DAC_FREQ,
                                 args.wave_type,
-                                args.stream_mode,
-                                args.oneshot_mode)
+                                args.stream_mode)
     
     time_end = time.time()
     time_diff = time_end - time_start

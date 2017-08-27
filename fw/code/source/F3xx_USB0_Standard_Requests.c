@@ -9,24 +9,24 @@
 // Variables
 //-----------------------------------------------------------------------------
 extern device_descriptor code DEVICEDESC;   // These are created in F3xx_USB0_Descriptor.h
-extern unsigned char* STRINGDESCTABLE[];
+extern unsigned char* xdata STRINGDESCTABLE[];
 
 // Additional declarations for HID:
 extern code const hid_configuration_descriptor HIDCONFIGDESC;
 extern hid_report_descriptor code HIDREPORTDESC;
 
-extern setup_buffer SETUP;             // Buffer for current device request
+extern setup_buffer xdata SETUP;             // Buffer for current device request
                                        // information
-extern unsigned int DATASIZE;
-extern unsigned int DATASENT;
-extern unsigned char* DATAPTR;
+extern unsigned int xdata DATASIZE;
+extern unsigned int xdata DATASENT;
+extern unsigned char* xdata DATAPTR;
 
 // These are response packets used for
 code unsigned char ONES_PACKET[2] = {0x01, 0x00};
 // Communication with host
 code unsigned char ZERO_PACKET[2] = {0x00, 0x00};
 
-extern unsigned char USB0_STATE;       // Determines current usb device state
+extern unsigned char xdata USB0_STATE;       // Determines current usb device state
 
 //-----------------------------------------------------------------------------
 // Definitions

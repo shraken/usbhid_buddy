@@ -7,8 +7,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-//#include <buddy.h>
-#include "foo.h"
 #include "buddy.h"
 #include "hidapi.h"
 
@@ -26,46 +24,17 @@
 #define BUDDY_USB_VID 0x10C4
 #define BUDDY_USB_PID 0x82CD
 
-#define MAX_STR 255
-
-#define TBL_BASE_INDEX 0
-#define TBL_BASE_VALUE 1
-
-// Peripheral Control and Value mappings
-#define INIT_ADC_ROW_MAX 3
-#define INIT_ADC_COL_MAX 2
-
-#define INIT_DAC_ROW_MAX 2
-#define INIT_DAC_COL_MAX 2
-
 #define FREQUENCY_TO_NSEC(freq) ((1.0 / freq) * 1e9)
-
 #define MAX_CHAR_LENGTH 255
-typedef struct _buddy_hid_info_t {
-	/*
-	char str_mfr[MAX_CHAR_LENGTH];
-	char str_product[MAX_CHAR_LENGTH];
-	char str_serial[MAX_CHAR_LENGTH];
-	char str_index_1[MAX_CHAR_LENGTH];
-	*/
 
+#define BUDDY_MAX_IO_ATTEMPTS 5
+
+typedef struct _buddy_hid_info_t {
 	char *str_mfr;
 	char *str_product;
 	char *str_serial;
 	char *str_index_1;
 } buddy_hid_info_t;
-
-/*
-typedef struct _test_info_t {
-	int x;
-	int y;
-	double z;
-	char foo[MAX_CHAR_LENGTH];
-	char bar[MAX_CHAR_LENGTH];
-	char abc[MAX_CHAR_LENGTH];
-	char blah[MAX_CHAR_LENGTH];
-} test_info_t;
-*/
 
 typedef enum _BUDDY_ERROR {
 	BUDDY_ERROR_OK = 1,
@@ -75,10 +44,11 @@ typedef enum _BUDDY_ERROR {
 } BUDDY_ERROR;
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
-extern char *fw_info_mem_type_names[FIRMWARE_INFO_MEM_TYPE_LENGTH];
 
-// testing
-void print_fw_info_mem_types(void);
+/** @brief prints a dump of the fw_info_dac_type_names ASCIIz
+ *			strings to the console.
+ *  @return Void.
+*/
 void print_fw_info_dac_types(void);
 
 /** @brief prints a hex dump of the internal HID IN packet buffer

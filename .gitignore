@@ -6,7 +6,6 @@ fw/build/*
 ###################
 *.com
 *.class
-*.dll
 *.exe
 *.o
 *.so
@@ -64,3 +63,5 @@ lib/libbuddy/bindings/labview/buddy/x64/*
 examples/C/simple/build/*
 fw/bootload/build/*
 fw/standard/build/*
+
+*.csv

@@ -6,18 +6,20 @@
 #include <gpio.h>
 #include <globals.h>
 
+#include <c8051f3xx.h>
+
 //-----------------------------------------------------------------------------
 // Global Variables
 //-----------------------------------------------------------------------------
-unsigned char SPI_Data_Rx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
-unsigned char SPI_Data_Tx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
+unsigned char xdata SPI_Data_Rx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
+unsigned char xdata SPI_Data_Tx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
 
-unsigned char bytes_trans;
+unsigned char xdata bytes_trans;
 
 void SPI_ISR (void) interrupt 6
 {
-	static unsigned char state = 0;
-	static unsigned char array_index = 0;
+	static unsigned char xdata state = 0;
+	static unsigned char xdata array_index = 0;
 	
 	switch (state) {
 		// continue sending
@@ -60,9 +62,6 @@ void SPI0_Init(void)
    // set the number of bytes in transcation to zero
    bytes_trans = 0;
 	
-   //SPI0CFG   = 0x70;                   // Enable the SPI as a Master
-   //                                    // CKPHA = '0', CKPOL = '0'
-   // 
    SPI0CFG = 0x50;
 
    SPI0CN    = 0x0D;                   // 4-wire Single Master, SPI enabled
@@ -75,6 +74,8 @@ void SPI0_Init(void)
 
 void SPI_Array_ReadWrite (void)
 {
+	//P3 = P3 & ~0x40;
+
 	// Wait until the SPI is free, in case
     // it's already busy
     while (!NSSMD0);                    
@@ -88,12 +89,17 @@ void SPI_Array_ReadWrite (void)
 	
     // Wait for SPI transcation to complete
     while (!NSSMD0);
+	
+			//P3 = P3 | 0x40;
 }
 
 void SPI_Select(uint8_t chip_select)
 {
 	switch (chip_select) {
 		case SPI_DEVICE_TYPE_TLV563x:
+			// Use mode 2 with data valid on leading edge but clock idle high
+			SPI0CFG = 0x50;
+		
 			// disable chip select for memory
 			gpio_set_pin_value(SPI_MEM_CS_PIN, GPIO_VALUE_HIGH);
 		
@@ -102,6 +108,9 @@ void SPI_Select(uint8_t chip_select)
 			break;
 		
 		case SPI_DEVICE_TYPE_23LC1024:
+			// Use mode 0 with data valid on leading edge but clock idle high
+			SPI0CFG = 0x40;
+		
 			// disable chip select for tlv563x DAC
 			gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
 		

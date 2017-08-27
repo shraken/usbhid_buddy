@@ -58,12 +58,12 @@ extern void ReportHandler_IN_Foreground(unsigned char);
 extern void ReportHandler_OUT(unsigned char);
 extern void Setup_OUT_BUFFER(void);
 
-extern BufferStructure IN_BUFFER, OUT_BUFFER;
+extern BufferStructure xdata IN_BUFFER;
+extern BufferStructure xdata OUT_BUFFER;
 
 void IN_DATA_ROUTINE(void);
 void OUT_DATA_ROUTINE(void);
 void Setup_OUT_BUFFER(void);
-void Setup_IN_BUFFER(void);
 void ReportHandler_IN_ISR(unsigned char R_ID);
 void ReportHandler_IN_Foreground(unsigned char R_ID);
 void ReportHandler_OUT(unsigned char R_ID);

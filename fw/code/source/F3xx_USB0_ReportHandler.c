@@ -5,7 +5,7 @@
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
 
-extern uint8_t processed_out;
+extern uint8_t xdata processed_out;
 
 // ----------------------------------------------------------------------------
 // Local Function Prototypes
@@ -31,8 +31,7 @@ void OUT_DATA_ROUTINE(void);
 // Local Definitions
 // ----------------------------------------------------------------------------
 
-extern unsigned char flag_usb_out;
-extern unsigned char flag_usb_in;
+extern unsigned char xdata flag_usb_out;
 
 unsigned char xdata OUT_PACKET[64];
 unsigned char xdata IN_PACKET[64];
@@ -44,7 +43,7 @@ unsigned char xdata IN_PACKET[64];
 // ****************************************************************************
 // Link all Report Handler functions to corresponding Report IDs
 // ****************************************************************************
-const VectorTableEntry IN_VECTORTABLE[IN_VECTORTABLESize] =
+const VectorTableEntry xdata IN_VECTORTABLE[IN_VECTORTABLESize] =
 {
    // FORMAT: Report ID, Report Handler
    IN_DATA, IN_DATA_ROUTINE,
@@ -53,7 +52,7 @@ const VectorTableEntry IN_VECTORTABLE[IN_VECTORTABLESize] =
 // ****************************************************************************
 // Link all Report Handler functions to corresponding Report IDs
 // ****************************************************************************
-const VectorTableEntry OUT_VECTORTABLE[OUT_VECTORTABLESize] =
+const VectorTableEntry xdata OUT_VECTORTABLE[OUT_VECTORTABLESize] =
 {
    // FORMAT: Report ID, Report Handler
    OUT_DATA, OUT_DATA_ROUTINE,
@@ -64,7 +63,7 @@ const VectorTableEntry OUT_VECTORTABLE[OUT_VECTORTABLESize] =
 // Global Variable Declaration
 // ----------------------------------------------------------------------------
 
-BufferStructure IN_BUFFER, OUT_BUFFER;
+BufferStructure xdata IN_BUFFER, OUT_BUFFER;
 
 // ----------------------------------------------------------------------------
 // Local Variable Declaration
@@ -128,7 +127,6 @@ void OUT_DATA_ROUTINE(void)
 {
    flag_usb_out = 1;
    processed_out = 0;
-   //printf("disable USBHID out\r\n");
 }
 
 // ----------------------------------------------------------------------------
@@ -153,15 +151,6 @@ void Setup_OUT_BUFFER(void)
    OUT_BUFFER.Length = OUT_DATA_SIZE;
 }
 
-/*
-void Setup_IN_BUFFER(void)
-{
-   // Set USB IN report buffer pointer to IN_PACKET buffer
-   IN_BUFFER.Ptr = (unsigned char *) IN_PACKET;
-   IN_BUFFER.Length = (IN_DATA_SIZE + 1); 
-}
-*/
-
 // ----------------------------------------------------------------------------
 // Vector Routines
 // ----------------------------------------------------------------------------
@@ -184,7 +173,7 @@ void Setup_IN_BUFFER(void)
 // ----------------------------------------------------------------------------
 void ReportHandler_IN_ISR(unsigned char R_ID)
 {
-   unsigned char index;
+   unsigned char xdata index;
 
    index = 0;
 
@@ -206,7 +195,7 @@ void ReportHandler_IN_ISR(unsigned char R_ID)
 
 void ReportHandler_IN_Foreground(unsigned char R_ID)
 {
-   unsigned char index;
+   unsigned char xdata index;
 
    index = 0;
 
@@ -239,7 +228,7 @@ void ReportHandler_IN_Foreground(unsigned char R_ID)
 // ----------------------------------------------------------------------------
 void ReportHandler_OUT(unsigned char R_ID){
 
-   unsigned char index;
+   unsigned char xdata index;
 
    index = 0;
 

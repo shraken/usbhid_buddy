@@ -1,4 +1,4 @@
-# Python SWIG Bindings
+# Buddy Python SWIG Bindings
 
 ## Building
 

@@ -15,13 +15,13 @@
 #include <utility.h>
 
 // shraken TODO: make this configurable as build directive
-uint8_t tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
+uint8_t xdata tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
 
 extern code firmware_info_t fw_info;
 
-extern unsigned char SPI_Data_Rx_Array[];
-extern unsigned char SPI_Data_Tx_Array[];
-extern unsigned char bytes_trans;
+extern unsigned char xdata SPI_Data_Rx_Array[];
+extern unsigned char xdata SPI_Data_Tx_Array[];
+extern unsigned char xdata bytes_trans;
 
 void TLV563x_write(uint8_t reg_channel, uint16_t reg_value)
 {
@@ -71,7 +71,7 @@ void TLV563x_DAC_Init(void)
 
 void TLV563x_DAC_Reset(void)
 {
-	int i;
+	int xdata i;
 	
 	// set all DAC channels to zero outputs
 	for (i = REG_DAC_A; i <= REG_DAC_H; i++) {
