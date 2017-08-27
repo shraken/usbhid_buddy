@@ -9,26 +9,8 @@ void UART0_Init (void)
                                        //        RX enabled
                                        //        ninth bits are zeros
                                        //        clear RI0 and TI0 bits
-		/*
-		if (SYSCLK/BAUDRATE/2/256 < 1) {
-      TH1 = -(SYSCLK/BAUDRATE/2);
-      CKCON &= ~0x0B;                  // T1M = 1; SCA1:0 = xx
-      CKCON |=  0x08;
-   } else if (SYSCLK/BAUDRATE/2/256 < 4) {
-      TH1 = -(SYSCLK/BAUDRATE/2/4);
-      CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 01                  
-      CKCON |=  0x01;
-   } else if (SYSCLK/BAUDRATE/2/256 < 12) {
-      TH1 = -(SYSCLK/BAUDRATE/2/12);
-      CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 00
-   } else {
-      TH1 = -(SYSCLK/BAUDRATE/2/48);
-      CKCON &= ~0x0B;                  // T1M = 0; SCA1:0 = 10
-      CKCON |=  0x02;
-   }
-	 */
 
-	 TH1 = -(SYSCLK/BAUDRATE/2);
+   TH1 = -(SYSCLK/BAUDRATE/2);
    CKCON &= ~0x0B;                     // T1M = 1; SCA1:0 = xx
    CKCON |=  0x08;
 

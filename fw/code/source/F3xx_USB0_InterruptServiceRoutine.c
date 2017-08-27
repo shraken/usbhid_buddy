@@ -9,15 +9,15 @@
 //-----------------------------------------------------------------------------
 // Global Variable Definitions
 //-----------------------------------------------------------------------------
-unsigned char USB0_STATE;              // Holds the current USB State
+unsigned char xdata USB0_STATE;              // Holds the current USB State
                                        // def. in F3xx_USB0_InterruptServiceRoutine.h
 
-setup_buffer SETUP;                    // Buffer for current device
+setup_buffer xdata SETUP;                    // Buffer for current device
                                        // request information
 
-unsigned int DATASIZE;                 // Size of data to return
-unsigned int DATASENT;                 // Amount of data sent so far
-unsigned char* DATAPTR;                // Pointer to data to return
+unsigned int xdata DATASIZE;                 // Size of data to return
+unsigned int xdata DATASENT;                 // Amount of data sent so far
+unsigned char* xdata DATAPTR;                // Pointer to data to return
 
 unsigned char EP_STATUS[3] = {EP_IDLE, EP_HALT, EP_HALT};
                                        // Holds the status for each endpoint
@@ -57,7 +57,7 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char, unsigned int,
 void Usb_ISR (void) interrupt 8        // Top-level USB ISR
 {
 
-   unsigned char bCommon, bIn, bOut;
+   unsigned char xdata bCommon, bIn, bOut;
    POLL_READ_BYTE (CMINT, bCommon);    // Read all interrupt registers
    POLL_READ_BYTE (IN1INT, bIn);       // this read also clears the register
    POLL_READ_BYTE (OUT1INT, bOut);
@@ -133,7 +133,7 @@ void Usb_Reset (void)
 
 void Usb_Resume(void)
 {
-   volatile int k;
+   volatile int xdata k;
 
    //printf("Usb_Resume invoked\r\n");
    k++;
@@ -156,7 +156,7 @@ void Usb_Resume(void)
 
 void Handle_Control (void)
 {
-   unsigned char ControlReg;           // Temporary storage for EP control
+   unsigned char xdata ControlReg;           // Temporary storage for EP control
                                        // register
 
    //printf("Handle_Control invoked\r\n");
@@ -387,8 +387,8 @@ void Handle_In1 ()
 void Handle_Out1 ()
 {
 
-   unsigned char Count = 0;
-   unsigned char ControlReg;
+   unsigned char xdata Count = 0;
+   unsigned char xdata ControlReg;
 
    POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 2 registers
    POLL_READ_BYTE (EOUTCSR1, ControlReg);
@@ -417,14 +417,6 @@ void Handle_Out1 ()
       // of '0x00'.
 
       ReportHandler_OUT (OUT_BUFFER.Ptr[0]);
-	  //POLL_WRITE_BYTE (EOUTCSR1, 0);   // Clear Out Packet ready bit
-	  
-	  /*
-	  if (out_ready) {
-		POLL_WRITE_BYTE (EOUTCSR1, 0);   // Clear Out Packet ready bit
-		//out_ready = false;
-	  }
-	  */
    }
 }
 
@@ -441,7 +433,7 @@ void Enable_Out1(void)
 //
 void Usb_Suspend (void)
 {
-   volatile int k;
+   volatile int xdata k;
    k++;
 
    //printf("Usb_Suspend invoked\r\n");
@@ -463,7 +455,7 @@ void Usb_Suspend (void)
 void Fifo_Read (unsigned char addr, unsigned int uNumBytes,
                unsigned char * pData)
 {
-   int i;
+   int xdata i;
 
    if (uNumBytes)                      // Check if >0 bytes requested,
    {
@@ -503,7 +495,7 @@ void Fifo_Read (unsigned char addr, unsigned int uNumBytes,
 void Fifo_Write_Foreground (unsigned char addr, unsigned int uNumBytes,
                     unsigned char * pData)
 {
-   int i;
+   int xdata i;
 
    // If >0 bytes requested,
    if (uNumBytes)
@@ -525,7 +517,7 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char addr,
                                          unsigned int uNumBytes,
                                          unsigned char * pData)
 {
-   int i;
+   int xdata i;
 
    // If >0 bytes requested,
    if (uNumBytes)
@@ -578,16 +570,16 @@ void Force_Stall (void)
 
 void SendPacket (unsigned char ReportID)
 {	 
-	 bit EAState;
-   unsigned char ControlReg;
+	bit EAState;
+	unsigned char xdata ControlReg;
 
-   EAState = EA;
-   EA = 0;
-	 SendPacketBusy = 1;
+	EAState = EA;
+	EA = 0;
+	SendPacketBusy = 1;
 	 
-   POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
-
-   // Read contol register for EP 1
+	POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
+	
+	// Read contol register for EP 1
     POLL_READ_BYTE (EINCSR1, ControlReg);
 
    if (EP_STATUS[1] == EP_HALT)        // If endpoint is currently halted,
@@ -595,7 +587,6 @@ void SendPacket (unsigned char ReportID)
    {
       POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
    }
-
    else if(EP_STATUS[1] == EP_IDLE)
    {
       // the state will be updated inside the ISR handler

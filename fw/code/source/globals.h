@@ -3,8 +3,6 @@
 
 #include <buddy.h>
 
-//#define SYSCLK             12000000    // SYSCLK frequency in Hz
-
 //#define ADC_TEST
 
 // C8051F380 48-pin ADC pin macros

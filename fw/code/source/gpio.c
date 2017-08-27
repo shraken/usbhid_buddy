@@ -50,8 +50,8 @@ error_t gpio_init()
  */
 error_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
 {
-    gpio_major_pin pin_major;
-    gpio_minor_pin pin_minor;
+    gpio_major_pin xdata pin_major;
+    gpio_minor_pin xdata pin_minor;
 
     // use bitmask and shift operationt to extract
     // the major and minor positions
@@ -98,8 +98,8 @@ error_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
  */
 error_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
 {
-    gpio_major_pin pin_major;
-    gpio_minor_pin pin_minor;
+    gpio_major_pin xdata pin_major;
+    gpio_minor_pin xdata pin_minor;
 
     // use bitmask and shift operationt to extract
     // the major and minor positions
@@ -168,9 +168,9 @@ error_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
 
 int gpio_get_pin_value(gpio_pin pin)
 {
-    uint8_t pin_value;
-    gpio_major_pin pin_major;
-    gpio_minor_pin pin_minor;
+    uint8_t xdata pin_value;
+    gpio_major_pin xdata pin_major;
+    gpio_minor_pin xdata pin_minor;
     
     // use bitmask and shift operationt to extract
     // the major and minor positions

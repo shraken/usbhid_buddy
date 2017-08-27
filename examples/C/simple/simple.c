@@ -14,7 +14,6 @@
 #include <sys/timeb.h>
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
-extern char *fw_info_mem_type_names[FIRMWARE_INFO_MEM_TYPE_LENGTH];
 
 static hid_device* hid_handle;
 static bool active = false;
@@ -85,18 +84,10 @@ void display_fw_info(firmware_info_t *fw_info)
 		printf("Firmware DAC type: %d\n",
 			fw_info->type_dac);
 	}
-
-	if (fw_info->type_ext_memory < FIRMWARE_INFO_MEM_TYPE_LENGTH) {
-		printf("Firmware External Memory type: %d - %s\n",
-			fw_info->type_ext_memory, fw_info_mem_type_names[fw_info->type_ext_memory]);
-	} else {
-		printf("Firmware External Memory type: %d\n", fw_info->type_ext_memory);
-	}
-	printf("\n");
 }
 
 int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info, 
-				float sample_rate, bool streaming, bool oneshot)
+				float sample_rate, bool streaming)
 {
 	static int test_seq_dac_count = 0;
 	general_packet_t packet;
@@ -110,15 +101,14 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	active = true;
 	general_settings.function = GENERAL_CTRL_DAC_ENABLE;
 	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
-	general_settings.operation = (oneshot ? OPER_CTRL_ONESHOT : OPER_CTRL_CONTINUOUS);
-	
+
 	//general_settings.queue = QUEUE_CTRL_WRAP;
 	//general_settings.queue = QUEUE_CTRL_SATURATE;
 	general_settings.queue = QUEUE_CTRL_WAIT;
 
-	general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
-	//general_settings.channel_mask = BUDDY_CHAN_0_MASK;
-	
+	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
+	general_settings.channel_mask = BUDDY_CHAN_0_MASK;
+
 	/*
 	// set bit width of communication
 	switch (fw_info->type_dac) {
@@ -169,7 +159,7 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 		}
 
 		//printf("test_seq_dac, sending %d packet with value %d\r\n", test_seq_dac_count++, (k % 255));
-		printf("test_seq_dac, sending %d packet with value %d\r\n", test_seq_dac_count++, k);
+		printf("test_seq_dac, sending %d packet with value %d (%x)\r\n", test_seq_dac_count++, k, k);
 
 		if (buddy_send_dac(handle, &packet, streaming) != BUDDY_ERROR_OK) {
 			printf("test_seq_dac: buddy_send_dac call failed\n");
@@ -188,18 +178,11 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	// to send packet, then wait fixed period to allow MCU to process frame
 	buddy_flush(handle);
 
-	if (oneshot) {
-		if (buddy_trigger(handle) != BUDDY_ERROR_OK) {
-			return BUDDY_ERROR_GENERAL;
-		}
-		short_sleep(1000);
-	}
-
 	return 0;
 }
 
 int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
-				float sample_rate, bool streaming, bool oneshot) {
+				float sample_rate, bool streaming) {
 	static int test_seq_dac_count = 0;
 	general_packet_t packet;
 	ctrl_general_t general_settings = { 0 };
@@ -212,16 +195,15 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 	active = true;
 	general_settings.function = GENERAL_CTRL_ADC_ENABLE;
 	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
-	general_settings.operation = (oneshot ? OPER_CTRL_ONESHOT : OPER_CTRL_CONTINUOUS);
 	general_settings.queue = QUEUE_CTRL_SATURATE;
-	general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
+	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
 	//general_settings.channel_mask = BUDDY_CHAN_6_MASK | BUDDY_CHAN_0_MASK | BUDDY_CHAN_7_MASK;
-	//general_settings.channel_mask = BUDDY_CHAN_0_MASK | BUDDY_CHAN_1_MASK;
+	general_settings.channel_mask = BUDDY_CHAN_1_MASK;
 	
 	//general_settings.resolution = CODEC_BIT_WIDTH_8;
-	//general_settings.resolution = CODEC_BIT_WIDTH_10;
-	general_settings.resolution = CODEC_BIT_WIDTH_12;
-
+	general_settings.resolution = CODEC_BIT_WIDTH_10;
+	//general_settings.resolution = CODEC_BIT_WIDTH_12;
+	
 	timing_settings.period = (uint32_t) FREQUENCY_TO_NSEC(sample_rate);
 	timing_settings.averaging = 1;
 
@@ -234,13 +216,6 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 		return -1;
 	}
 	short_sleep(100);
-
-	if (oneshot) {
-		if (buddy_trigger(handle) != BUDDY_ERROR_OK) {
-			return BUDDY_ERROR_GENERAL;
-		}
-		short_sleep(1000);
-	}
 
 	recv_packets = 0;
 	do {
@@ -279,7 +254,6 @@ int main(int argc, char *argv[])
 	int8_t err_code = 0;
 	struct timeb time_start, time_end;
 	int time_diff;
-	bool oneshot_mode = false;
 	bool stream_mode = false;
 	enum { DAQ_MODE, ADC_MODE, DUAL_MODE } mode = DAQ_MODE;
 
@@ -309,7 +283,6 @@ int main(int argc, char *argv[])
 			case 'a': mode = ADC_MODE; break;
 			case 'p': mode = DUAL_MODE; break;
 			case 's': stream_mode = true; break;
-			case 'o': oneshot_mode = true; break;
 			case 'h': 
 			default:
 				fprintf(stderr, "Usage: %s [-dapos]\n", argv[0]);
@@ -331,15 +304,17 @@ int main(int argc, char *argv[])
 	ftime(&time_start);
 	if (mode == DAQ_MODE) {
 		printf("main: testing with mode = DAQ_MODE\n");
-		err_code = test_seq_dac(hid_handle, &fw_info, BUDDY_TEST_DAC_FREQ, stream_mode, oneshot_mode);
+		err_code = test_seq_dac(hid_handle, &fw_info, BUDDY_TEST_DAC_FREQ, stream_mode);
 	} else if (mode == ADC_MODE) {
 		printf("main: testing with mode = ADC_MODE\n");
-		err_code = test_seq_adc(hid_handle, &fw_info, BUDDY_TEST_ADC_FREQ, stream_mode, oneshot_mode);
+		err_code = test_seq_adc(hid_handle, &fw_info, BUDDY_TEST_ADC_FREQ, stream_mode);
 	} 
 	ftime(&time_end);
 	time_diff = (int)(1000.0 * (time_end.time - time_start.time) + (time_end.millitm - time_start.millitm));
 	printf("Test took (%f) seconds  to run\n", (float) (time_diff / 1000.0));
 	
+	short_sleep(1000);
+
 	if (err_code == 0) {
 		buddy_cleanup(hid_handle, &hid_info);
 	} else {

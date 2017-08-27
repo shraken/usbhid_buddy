@@ -15,84 +15,50 @@
 #include <globals.h>
 #include <utility.h>
 
-#define TIMER0_RELOAD_HIGH  0x2F        // Timer0 High register
-#define TIMER0_RELOAD_LOW 0xFF-250      // Timer0 Low register
-
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata IN_PACKET[];
 
-extern uint8_t tlv563x_resolution;
-extern uint32_t timer2_count;
-extern uint8_t timer0_flag;
+extern uint8_t xdata tlv563x_resolution;
+extern uint8_t xdata timer0_flag;
 
 extern bit SendPacketBusy;
 
-unsigned char flag_usb_out = 0;
-unsigned char flag_usb_in = 0;
+extern buddy_queue data queue_internal;
 
-unsigned char dac_output_flag = 0;
-
-extern uint16_t adc_results[MAX_ANALOG_INPUTS];
-extern uint8_t adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
-extern uint8_t adc_mux_tbl[MAX_ANALOG_INPUTS];
-extern uint8_t adc_channel_count;
-extern uint8_t adc_complete;
-extern uint8_t adc_int_dec_max;
-extern uint8_t adc_channel_index;
-extern uint8_t adc_int_dec;
+extern uint16_t xdata adc_results[MAX_ANALOG_INPUTS];
+extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
+extern uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS];
+extern uint8_t xdata adc_channel_count;
+extern uint8_t xdata adc_complete;
+extern uint8_t xdata adc_int_dec_max;
+extern uint8_t xdata adc_channel_index;
+extern uint8_t xdata adc_int_dec;
 
 extern buddy_queue queue;
 
 extern code firmware_info_t fw_info;
-extern bit out_ready;
 
 extern void Delay(void);
 extern void DelayLong(void);
 
-uint8_t daq_state;
+unsigned char xdata flag_usb_out = 0;
 
-uint8_t m_trigger = false;
-uint8_t m_ctrl_mode = MODE_CTRL_IMMEDIATE;
-uint8_t m_ctrl_operation = OPER_CTRL_CONTINUOUS;
-uint8_t m_ctrl_queue = QUEUE_CTRL_SATURATE;
+uint8_t xdata daq_state;
 
-uint8_t m_adc_control = DEFAULT_ADC0CN;
-uint8_t m_adc_ref = DEFAULT_REF0CN;
-uint8_t m_adc_cfg = DEFAULT_ADC0CF;
-uint8_t m_chan_mask = 0;
-uint8_t m_res_mask = 0;
+uint8_t xdata m_trigger = false;
+uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
+uint8_t xdata m_ctrl_queue = QUEUE_CTRL_SATURATE;
 
-int8_t res_delta = 0;
-uint8_t res_shift = 0;
+uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
+uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
+uint8_t xdata m_adc_cfg = DEFAULT_ADC0CF;
+uint8_t xdata m_chan_mask = 0;
+uint8_t xdata m_res_mask = 0;
 
-uint8_t processed_out = 0;
+int8_t xdata res_delta = 0;
+uint8_t xdata res_shift = 0;
 
-/*
-void DAQ_print_dac(void)
-{
-    int i;
-    
-    debug(("DAQ_print_dac() = \r\n"));
-    
-	#ifndef NDEBUG
-    for (i = 0; i < TLV563X_CHANNEL_COUNT; i++) {
-        printf("DAC_TLV5630_Data[%d] = %04x\r\n", i, DAC_TLV5630_Data[i]);
-    }
-	#endif
-}
-*/
-
-void DAQ_print_adc(void)
-{
-	int i;
-	
-	debug(("DAQ_print_adc() = \r\n"));
-	#ifndef NDEBUG
-    for (i = 0; i < MAX_ANALOG_INPUTS; i++) {
-        printf("adc_results[%d] = %d\r\n", i, adc_results[i]);
-    }
-	#endif
-}
+uint8_t xdata processed_out = 0;
 
 void ADC_Control_Set(uint8_t ctrl_value)
 {
@@ -111,10 +77,9 @@ void ADC_Configuration_Set(uint8_t ctrl_value)
 
 void update_dac(general_packet_t *packet)
 {	
-	static int update_dac_count = 0;
-	int i;
-	uint16_t dac_chan_value;
-	uint8_t type_dac_shift;
+	int xdata i;
+	uint16_t xdata dac_chan_value;
+	uint8_t xdata type_dac_shift;
 	
 	//printf("update_dac invoked\r\n");
 	//debug(("m_chan_mask = %02bx\r\n", m_chan_mask));
@@ -126,8 +91,8 @@ void update_dac(general_packet_t *packet)
 			//printf("res_delta = %bd (%bx)\r\n", res_delta, res_delta);
 			//printf("res_shift = %bd (%bx)\r\n", res_shift, res_shift);
 			
-			debug(("unmodified value %d (%x)\r\n", 
-				packet->channels[i], packet->channels[i]));
+			//debug(("unmodified value %d (%x)\r\n", 
+			//	packet->channels[i], packet->channels[i]));
 			
 			// adjust the DAC register value to be written to be left adjusted
 			// by proper amount given the DAC bit resolution
@@ -154,7 +119,7 @@ void update_dac(general_packet_t *packet)
 					break;
 			}
 			
-			debug(("type_dac_shift = %bd (%bx)\r\n", type_dac_shift));
+			//debug(("type_dac_shift = %bd (%bx)\r\n", type_dac_shift));
 			//debug(("DAC resolution compensated value %d (%x)\r\n", 
 			//	dac_chan_value, dac_chan_value));
 			
@@ -196,8 +161,8 @@ void update_dac(general_packet_t *packet)
 
 void process_dac_stream(void)
 {
-	static buddy_frame_t *frame = NULL;
-	general_packet_t packet;
+	static xdata buddy_frame_t *frame = NULL;
+	general_packet_t xdata packet;
 	
 	//printf("process_dac_stream invoked\r\n");
 	//printf("number items = %d\r\n", (int) queue_remain_items());
@@ -206,14 +171,10 @@ void process_dac_stream(void)
 	// case pull new frame from queue buffer.
 	if (frame) {
 		if (decode_packet(frame, &packet) == CODEC_STATUS_FULL) {
-			debug(("decode_packet = CODEC_STATUS_FULL\r\n"));
-			if (!queue_is_empty()) {
-				/*
-				gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-				gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-				*/
-				
-				frame = queue_dequeue();
+			//debug(("decode_packet = CODEC_STATUS_FULL\r\n"));
+			if (!queue_is_empty(&queue_internal)) {
+				frame = queue_dequeue(&queue_internal);
+					
 				codec_reset();
 			} else {
 				frame = (buddy_frame_t *) NULL;
@@ -222,52 +183,37 @@ void process_dac_stream(void)
 				
 		// both CODEC_STATUS_FULL and CODEC_STATUS_CONTINUE will return
 		// a valid packet
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
+		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
 		update_dac(&packet);
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
+		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
 		
-	} else if ((!frame) && (!queue_is_empty())) {
-		/*
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-		*/
-		
-		frame = queue_dequeue();
+	} else if ((!frame) && (!queue_is_empty(&queue_internal))) {
+		frame = queue_dequeue(&queue_internal);
 		codec_reset();
 	}
 }
 
 void process_dac()
 {
-	buddy_frame_t *frame;
-	general_packet_t packet;
-	static int process_dac_count = 0;
-	
+	buddy_frame_t xdata *frame;
+	general_packet_t xdata packet;
+
 	//debug(("process_dac()\r\n"));
-	//debug(("process_dac_count = %d\r\n", process_dac_count++));
-	
+
 	frame = (buddy_frame_t *) &OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
 		//debug(("m_ctrl_mode = MODE_CTRL_IMMEDIATE\r\n"));
-
 		// decode packet, don't process the return code but immediately
 		// pull the buffer and send update
 		
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
 		decode_packet(frame, &packet);
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		
 		codec_reset();
 		
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
 		update_dac(&packet);
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		
 	} else if (m_ctrl_mode == MODE_CTRL_STREAM) {
 		// add packet to queue
 		//debug(("m_ctrl_mode = MODE_CTRL_STREAM\r\n"));
-		//debug(("timer2_count = %d\r\n", timer2_count));
-			
+	
 		//printf("got MODE_CTRL_STREAM packet\r\n");
 		
 		/*
@@ -276,26 +222,38 @@ void process_dac()
 		printf("queue_is_full = %bd\r\n", queue_is_full());
 		*/
 		
-		if (!queue_is_full()) {
-			debug(("process_dac: adding frame to queue\r\n"));
-			queue_enqueue(frame);
+		/*
+			The logic for stream mode queue is as follows:
+				1. Check if internal queue is full, if not then simply
+				place the frame in the internal queue.  
+				2. If internal queue is full. then check the queue control
+				mode.
+					a. If queue wrap is enabled then check if external memory
+					is enabled, and attempt to enqueue packet in external
+					memory.  If external memory is full then drop the most
+					stale packet in external memory and re-enqueue in the
+					external memory with current frame.  If the external memory
+					is disabled then check if internal queue is full and drop
+					the most stale packet and re-enqueue with current frame.  
+		
+					b. If queue saturation is enabled then check if external
+					memory is enabled, and attempt to enqueue the frame in
+					external memory.  If the external memory is full then drop
+					the current frame.  Otherwise, if external memory is disabled
+					and internal queue is full then drop the current frame.
+		*/
+		
+		if (!queue_is_full(&queue_internal)) {
+			//debug(("process_dac: adding frame to queue\r\n"));
+			queue_enqueue(&queue_internal, frame);
 		} else {
 			if (m_ctrl_queue == QUEUE_CTRL_WRAP) {
-				// throw away next queue entry and add new one
+                // throw away next queue entry and add new one
 				debug(("process_dac: queue is full but wrapping\r\n"));
-				//printf("process_dac: queue is full but wrapping\r\n");
-				queue_dequeue();
-				queue_enqueue(frame);
-			} else if (m_ctrl_queue ==  QUEUE_CTRL_SATURATE) {\
-				// do nothing
-				debug(("process_dac: queue is full\r\n"));
-				//printf("process_dac: queue is full\r\n");
-			} 
-			/*
-			else {
-				printf("dropping packet\r\n");
+	
+				queue_dequeue(&queue_internal);
+				queue_enqueue(&queue_internal, frame);
 			}
-			*/
 		}
 	}
 }
@@ -315,8 +273,8 @@ void process_ctrl_function(uint8_t function)
 		m_trigger = false;
 	} else if (function == GENERAL_CTRL_ADC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
-		queue_clear();
-	
+		queue_clear(&queue_internal);
+
 		ADC0_Enable();
 		daq_state = GENERAL_CTRL_ADC_ENABLE;
 
@@ -326,7 +284,7 @@ void process_ctrl_function(uint8_t function)
 		debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
 		
 		//printf("queue_clear invoked\r\n");
-		queue_clear();
+		queue_clear(&queue_internal);
 		daq_state = GENERAL_CTRL_NONE;
 							
 		ADC0_Disable();
@@ -339,26 +297,25 @@ void process_ctrl_function(uint8_t function)
 						
 	// clear data queue for stream messages
 	//printf("queue_clear 2 invoked\r\n");
-	queue_clear();
+	queue_clear(&queue_internal);
 }
 
-void process_ctrl_mode_operation(uint8_t mode, uint8_t operation, uint8_t queue_type)
+void process_ctrl_mode_operation(uint8_t mode, uint8_t queue_type)
 {
 	debug(("process_ctrl_mode_operation\r\n"));
 	m_ctrl_mode = mode;
-	m_ctrl_operation = operation;
 	m_ctrl_queue = queue_type;
 }
 
 int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
 {
-	int i;
+	int xdata i;
 	
 	debug(("process_ctrl_channel_resolution\r\n"));
 	
 	m_chan_mask = chan_mask;
 	m_res_mask = res;
-				
+		
 	if (function == GENERAL_CTRL_DAC_ENABLE) {
 		res_delta = tlv563x_resolution - m_res_mask;
 		res_shift = abs(res_delta);
@@ -392,7 +349,7 @@ int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
 
 void process_ctrl_general(uint8_t *p)
 {
-	ctrl_general_t *p_general;
+	ctrl_general_t xdata *p_general;
 	
 	p_general = (ctrl_general_t *) p;
 	//debug(("process_ctrl_general():\r\n"));
@@ -403,16 +360,16 @@ void process_ctrl_general(uint8_t *p)
 	//debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
 	//debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
 				
-	process_ctrl_mode_operation(p_general->mode, p_general->operation, p_general->queue);
+	process_ctrl_mode_operation(p_general->mode, p_general->queue);
 	process_ctrl_chan_res(p_general->function, p_general->channel_mask, p_general->resolution);
 	process_ctrl_function(p_general->function);
 }
 
 void process_ctrl_runtime(uint8_t *p)
 {
-	ctrl_runtime_t *p_runtime;
-	uint8_t adc_reg_value = 0;
-	uint8_t dac_reg_value = 0;
+	ctrl_runtime_t xdata *p_runtime;
+	uint8_t xdata adc_reg_value = 0;
+	uint8_t xdata dac_reg_value = 0;
 	
 	p_runtime = (ctrl_runtime_t *) p;
 	debug(("process_ctrl_runtime():\r\n"));
@@ -522,7 +479,7 @@ void process_ctrl_register(uint8_t *p)
 
 void process_ctrl_timing(uint8_t *p)
 {
-	ctrl_timing_t *p_timing;
+	ctrl_timing_t xdata *p_timing;
 	
 	p_timing = (ctrl_timing_t *) p;
 	debug(("process_ct\rl_timing():\r\n"));
@@ -537,9 +494,8 @@ void process_ctrl_timing(uint8_t *p)
 
 int process_ctrl()
 {
-	uint8_t ctrl_type;
-    int i;
-	
+	uint8_t xdata ctrl_type;
+
     ctrl_type = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 
 	debug(("process_ctrl():\r\n"));
@@ -574,9 +530,8 @@ int process_ctrl()
 
 void process_out()
 {
-	uint8_t app_code;
-	int i;
-	
+	uint8_t xdata app_code;
+
 	// if stream mode is enabled then enable the HID OUT
 	// endpoint only if the previous OUT message has processed
 	// by placing on the queue buffer and that the queue buffer
@@ -584,17 +539,27 @@ void process_out()
 	// placed into buffer.
 	if (m_ctrl_mode == MODE_CTRL_STREAM) {
 		if (m_ctrl_queue == QUEUE_CTRL_WAIT) {
-			//if ((!queue_is_full()) && processed_out) {
-			if ((processed_out) && (queue_remain_items() > 0)) {
+			/*
+				USB HID OUT wait logic:
+					1. if external memory is enabled then check to see if external
+					   queue has room for additional frame.  If it does not then
+					   do not enable the USB HID out endpoint.
+					2. if external memory is disabled then check to see if internal
+						memory queue has room for additional frame.  If it does not then
+					   do not enable the USB HID out endpoint.
+			*/
+			
+			if ((processed_out) && (queue_remain_items(&queue_internal) > 0)) {
 				// 7/17/2017: added because otherwise USB host stack locks up and causes
 				// a halt with reset followed by a Clear Feature packet
 				DelayLong();
 				
-				//printf("Enable_Out1 2 invoked\r\n");
+				//printf("Enable_Out1 2 internal invoked\r\n");
 				processed_out = 0;
 				Enable_Out1();
-			}	
+			}
 		} else {
+			processed_out = 0;
 			Enable_Out1();
 		}
 	}
@@ -613,7 +578,8 @@ void process_out()
 				break;
 						
 			case APP_CODE_DAC:
-				debug(("APP_CODE_DAC\r\n"));
+				//debug(("APP_CODE_DAC\r\n"));
+				//printf("APP_CODE_DAC\r\n");
 	
 				/*
 				for (i = 0; i < 64; i++) {
@@ -623,9 +589,7 @@ void process_out()
 				*/
 			
 				if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
-					//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
 					process_dac();
-					//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
 				}
 				
 				rx_led_toggle();
@@ -666,11 +630,7 @@ void process_out()
 		// if oneshot enabled and no trigger received  
 		// timer elapsed, if DAC mode then pull value from DAC queue
 		// and process.
-		if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
-			if ((m_ctrl_operation == OPER_CTRL_ONESHOT) && (!m_trigger)) {
-				return;
-			}
-						
+		if (daq_state == GENERAL_CTRL_DAC_ENABLE) {			
 			process_dac_stream();
 		} 
 	}
@@ -678,30 +638,21 @@ void process_out()
 
 void build_adc_packet(void)
 {
-	//static uint8_t timer0_state;
-	static uint16_t channel_value = 0;
-	buddy_frame_t *frame;
-	general_packet_t packet;
-	uint8_t err_code;
-	uint8_t current_channel;
-	uint8_t i;
-	int8_t delta_width;
-	
-	/*
-	if (timer0_state)  {
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-		timer0_state = 0;
-	} else {
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		timer0_state = 1;
-	}
-	*/
+	//static uint16_t data channel_value = 0;
+	//static uint8_t channel_value = 0;
+	buddy_frame_t xdata *frame;
+	general_packet_t data packet;
+	uint8_t xdata err_code;
+	uint8_t data current_channel;
+	uint8_t data i;
+	int8_t data delta_width;
 	
 	// calculate bitshift left/right required to adjust ADC values
 	// to the expected bit width
 
 	delta_width = ADC_BIT_SIZE - m_res_mask;
-			
+
+	//P3 = P3 & ~0x40;
 	current_channel = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_chan_mask & (1 << i)) {
@@ -713,10 +664,13 @@ void build_adc_packet(void)
 			
 			#if defined(ADC_TEST)
 			current_channel++;
-			channel_value = (channel_value + 1) % 1023;
+			//channel_value = (channel_value + 1) % 255;
+			//channel_value = channel_value++;
 			
-			packet.channels[i] = channel_value;
+			packet.channels[i] = channel_value++;
+			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
 			#else
+
 			if (delta_width < 0) {
 				packet.channels[i] = adc_results[current_channel] << abs(delta_width);
 			} else if (delta_width > 0) {
@@ -724,11 +678,14 @@ void build_adc_packet(void)
 			} else {
 				packet.channels[i] = adc_results[current_channel];
 			}
+
+			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
 			
 			current_channel++;
 			#endif
 		}
 	}
+  //P3 = P3 | 0x40;
 	
 	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
 		codec_reset();
@@ -736,61 +693,57 @@ void build_adc_packet(void)
 			
 		err_code = encode_packet(&packet);
 	} else if (m_ctrl_mode == MODE_CTRL_STREAM) {
+		//P3 = P3 & ~0x40;
 		err_code = encode_packet(&packet);
-
+		//P3 = P3 | 0x40;
+        
 		adc_complete = 0;
+        
+    //P3 = P3 & ~0x40;
 		if (err_code == CODEC_STATUS_FULL) {
 			frame = codec_get_buffer();
 						
-			if (!queue_is_full()) {
+			if (!queue_is_full(&queue_internal)) {
 				//debug(("build_adc_packet: add item to stream queue\r\n"));
-							
-				queue_enqueue(frame);
+					
+        //P3 = P3 & ~0x40;
+				queue_enqueue(&queue_internal, frame);
+        //P3 = P3 | 0x40;
+                
 				//debug(("after enqueue = %ld\r\n", queue_remain_items()));
 				//debug(("after enqueue tail = %ld\r\n", queue.tail));
 			} else {
 				if (m_ctrl_queue == QUEUE_CTRL_WRAP) {
-					// throw away next queue entry and add new one
+					//printf("process_dac: wrap on internal queue 1\r\n");
 					debug(("build_adc_packet: queue is full but wrapping\r\n"));
-					queue_dequeue();
-					queue_enqueue(frame);
+					queue_dequeue(&queue_internal);
+					queue_enqueue(&queue_internal, frame);
+				} else if (m_ctrl_queue ==  QUEUE_CTRL_SATURATE) {
+					printf("build_adc_packet: queue is exhausted\r\n");
+					
+					// internal and external queue full -- do nothing
+					debug(("process_dac: queue is full\r\n"));
 				} else {
+					printf("build_adc_packet: queue is full\r\n");
 					//debug(("build_adc_packet: queue is full\r\n"));
 				}
 			}
 				
+      //P3 = P3 & ~0x40;
 			codec_reset();
 			codec_clear();
+      //P3 = P3 | 0x40;
 		}
-		
-		/*
-		else if (err_code == CODEC_STATUS_CONTINUE) {
-			debug(("build_adc_packet: CODEC_STATUS_CONTINUE\r\n"));
-		}
-		*/
+        
+    //P3 = P3 | 0x40;
 	}
 }
 
 void process_in()
 {
-	buddy_frame_t *frame;
-	buddy_frame_t frame_static;
-	uint16_t test_adc[MAX_ANALOG_INPUTS]; 
-	static uint8_t in_counter = 0;
-	static int base_count = 0;
-	static uint8_t timer2_state = 0;
-	int i;
-	  
-	/*
-	if (timer2_state)  {
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-		timer2_state = 0;
-	} else {
-		gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		timer2_state = 1;
-	}
-	*/
-	
+	buddy_frame_t xdata *frame;
+	static uint8_t xdata in_counter = 0;
+
 	// adc mode: if (daq_state = GENERAL_CTRL_ADC_ENABLE)
 	//   - if m_ctrl_mode != stream mode and adc_complete then immediately
 	//			copy frame to USBHID IN buffer
@@ -798,74 +751,45 @@ void process_in()
 	//			frame to USBHID IN buffer
 	//   - for either case invoke the SendPacket routine to notify USB stack
 	// 			that outgoing USBHID IN buffer packet is ready
-    
-	/*
-	if (daq_state != GENERAL_CTRL_ADC_ENABLE) {
-		if (!SendPacketBusy) {
-			IN_PACKET[1] = BUDDY_RESPONSE_FILLER | (0 % BUDDY_MAX_COUNTER);		
-			IN_PACKET[0] = IN_DATA;
-
-			SendPacket(IN_DATA);
-		}
-		
-		return;
-	}
-	*/
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		if (adc_complete) {
+			//P3 = P3 & ~0x40;
 			build_adc_packet();
-			//DAQ_print_adc();
+			//P3 = P3 | 0x40;
+			//adc_complete = 0;
 		}
 		
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-		//build_adc_packet();
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-			
 		if (!SendPacketBusy) {
-			//adc_complete = 1;
-	
 			//if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
 			if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) && (adc_complete)) {
 				//debug(("process_in: m_ctrl_mode == MODE_CTRL_IMMEDIATE\r\n"));
+				//printf("process_in: m_ctrl_mode == MODE_CTRL_IMMEDIATE\r\n");
 				adc_complete = 0;
 			
-				IN_PACKET[1] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
+				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
 				//memcpy(&IN_PACKET[USBHID_APP_INDIC_OFFSET], codec_get_buffer(), sizeof(buddy_frame_t));
 				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
 							
 				tx_led_toggle();
-			} else if ((m_ctrl_mode == MODE_CTRL_STREAM) && (!queue_is_empty())) {
+			} else if ((m_ctrl_mode == MODE_CTRL_STREAM) && (!queue_is_empty(&queue_internal))) {
 				//debug(("process_in: m_ctrl_mode == MODE_CTRL_STREAM\r\n"));
-								
-				/*
-				if (timer2_state)  {
-					gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-					timer2_state = 0;
-				} else {
-					gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-					timer2_state = 1;
-				}
-				*/
 							
-				//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-				//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		
-				frame = queue_dequeue();
+				frame = queue_dequeue(&queue_internal);
 				//debug(("queue dequeue, length = %ld\r\n", queue_remain_items()));
 							
-				IN_PACKET[1] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
-				memcpy(&IN_PACKET[2], frame, sizeof(buddy_frame_t));
+				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
+				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], frame, sizeof(buddy_frame_t));
 			} else {
 				//printf("sending ADC filler packet\r\n");
-				IN_PACKET[1] = BUDDY_RESPONSE_FILLER | (in_counter++ % BUDDY_MAX_COUNTER);
+				//memset(&IN_PACKET, 0x00, 64);
+				//IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_FILLER | (in_counter++ % BUDDY_MAX_COUNTER);
+				
+				return;
 			}
 						
-			IN_PACKET[0] = IN_DATA;
-						
-			//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
+			IN_PACKET[BUDDY_TYPE_OFFSET] = IN_DATA;
 			SendPacket(IN_DATA);
-			//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
 		}
 	}
 }

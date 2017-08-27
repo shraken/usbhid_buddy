@@ -8,12 +8,12 @@
 //-----------------------------------------------------------------------------
 // Global Constants
 //-----------------------------------------------------------------------------
-#define SPI_CLOCK          10000000      // Maximum SPI clock
+#define SPI_CLOCK          12000000      // Maximum SPI clock
                                         // The SPI clock is a maximum of 250 kHz
                                         // when this example is used with
                                         // the SPI0_Slave code example.
 
-#define SPI_MAX_BUFFER_SIZE    32      // Maximum buffer Master will send
+#define SPI_MAX_BUFFER_SIZE    128      // Maximum buffer Master will send
 
 // Instruction Set
 #define  SPI_WRITE         0x04        // Send a byte from the Master to the

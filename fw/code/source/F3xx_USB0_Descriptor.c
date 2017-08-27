@@ -124,29 +124,32 @@ code unsigned char String0Desc [STR0LEN] =
    STR0LEN, 0x03, 0x09, 0x04
 }; // End of String0Desc
 
-#define STR1LEN sizeof ("SLAB") * 2
+#define STR1LEN sizeof ("WIGGLE") * 2
 
 code unsigned char String1Desc [STR1LEN] =
 {
    STR1LEN, 0x03,
-   'S', 0,
+   'W', 0,
+   'I', 0,
+   'G', 0,
+   'G', 0,
    'L', 0,
-   'A', 0,
-   'B', 0
+   'E', 0
 }; // End of String1Desc
 
-#define STR2LEN sizeof ("F320") * 2
+#define STR2LEN sizeof ("BUDDY") * 2
 
 code unsigned char String2Desc [STR2LEN] =
 {
    STR2LEN, 0x03,
-   'F', 0,
-   '3', 0,
-   'x', 0,
-   'x', 0
+   'B', 0,
+   'U', 0,
+   'D', 0,
+   'D', 0,
+   'Y', 0
 }; // End of String2Desc
 
-unsigned char* STRINGDESCTABLE [] =
+unsigned char* xdata STRINGDESCTABLE [] =
 {
    String0Desc,
    String1Desc,

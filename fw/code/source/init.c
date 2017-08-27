@@ -163,14 +163,14 @@ void Usb_Init(void)
 // ----------------------------------------------------------------------------
 void Delay(void)
 {
-   int x;
+   int xdata x;
    for(x = 0;x < 500;x)
       x++;
 }
 
 void DelayLong(void)
 {
-   int x;
+   int xdata x;
    for(x = 0;x < 5000;x)
       x++;
 }
