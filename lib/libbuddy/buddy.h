@@ -11,7 +11,7 @@
 // C8051 System Clock Frequency
 #define SYSCLK     48000000
 
-#define MAX_REPORT_SIZE 64
+#define MAX_REPORT_SIZE 63
 #define MAX_OUT_SIZE MAX_REPORT_SIZE
 #define MAX_IN_SIZE MAX_REPORT_SIZE
 
@@ -101,6 +101,11 @@ typedef enum _QUEUE_CTRL {
 	QUEUE_CTRL_WRAP,
 	QUEUE_CTRL_WAIT
 } QUEUE_CTRL;
+
+typedef enum _CODEC_CTRL {
+	CODEC_CTRL_DISABLED = 0,
+	CODEC_CTRL_ENABLED = 1,
+} CODEC_CTRL;
 
 /**
  * \enum CODEC_STATUS
@@ -285,6 +290,7 @@ typedef struct _ctrl_general_t {
 	uint8_t function;
 	uint8_t mode;
 	uint8_t queue;
+	uint8_t codec;
 	uint8_t channel_mask;
 	uint8_t resolution;
 } ctrl_general_t;
@@ -344,6 +350,8 @@ typedef struct _buddy_frame_t {
  *					until the frame is completley full, otherwise single packets
  *					are pushed into the frame.
  *  @param streaming boolean indicating if stream mode is enabled
+ *  @param enabled enum of type QUEUE_CTRL used to enable/disable bit packing
+ *					in the stream frame.
  *	@param channels_mask bitmask of channel values to be decoded or encoded by
  *						subsequent `encode_packet` or `decode_packet` calls.
  *  @param resolution enum of type CODEC_BIT_WIDTH specifying the resolution
@@ -351,7 +359,7 @@ typedef struct _buddy_frame_t {
  *				  if decoding.
  *  @return CODEC_STATUS_NOERR on success, CODEC_STATUS_ERROR otherwise for error 
  */
-int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution);
+int codec_init(bool streaming, uint8_t enabled, uint8_t channels_mask, uint8_t resolution);
 
 /** @brief Encodes a general_packet_t structure and packs the result into an
  *					internal frame buffer.
@@ -361,6 +369,9 @@ int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution);
  *					CODEC_STATUS_ERROR if an error occured
  */
 int encode_packet(general_packet_t *packet);
+
+int encode_packet_simple(general_packet_t *packet);
+int encode_packet_complex(general_packet_t *packet);
 
 /** @brief Decodes a general_packet_t structure from the frame.
  *	@param frame pointer to a frame type to be decoded

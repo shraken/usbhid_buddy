@@ -105,6 +105,7 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	//general_settings.queue = QUEUE_CTRL_WRAP;
 	//general_settings.queue = QUEUE_CTRL_SATURATE;
 	general_settings.queue = QUEUE_CTRL_WAIT;
+	general_settings.codec = CODEC_CTRL_ENABLED;
 
 	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
 	general_settings.channel_mask = BUDDY_CHAN_0_MASK;
@@ -196,6 +197,10 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 	general_settings.function = GENERAL_CTRL_ADC_ENABLE;
 	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
 	general_settings.queue = QUEUE_CTRL_SATURATE;
+	
+	//general_settings.codec = CODEC_CTRL_ENABLED;
+	general_settings.codec = CODEC_CTRL_DISABLED;
+
 	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
 	//general_settings.channel_mask = BUDDY_CHAN_6_MASK | BUDDY_CHAN_0_MASK | BUDDY_CHAN_7_MASK;
 	general_settings.channel_mask = BUDDY_CHAN_1_MASK;

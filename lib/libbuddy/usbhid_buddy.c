@@ -377,7 +377,10 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	if (!is_codec_initialized()) {
 		//printf("is_codec_initialized = false\n");
 
-		if (codec_init(general->mode == MODE_CTRL_STREAM, general->channel_mask, general->resolution) != CODEC_STATUS_NOERR) {
+		if (codec_init(general->mode == MODE_CTRL_STREAM, 
+					   general->codec,
+					   general->channel_mask, 
+					   general->resolution) != CODEC_STATUS_NOERR) {
 			//printf("buddy_configure: codec_init call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}

@@ -17,10 +17,12 @@
 
 static XDATA_TYPE buddy_frame_t codec_frame;
 static uint16_t DATA_TYPE codec_bit_offset;
+static uint8_t DATA_TYPE codec_byte_offset;
 
 static bool XDATA_TYPE m_codec_initialized;
 static uint8_t XDATA_TYPE m_resolution_byte_size;
 static uint8_t DATA_TYPE m_resolution;
+static uint8_t XDATA_TYPE m_codec;
 static uint16_t XDATA_TYPE m_mask_resolution;
 static uint8_t XDATA_TYPE m_channels_mask;
 static uint8_t DATA_TYPE m_channels_count;
@@ -28,13 +30,14 @@ static bool XDATA_TYPE m_codec_stream = false;
 
 uint8_t DATA_TYPE m_codec_chan_enable[BUDDY_CHAN_LENGTH];
 
-int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution)
+int codec_init(bool streaming, uint8_t enabled, uint8_t channels_mask, uint8_t resolution)
 {
 	int XDATA_TYPE i;
 
 	m_codec_initialized = true;
 
 	m_codec_stream = streaming;
+	m_codec = enabled;
 	m_resolution = resolution;
 	m_channels_mask = channels_mask;
 
@@ -68,7 +71,45 @@ int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution)
 	return CODEC_STATUS_NOERR;
 }
 
-int encode_packet(general_packet_t *packet)
+int encode_packet_simple(general_packet_t *packet)
+{
+	int status_code;
+	uint8_t data i;
+	
+	// no channels activated, 
+	if (!m_channels_mask) {
+		return CODEC_STATUS_ERROR;
+	}
+	
+	//P3 = P3 & ~0x40;
+	if (m_codec == CODEC_CTRL_DISABLED) {
+		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+			if (m_codec_chan_enable[i]) {
+					//printf("placing %d in codec_byte_offset = %bd\r\n", packet->channels[i], codec_byte_offset);	
+
+					P3 = P3 & ~0x40;
+					codec_frame.payload[codec_byte_offset] = ((packet->channels[i] & 0xFF00) >> 8);
+					codec_frame.payload[codec_byte_offset + 1] = (packet->channels[i] & 0x00FF);
+					codec_byte_offset += 2;
+					P3 = P3 | 0x40;
+			}				
+		}
+		
+		codec_frame.count++;
+	}
+	
+	//P3 = P3 | 0x40;
+	
+	if ((codec_byte_offset + 2) > (MAX_REPORT_SIZE - 3)) {
+		status_code = CODEC_STATUS_FULL;
+	} else {
+		status_code = CODEC_STATUS_CONTINUE;
+	}
+	
+	return status_code;
+}
+
+int encode_packet_complex(general_packet_t *packet)
 {
 	uint16_t DATA_TYPE channel_temp;
 	uint8_t DATA_TYPE future_div_base_index;
@@ -76,15 +117,15 @@ int encode_packet(general_packet_t *packet)
 	uint8_t DATA_TYPE mod_base_index;
 	uint8_t DATA_TYPE lo_byte;
 	uint8_t DATA_TYPE hi_byte;
-	int XDATA_TYPE status_code;
 	uint8_t DATA_TYPE i;
 	int16_t DATA_TYPE overflow_index;
+	int status_code;
 	
 	//printf("encode_packet() entered\n");
 	//printf("m_channels_mask = %02x\n", m_channels_mask);
 
 	//printf("codec_frame.count = %d\n", codec_frame.count);
-
+	
 	overflow_index = m_resolution - BUDDY_BIT_SIZE;
 
     //P3 = P3 & ~0x40; 
@@ -162,7 +203,49 @@ int encode_packet(general_packet_t *packet)
 	return status_code;
 }
 
-int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
+int encode_packet(general_packet_t *packet)
+{
+	if (m_codec == CODEC_CTRL_ENABLED) {
+		return encode_packet_complex(packet);
+	} else if (m_codec == CODEC_CTRL_DISABLED) {
+		return encode_packet_simple(packet);
+	} else {
+		return CODEC_STATUS_ERROR;
+	}
+}
+
+int decode_packet_simple(buddy_frame_t *frame, general_packet_t *packet)
+{
+	uint16_t XDATA_TYPE channel_temp;
+	uint8_t DATA_TYPE i;
+
+	printf("decode_packet_simple()\n");
+	
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		// check if channel value passed is active
+		if (!(m_channels_mask & (1 << i))) {
+			continue;
+		}
+
+		channel_temp = ((frame->payload[codec_byte_offset] << 8) | frame->payload[codec_byte_offset + 1]);
+
+		packet->channels[i] = channel_temp;
+		codec_byte_offset += 2;
+	}
+
+	// check if the next packet can fit in the packed array
+	//if ((codec_byte_offset ) > (2 * frame->count)) {
+	if ((codec_byte_offset + 2) > (MAX_REPORT_SIZE - 3)) {
+		//printf("full\r\n");
+		return CODEC_STATUS_FULL;
+	}
+	else {
+		//printf("continue\r\n");
+		return CODEC_STATUS_CONTINUE;
+	}
+}
+
+int decode_packet_complex(buddy_frame_t *frame, general_packet_t *packet)
 {
 	uint16_t XDATA_TYPE channel_temp;
 	uint8_t XDATA_TYPE future_div_base_index;
@@ -172,17 +255,19 @@ int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
 	uint8_t XDATA_TYPE hi_byte;
 	uint8_t DATA_TYPE i;
 	int DATA_TYPE overflow_index;
-	
+
+	printf("decode_packet_complex()\n");
+
 	//printf("frame->count = %bd\r\n", frame->count);
 	overflow_index = m_resolution - BUDDY_BIT_SIZE;
 	//printf("overflow_index = %d\r\n", overflow_index);
-	
+
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		// check if channel value passed is active
 		if (!(m_channels_mask & (1 << i))) {
-				continue;
+			continue;
 		}
-		
+
 		norm_div_base_index = (codec_bit_offset / BUDDY_BIT_SIZE);
 		future_div_base_index = ((codec_bit_offset + BUDDY_BIT_SIZE) / BUDDY_BIT_SIZE);
 		mod_base_index = (codec_bit_offset % BUDDY_BIT_SIZE);
@@ -230,13 +315,25 @@ int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
 	//printf("against = %d\r\n", (m_channels_count * m_resolution * frame->count));
 
 	// check if the next packet can fit in the packed array
-	if ( (codec_bit_offset + (m_resolution * m_channels_count)) > 
-			 (m_channels_count * m_resolution * frame->count)) {
+	if ((codec_bit_offset + (m_resolution * m_channels_count)) >
+		(m_channels_count * m_resolution * frame->count)) {
 		//printf("full\r\n");
 		return CODEC_STATUS_FULL;
-	} else {
+	}
+	else {
 		//printf("continue\r\n");
 		return CODEC_STATUS_CONTINUE;
+	}
+}
+
+int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
+{
+	if (m_codec == CODEC_CTRL_ENABLED) {
+		return decode_packet_complex(frame, packet);
+	} else if (m_codec == CODEC_CTRL_DISABLED) {
+		return decode_packet_simple(frame, packet);
+	} else {
+		return CODEC_STATUS_ERROR;
 	}
 }
 
@@ -248,6 +345,7 @@ buddy_frame_t *codec_get_buffer(void)
 void codec_reset(void)
 {
 	codec_bit_offset = 0;
+	codec_byte_offset = 0;
 }
 
 void codec_clear(void)
@@ -269,7 +367,11 @@ void codec_dump(void)
 
 bool codec_buffer_empty(void)
 {
-	return (codec_bit_offset == 0);
+	if (m_codec == CODEC_CTRL_ENABLED) {
+		return (codec_bit_offset == 0);
+	} else {
+		return (codec_byte_offset == 0);
+	}
 }
 
 bool is_codec_initialized(void)

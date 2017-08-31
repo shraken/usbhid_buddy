@@ -48,6 +48,7 @@ uint8_t xdata daq_state;
 uint8_t xdata m_trigger = false;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
 uint8_t xdata m_ctrl_queue = QUEUE_CTRL_SATURATE;
+uint8_t xdata m_ctrl_codec = CODEC_CTRL_DISABLED;
 
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
 uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
@@ -258,11 +259,12 @@ void process_dac()
 	}
 }
 
-void process_ctrl_function(uint8_t function)
+//void process_ctrl_function(uint8_t function)
+void process_ctrl_function(ctrl_general_t *p_general)
 {
 	debug(("process_ctrl_function()\r\n"));
 	
-	if (function == GENERAL_CTRL_DAC_ENABLE) {
+	if (p_general->function == GENERAL_CTRL_DAC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_DAC_ENABLE\r\n"));
 		daq_state = GENERAL_CTRL_DAC_ENABLE;
 		ADC0_Disable();
@@ -271,7 +273,7 @@ void process_ctrl_function(uint8_t function)
 		//TLV563x_DAC_set_power_mode(1);
 		TLV563x_DAC_Reset();
 		m_trigger = false;
-	} else if (function == GENERAL_CTRL_ADC_ENABLE) {
+	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
 		queue_clear(&queue_internal);
 
@@ -280,7 +282,7 @@ void process_ctrl_function(uint8_t function)
 
 		// disable TLV563x SPI DAC by setting power down (PD) register value
 		TLV563x_DAC_set_power_mode(0);
-	} else if (function == GENERAL_CTRL_NONE) {
+	} else if (p_general->function == GENERAL_CTRL_NONE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
 		
 		//printf("queue_clear invoked\r\n");
@@ -300,26 +302,35 @@ void process_ctrl_function(uint8_t function)
 	queue_clear(&queue_internal);
 }
 
-void process_ctrl_mode_operation(uint8_t mode, uint8_t queue_type)
+//void process_ctrl_mode_operation(uint8_t mode, uint8_t queue_type)
+void process_ctrl_mode_operation(ctrl_general_t *p_general)
 {
+	/*
 	debug(("process_ctrl_mode_operation\r\n"));
 	m_ctrl_mode = mode;
 	m_ctrl_queue = queue_type;
+	*/
+	
+	debug(("process_ctrl_mode_operation\r\n"));
+	m_ctrl_mode = p_general->mode;
+	m_ctrl_queue =  p_general->queue;
+	m_ctrl_codec = p_general->codec;
 }
 
-int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
+//int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
+int process_ctrl_chan_res(ctrl_general_t *p_general)
 {
-	int xdata i;
+	int i;
 	
 	debug(("process_ctrl_channel_resolution\r\n"));
 	
-	m_chan_mask = chan_mask;
-	m_res_mask = res;
+	m_chan_mask = p_general->channel_mask;
+	m_res_mask = p_general->resolution;
 		
-	if (function == GENERAL_CTRL_DAC_ENABLE) {
+	if (p_general->function == GENERAL_CTRL_DAC_ENABLE) {
 		res_delta = tlv563x_resolution - m_res_mask;
 		res_shift = abs(res_delta);
-	} else if (function == GENERAL_CTRL_ADC_ENABLE) {
+	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		adc_channel_count = 0;
 		adc_channel_index = 0;
 			
@@ -338,11 +349,6 @@ int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
 	
 	//debug(("m_chan_mask = %02bx\r\n", m_chan_mask));
 	//debug(("m_res_mask = %02bx\r\n", m_res_mask));
-				
-	if (codec_init(m_ctrl_mode, m_chan_mask, m_res_mask) != CODEC_STATUS_NOERR) {
-		debug(("process_ctrl_chan_res: codec_init call failed\n"));
-		return -1;
-	}
 		
 	return 0;
 }
@@ -352,17 +358,27 @@ void process_ctrl_general(uint8_t *p)
 	ctrl_general_t xdata *p_general;
 	
 	p_general = (ctrl_general_t *) p;
-	//debug(("process_ctrl_general():\r\n"));
-	//debug(("p_general->function = %bd (0x%bx)\r\n", p_general->function, p_general->function));
-	//debug(("p_general->mode = %bd (0x%bx)\r\n", p_general->mode, p_general->mode));
-	//debug(("p_general->operation = %bd (0x%bx)\r\n", p_general->operation, p_general->operation));
-	//debug(("p_general->queue = %bd (0x%bx)\r\n", p_general->queue, p_general->queue));
-	//debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
-	//debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
-				
+	debug(("process_ctrl_general():\r\n"));
+	debug(("p_general->function = %bd (0x%bx)\r\n", p_general->function, p_general->function));
+	debug(("p_general->mode = %bd (0x%bx)\r\n", p_general->mode, p_general->mode));
+	debug(("p_general->queue = %bd (0x%bx)\r\n", p_general->queue, p_general->queue));
+	debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
+	debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
+		
+	/*
 	process_ctrl_mode_operation(p_general->mode, p_general->queue);
 	process_ctrl_chan_res(p_general->function, p_general->channel_mask, p_general->resolution);
 	process_ctrl_function(p_general->function);
+	*/
+	
+	process_ctrl_mode_operation(p_general);
+	process_ctrl_chan_res(p_general);
+	process_ctrl_function(p_general);
+	
+	if (codec_init(m_ctrl_mode, m_ctrl_codec, m_chan_mask, m_res_mask) != CODEC_STATUS_NOERR) {
+		debug(("process_ctrl_chan_res: codec_init call failed\n"));
+		return;
+	}
 }
 
 void process_ctrl_runtime(uint8_t *p)
@@ -638,7 +654,7 @@ void process_out()
 
 void build_adc_packet(void)
 {
-	//static uint16_t data channel_value = 0;
+	static uint16_t data channel_value = 0;
 	//static uint8_t channel_value = 0;
 	buddy_frame_t xdata *frame;
 	general_packet_t data packet;
@@ -667,7 +683,7 @@ void build_adc_packet(void)
 			//channel_value = (channel_value + 1) % 255;
 			//channel_value = channel_value++;
 			
-			packet.channels[i] = channel_value++;
+			packet.channels[i] = (channel_value++ % 1023);
 			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
 			#else
 

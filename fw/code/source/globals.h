@@ -3,7 +3,7 @@
 
 #include <buddy.h>
 
-//#define ADC_TEST
+#define ADC_TEST
 
 // C8051F380 48-pin ADC pin macros
 // see pg. 60 of C8051F38x datasheet
