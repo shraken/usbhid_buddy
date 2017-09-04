@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdio.h>
-//#include <stdbool.h>
 #include <wchar.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,7 +11,11 @@
 
 static bool _stream_mode = false;
 static uint8_t _chan_mask = 0;
+static uint8_t _chan_number = 0;
+static uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
 static uint8_t _res_mask = 0;
+
+static uint8_t codec_byte_offset = 0;
 
 char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH] = {
 	"None",
@@ -70,6 +73,31 @@ int number_channels(uint8_t channel_mask)
 	}
 
 	return channel_count;
+}
+
+int decode(uint8_t *frame, general_packet_t *packet)
+{
+	int i;
+
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		// check if channel value passed is active
+		if (!_chan_enable[i]) {
+			continue;
+		}
+
+		packet->channels[i] = (*(frame + codec_byte_offset) << 8);
+		packet->channels[i] |= *(frame + codec_byte_offset + 1);
+		codec_byte_offset += 2;
+	}
+
+	// check if the next packet can fit in the packed array
+	if ((codec_byte_offset + (2 * _chan_number)) > (MAX_REPORT_SIZE - 3)) {
+		codec_byte_offset = 0;
+		return CODEC_STATUS_FULL;
+	}
+	else {
+		return CODEC_STATUS_CONTINUE;
+	}
 }
 
 hid_device* hidapi_init(buddy_hid_info_t *hid_info)
@@ -200,7 +228,9 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 	uint8_t err_code;
 	int i;
 
+	/*
 	err_code = encode_packet(packet);
+	*/
 
 	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
 		//printf("encode_packet: full, sending now\r\n");
@@ -226,6 +256,7 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 
 		// sent the previous codec buffer so try and re-encode packet that could
 		// not fit
+		/*
 		err_code = encode_packet(packet);
 
 		if (err_code == CODEC_STATUS_CONTINUE) {
@@ -233,6 +264,7 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 		} else {
 			return BUDDY_ERROR_GENERAL;
 		}
+		*/
 
 		//debugf("buddy_send_dac exited 1\n");
 		return BUDDY_ERROR_OK;
@@ -252,16 +284,7 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int err_code;
 	int res;
-
-	/*
-	packet->channels[0] = 10;
-	packet->channels[1] = 20;
-	packet->channels[2] = 30;
-	packet->channels[3] = 40;
-	packet->channels[4] = 50;
-
-	return 1;
-	*/
+	int i;
 
 	// 
 	// 1. if streaming off/immediate on then read a HID IN packet and decode
@@ -272,6 +295,8 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 
 	err_code = BUDDY_ERROR_OK;
 	if ((!streaming) || (encode_status == CODEC_STATUS_FULL)) {
+		printf("invoke buddy_read_packet()\r\n");
+
 		res = 0;
 		while (res == 0) {
 			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE);
@@ -293,16 +318,24 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 			codec_reset();
 			codec_clear();
 
-			encode_status = decode_packet( (buddy_frame_t *) (in_buf + BUDDY_APP_INDIC_OFFSET), 
-											packet);
+			codec_byte_offset = 0;
+
+			//encode_status = decode_packet( (in_buf + BUDDY_APP_INDIC_OFFSET), 
+			//								packet);
+			encode_status = decode((in_buf + BUDDY_APP_INDIC_OFFSET), packet);
+			
+			printf("buddy_read_adc(): immediate packet decode\n");
 		} else {
 			// filler packet was detected
 			//debugf("filler packet detected!  BUDDY_ERROR_INVALID returned\n");
 			err_code = BUDDY_ERROR_INVALID;
 		}
 	} else if ((streaming) && (encode_status == CODEC_STATUS_CONTINUE)) {
-		encode_status = decode_packet( (buddy_frame_t *) (in_buf + BUDDY_APP_INDIC_OFFSET), 
-									    packet);
+		//encode_status = decode_packet( (buddy_frame_t *) (in_buf + BUDDY_APP_INDIC_OFFSET), 
+		///							    packet);
+		encode_status = decode((buddy_frame_t *)(in_buf + BUDDY_APP_INDIC_OFFSET), packet);
+
+		printf("buddy_read_adc(): streaming packet decode\n");
 	} else {
 		err_code = BUDDY_ERROR_GENERAL;
 		//debugf("BUDDY_ERROR_GENERAL returned\n");
@@ -352,6 +385,7 @@ int buddy_count_channels(uint8_t chan_mask)
 int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing)
 {
 	char buffer[128];
+	int i;
 
 	if ((!handle) || (!general) || (!runtime) || (!timing)) {
 		return BUDDY_ERROR_MEMORY;
@@ -389,6 +423,15 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	//printf("setting _chan_mask and _res_mask\n");
 	_chan_mask = general->channel_mask;
 	_res_mask = general->resolution;
+
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (_chan_mask & (1 << i)) {
+			_chan_enable[i] = 1;
+			_chan_number++;
+		} else {
+			_chan_enable[i] = 0;
+		}
+	}
 
 	// scale the input sample rate by the number of channels so that all
 	// ADC channels are sampling at the requested rate

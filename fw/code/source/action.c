@@ -45,6 +45,9 @@ unsigned char xdata flag_usb_out = 0;
 
 uint8_t xdata daq_state;
 
+uint8_t data in_packet_ready = false;
+uint8_t data in_packet_offset = 0;
+
 uint8_t xdata m_trigger = false;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
 uint8_t xdata m_ctrl_queue = QUEUE_CTRL_SATURATE;
@@ -55,6 +58,8 @@ uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
 uint8_t xdata m_adc_cfg = DEFAULT_ADC0CF;
 uint8_t xdata m_chan_mask = 0;
 uint8_t xdata m_res_mask = 0;
+uint8_t xdata m_chan_number;
+uint8_t data m_chan_enable[BUDDY_CHAN_LENGTH];
 
 int8_t xdata res_delta = 0;
 uint8_t xdata res_shift = 0;
@@ -277,6 +282,9 @@ void process_ctrl_function(ctrl_general_t *p_general)
 		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
 		queue_clear(&queue_internal);
 
+		in_packet_offset = 0;
+		in_packet_ready = false;
+		
 		ADC0_Enable();
 		daq_state = GENERAL_CTRL_ADC_ENABLE;
 
@@ -327,6 +335,17 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	m_chan_mask = p_general->channel_mask;
 	m_res_mask = p_general->resolution;
 		
+	// get number of channels activated
+	m_chan_number = 0;
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (m_chan_mask & (1 << i)) {
+			m_chan_enable[i] = 1;
+			m_chan_number++;	
+		} else {
+			m_chan_enable[i] = 0;
+		}
+	}
+	
 	if (p_general->function == GENERAL_CTRL_DAC_ENABLE) {
 		res_delta = tlv563x_resolution - m_res_mask;
 		res_shift = abs(res_delta);
@@ -655,157 +674,67 @@ void process_out()
 void build_adc_packet(void)
 {
 	static uint16_t data channel_value = 0;
-	//static uint8_t channel_value = 0;
-	buddy_frame_t xdata *frame;
 	general_packet_t data packet;
-	uint8_t xdata err_code;
-	uint8_t data current_channel;
 	uint8_t data i;
-	int8_t data delta_width;
+	uint8_t data current_channel = 0;
+	uint8_t err_code;
 	
-	// calculate bitshift left/right required to adjust ADC values
-	// to the expected bit width
-
-	delta_width = ADC_BIT_SIZE - m_res_mask;
-
-	//P3 = P3 & ~0x40;
-	current_channel = 0;
+	// after IN_PACKET is copied into IN USB EP the in_packet_ready
+	// will be set to false
+	if (in_packet_ready) {
+		return;
+	}
+	
+	P3 = P3 & ~0x40;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (m_chan_mask & (1 << i)) {
-			/*
-			debug(("adc_mux_ref_tbl[%bd] = %bx\r\n", i, adc_mux_ref_tbl[i]));
-			debug(("adc_mux_tbl[%bd] = %bx\r\n", current_channel, adc_mux_tbl[current_channel]));
-			debug(("adc_results[%bd] = %u\r\n\r\n", current_channel, adc_results[current_channel]));
-			*/
+		//if (m_chan_mask & (1 << i)) {
+	  if (m_chan_enable[i]) {	
+  		#if defined(ADC_TEST)
+			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset] = ((channel_value & 0xFF00) >> 8);
+			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset + 1] = (channel_value & 0xFF);
 			
-			#if defined(ADC_TEST)
-			current_channel++;
-			//channel_value = (channel_value + 1) % 255;
-			//channel_value = channel_value++;
-			
-			packet.channels[i] = (channel_value++ % 1023);
-			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
+			channel_value++;
 			#else
-
-			if (delta_width < 0) {
-				packet.channels[i] = adc_results[current_channel] << abs(delta_width);
-			} else if (delta_width > 0) {
-				packet.channels[i] = adc_results[current_channel] >> delta_width;
-			} else {
-				packet.channels[i] = adc_results[current_channel];
-			}
-
-			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
+			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset] = ((adc_results[current_channel] & 0xFF00) >> 8);
+			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset + 1] = (adc_results[current_channel] & 0xFF);
 			
 			current_channel++;
 			#endif
-		}
-	}
-  //P3 = P3 | 0x40;
-	
-	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-		codec_reset();
-		codec_clear();
 			
-		err_code = encode_packet(&packet);
-	} else if (m_ctrl_mode == MODE_CTRL_STREAM) {
-		//P3 = P3 & ~0x40;
-		err_code = encode_packet(&packet);
-		//P3 = P3 | 0x40;
-        
-		adc_complete = 0;
-        
-    //P3 = P3 & ~0x40;
-		if (err_code == CODEC_STATUS_FULL) {
-			frame = codec_get_buffer();
-						
-			if (!queue_is_full(&queue_internal)) {
-				//debug(("build_adc_packet: add item to stream queue\r\n"));
-					
-        //P3 = P3 & ~0x40;
-				queue_enqueue(&queue_internal, frame);
-        //P3 = P3 | 0x40;
-                
-				//debug(("after enqueue = %ld\r\n", queue_remain_items()));
-				//debug(("after enqueue tail = %ld\r\n", queue.tail));
-			} else {
-				if (m_ctrl_queue == QUEUE_CTRL_WRAP) {
-					//printf("process_dac: wrap on internal queue 1\r\n");
-					debug(("build_adc_packet: queue is full but wrapping\r\n"));
-					queue_dequeue(&queue_internal);
-					queue_enqueue(&queue_internal, frame);
-				} else if (m_ctrl_queue ==  QUEUE_CTRL_SATURATE) {
-					printf("build_adc_packet: queue is exhausted\r\n");
-					
-					// internal and external queue full -- do nothing
-					debug(("process_dac: queue is full\r\n"));
-				} else {
-					printf("build_adc_packet: queue is full\r\n");
-					//debug(("build_adc_packet: queue is full\r\n"));
-				}
-			}
-				
-      //P3 = P3 & ~0x40;
-			codec_reset();
-			codec_clear();
-      //P3 = P3 | 0x40;
+			in_packet_offset += 2;
 		}
-        
-    //P3 = P3 | 0x40;
 	}
+	
+	// check if subsequent packet will overflow buffer
+	if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
+		  ((in_packet_offset + (2 * m_chan_number)) > (MAX_REPORT_SIZE - 3))) {
+		in_packet_ready = true;
+		in_packet_offset = 0;
+	}
+	P3 = P3 | 0x40;
 }
 
-void process_in()
+void process_in(void)
 {
-	buddy_frame_t xdata *frame;
 	static uint8_t xdata in_counter = 0;
-
-	// adc mode: if (daq_state = GENERAL_CTRL_ADC_ENABLE)
-	//   - if m_ctrl_mode != stream mode and adc_complete then immediately
-	//			copy frame to USBHID IN buffer
-	//   - if m_ctrl_mode = stream mode then check outgoing buffer and copy
-	//			frame to USBHID IN buffer
-	//   - for either case invoke the SendPacket routine to notify USB stack
-	// 			that outgoing USBHID IN buffer packet is ready
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		if (adc_complete) {
 			//P3 = P3 & ~0x40;
 			build_adc_packet();
+			adc_complete = 0;
 			//P3 = P3 | 0x40;
 			//adc_complete = 0;
 		}
 		
 		if (!SendPacketBusy) {
-			//if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-			if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) && (adc_complete)) {
-				//debug(("process_in: m_ctrl_mode == MODE_CTRL_IMMEDIATE\r\n"));
-				//printf("process_in: m_ctrl_mode == MODE_CTRL_IMMEDIATE\r\n");
-				adc_complete = 0;
-			
+			if (in_packet_ready) {
+				in_packet_ready = false;
 				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
-				//memcpy(&IN_PACKET[USBHID_APP_INDIC_OFFSET], codec_get_buffer(), sizeof(buddy_frame_t));
-				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
-							
-				tx_led_toggle();
-			} else if ((m_ctrl_mode == MODE_CTRL_STREAM) && (!queue_is_empty(&queue_internal))) {
-				//debug(("process_in: m_ctrl_mode == MODE_CTRL_STREAM\r\n"));
-							
-				frame = queue_dequeue(&queue_internal);
-				//debug(("queue dequeue, length = %ld\r\n", queue_remain_items()));
-							
-				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
-				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], frame, sizeof(buddy_frame_t));
-			} else {
-				//printf("sending ADC filler packet\r\n");
-				//memset(&IN_PACKET, 0x00, 64);
-				//IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_FILLER | (in_counter++ % BUDDY_MAX_COUNTER);
 				
-				return;
+				IN_PACKET[BUDDY_TYPE_OFFSET] = IN_DATA;
+				SendPacket(IN_DATA);
 			}
-						
-			IN_PACKET[BUDDY_TYPE_OFFSET] = IN_DATA;
-			SendPacket(IN_DATA);
 		}
 	}
 }
@@ -818,5 +747,6 @@ void process()
 	
 	// Device -> Host message
 	// USB IN
+	//process_in();
 	process_in();
 }

@@ -243,12 +243,11 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 			printf("test_seq_adc: buddy_send_adc call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}
-	} while (recv_packets < 1200);
+	} while (recv_packets < 100);
 
 	return 0;
 }
 
-//int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, char *argv[])
 {
 	buddy_hid_info_t hid_info;

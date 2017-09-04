@@ -17,7 +17,7 @@
 
 static XDATA_TYPE buddy_frame_t codec_frame;
 static uint16_t DATA_TYPE codec_bit_offset;
-static uint8_t DATA_TYPE codec_byte_offset;
+static uint8_t DATA_TYPE codec_byte_offset = 0;
 
 static bool XDATA_TYPE m_codec_initialized;
 static uint8_t XDATA_TYPE m_resolution_byte_size;
@@ -71,6 +71,7 @@ int codec_init(bool streaming, uint8_t enabled, uint8_t channels_mask, uint8_t r
 	return CODEC_STATUS_NOERR;
 }
 
+/*
 int encode_packet_simple(general_packet_t *packet)
 {
 	int status_code;
@@ -108,6 +109,7 @@ int encode_packet_simple(general_packet_t *packet)
 	
 	return status_code;
 }
+*/
 
 int encode_packet_complex(general_packet_t *packet)
 {
@@ -203,14 +205,25 @@ int encode_packet_complex(general_packet_t *packet)
 	return status_code;
 }
 
-int encode_packet(general_packet_t *packet)
+//int encode_packet(general_packet_t *packet)
+int encode_packet(uint8_t *frame, general_packet_t *packet)
 {
-	if (m_codec == CODEC_CTRL_ENABLED) {
-		return encode_packet_complex(packet);
-	} else if (m_codec == CODEC_CTRL_DISABLED) {
-		return encode_packet_simple(packet);
+	uint8_t i;
+	
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (m_codec_chan_enable[i]) {
+			*(frame + BUDDY_APP_INDIC_OFFSET + codec_byte_offset) = ((packet->channels[i] & 0xFF00) >> 8);
+			*(frame + BUDDY_APP_INDIC_OFFSET + codec_byte_offset + 1) = (packet->channels[i] & 0xFF);
+			codec_byte_offset += 2;
+		}
+	}
+	
+	// check if subsequent packet will overflow buffer
+	if ((codec_byte_offset + (2 * m_channels_count)) > (MAX_REPORT_SIZE - 3)) {
+		codec_byte_offset = 0;
+		return CODEC_STATUS_FULL;
 	} else {
-		return CODEC_STATUS_ERROR;
+		return CODEC_STATUS_CONTINUE;
 	}
 }
 
@@ -326,14 +339,31 @@ int decode_packet_complex(buddy_frame_t *frame, general_packet_t *packet)
 	}
 }
 
-int decode_packet(buddy_frame_t *frame, general_packet_t *packet)
+int decode_packet(uint8_t *frame, general_packet_t *packet)
 {
-	if (m_codec == CODEC_CTRL_ENABLED) {
-		return decode_packet_complex(frame, packet);
-	} else if (m_codec == CODEC_CTRL_DISABLED) {
-		return decode_packet_simple(frame, packet);
-	} else {
-		return CODEC_STATUS_ERROR;
+	int i;
+
+	printf("decode_packet()\n");
+
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		// check if channel value passed is active
+		if (!(m_channels_mask & (1 << i))) {
+			continue;
+		}
+
+		packet->channels[i] = (*(frame + codec_byte_offset) << 8);
+		packet->channels[i] |= *(frame + codec_byte_offset + 1);
+		codec_byte_offset += 2;
+	}
+
+	// check if the next packet can fit in the packed array
+	//if ((codec_byte_offset ) > (2 * frame->count)) {
+	if ((codec_byte_offset + (2 * m_channels_count)) > (MAX_REPORT_SIZE - 3)) {
+		codec_byte_offset = 0;
+		return CODEC_STATUS_FULL;
+	}
+	else {
+		return CODEC_STATUS_CONTINUE;
 	}
 }
 

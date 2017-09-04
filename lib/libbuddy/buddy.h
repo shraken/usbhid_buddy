@@ -368,7 +368,7 @@ int codec_init(bool streaming, uint8_t enabled, uint8_t channels_mask, uint8_t r
  *					CODEC_STATUS_CONTINUE if packet was packed into frame and frame is not full,
  *					CODEC_STATUS_ERROR if an error occured
  */
-int encode_packet(general_packet_t *packet);
+int encode_packet(uint8_t *frame, general_packet_t *packet);
 
 int encode_packet_simple(general_packet_t *packet);
 int encode_packet_complex(general_packet_t *packet);
@@ -380,7 +380,7 @@ int encode_packet_complex(general_packet_t *packet);
  *					CODEC_STATUS_CONTINUE if frame was decoded into packet and is not at end of frame
  *					CODEC_STATUS_ERROR if an error occured
  */
-int decode_packet(buddy_frame_t *frame, general_packet_t *packet);
+int decode_packet(uint8_t *frame, general_packet_t *packet);
 
 /** @brief Gets a pointer to the current codec frame buffer.
  *	@param frame pointer to a frame type to be decoded
