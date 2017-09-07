@@ -16,6 +16,10 @@ static uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
 static uint8_t _res_mask = 0;
 
 static uint8_t codec_byte_offset = 0;
+static uint8_t encode_count = 0;
+static uint8_t decode_count = 0;
+
+static uint8_t out_hold_buf[MAX_OUT_SIZE] = { 0 };
 
 char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH] = {
 	"None",
@@ -75,27 +79,57 @@ int number_channels(uint8_t channel_mask)
 	return channel_count;
 }
 
-int decode(uint8_t *frame, general_packet_t *packet)
+int encode(uint8_t *frame, general_packet_t *packet)
 {
-	int i;
+	uint8_t i;
+
+	printf("codec_byte_offset = %d\n", codec_byte_offset);
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		// check if channel value passed is active
-		if (!_chan_enable[i]) {
-			continue;
+		if (_chan_enable[i]) {
+			printf("encode(): write %d into offset %d\n",
+				packet->channels[i], BUDDY_APP_VALUE_OFFSET + codec_byte_offset);
+			*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset) = ((packet->channels[i] & 0xFF00) >> 8);
+			*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 1) = (packet->channels[i] & 0xFF);
+			codec_byte_offset += 2;
 		}
-
-		packet->channels[i] = (*(frame + codec_byte_offset) << 8);
-		packet->channels[i] |= *(frame + codec_byte_offset + 1);
-		codec_byte_offset += 2;
 	}
 
-	// check if the next packet can fit in the packed array
+	// check if subsequent packet will overflow buffer
 	if ((codec_byte_offset + (2 * _chan_number)) > (MAX_REPORT_SIZE - 3)) {
 		codec_byte_offset = 0;
 		return CODEC_STATUS_FULL;
+	} else {
+		return CODEC_STATUS_CONTINUE;
 	}
-	else {
+}
+
+int decode(uint8_t *frame, general_packet_t *packet)
+{
+	uint8_t count;
+	int i;
+
+	count = *(frame + BUDDY_APP_INDIC_OFFSET);
+	printf("decode() with count = %d\n", count);
+
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (_chan_enable[i]) {
+			packet->channels[i] = (*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset) << 8);
+			packet->channels[i] |= *(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 1);
+			codec_byte_offset += 2;
+		}
+	}
+
+	decode_count++;
+
+	// check if the next packet can fit in the packed array
+	if (((codec_byte_offset + (2 * _chan_number)) > (MAX_REPORT_SIZE - 3)) ||
+	     (decode_count >= count)) {
+		codec_byte_offset = 0;
+		decode_count = 0;
+
+		return CODEC_STATUS_FULL;
+	} else {
 		return CODEC_STATUS_CONTINUE;
 	}
 }
@@ -198,6 +232,8 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 	static int count = 0;
 	int res;
 
+	printf("buddy_write_packet() invoked\r\n");
+
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
 		/*
@@ -224,56 +260,31 @@ int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 
 int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	unsigned char out_buf[MAX_OUT_SIZE] = { 0 };
-	uint8_t err_code;
-	int i;
+	int err_code;
 
-	/*
-	err_code = encode_packet(packet);
-	*/
+	err_code = encode(out_hold_buf, packet);
+	encode_count++;
 
 	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
-		//printf("encode_packet: full, sending now\r\n");
+		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
+		out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
+		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
 
-		out_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-		out_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
-		memcpy(&out_buf[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 2));
-
-		/*
-		for (i = 0; i < 64; i++) {
-			printf("%02x:", out_buf[i]);
-		}
-		printf("\r\n");
-		*/
-
-		if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
-			critical(("buddy_send_dac: buddy_write_packet call failed\n"));
+		printf("buddy_send_dac() with encode_count = %d\n", encode_count);
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
+			//critical(("buddy_send_dac: buddy_write_packet call failed\n"));
+			printf("buddy_send_dac: buddy_write_packet call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}
 
-		codec_reset();
-		codec_clear();
-
-		// sent the previous codec buffer so try and re-encode packet that could
-		// not fit
-		/*
-		err_code = encode_packet(packet);
-
-		if (err_code == CODEC_STATUS_CONTINUE) {
-			return BUDDY_ERROR_OK;
-		} else {
-			return BUDDY_ERROR_GENERAL;
-		}
-		*/
-
-		//debugf("buddy_send_dac exited 1\n");
-		return BUDDY_ERROR_OK;
+		encode_count = 0;
+		codec_byte_offset = 0;
 	} else if (err_code == CODEC_STATUS_CONTINUE) {
 		//printf("encode_packet: continue\r\n");
 		//debugf("buddy_send_dac exited 2\n");
 		return BUDDY_ERROR_OK;
 	} else {
-		//debugf("buddy_send_dac exited 3\n");
+		printf("buddy_send_dac: err_code = BUDDY_ERROR_GENERAL\n");
 		return BUDDY_ERROR_GENERAL;
 	}
 }
@@ -315,14 +326,11 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 		*/
 		
 		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_VALID) {
-			codec_reset();
-			codec_clear();
+			//codec_reset();
+			//codec_clear();
 
 			codec_byte_offset = 0;
-
-			//encode_status = decode_packet( (in_buf + BUDDY_APP_INDIC_OFFSET), 
-			//								packet);
-			encode_status = decode((in_buf + BUDDY_APP_INDIC_OFFSET), packet);
+			encode_status = decode(in_buf, packet);
 			
 			printf("buddy_read_adc(): immediate packet decode\n");
 		} else {
@@ -331,9 +339,7 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 			err_code = BUDDY_ERROR_INVALID;
 		}
 	} else if ((streaming) && (encode_status == CODEC_STATUS_CONTINUE)) {
-		//encode_status = decode_packet( (buddy_frame_t *) (in_buf + BUDDY_APP_INDIC_OFFSET), 
-		///							    packet);
-		encode_status = decode((buddy_frame_t *)(in_buf + BUDDY_APP_INDIC_OFFSET), packet);
+		encode_status = decode(in_buf, packet);
 
 		printf("buddy_read_adc(): streaming packet decode\n");
 	} else {
@@ -347,22 +353,20 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 
 int buddy_flush(hid_device *handle)
 {
-	unsigned char out_buf[MAX_OUT_SIZE] = { 0 };
-
-	if (!codec_buffer_empty()) {
+	if (codec_byte_offset) {
 		printf("flushing the buffer\r\n");
-		
-		out_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-		out_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
-		memcpy(&out_buf[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
 
-		if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
+		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
+		out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
+		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
+
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
 			critical(("buddy_flush: buddy_write_packet call failed\n"));
 			return BUDDY_ERROR_GENERAL;
 		}
 
-		codec_reset();
-		codec_clear();
+		codec_byte_offset = 0;
+		encode_count = 0;
 	}
 
 	return BUDDY_ERROR_OK;
@@ -407,18 +411,6 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	printf("buddy_configure: _chan_mask = %02x\r\n", general->channel_mask);
 	printf("buddy_configure: _res_mask = %02x\r\n", general->resolution);
 	*/
-
-	if (!is_codec_initialized()) {
-		//printf("is_codec_initialized = false\n");
-
-		if (codec_init(general->mode == MODE_CTRL_STREAM, 
-					   general->codec,
-					   general->channel_mask, 
-					   general->resolution) != CODEC_STATUS_NOERR) {
-			//printf("buddy_configure: codec_init call failed\n");
-			return BUDDY_ERROR_GENERAL;
-		}
-	}
 
 	//printf("setting _chan_mask and _res_mask\n");
 	_chan_mask = general->channel_mask;

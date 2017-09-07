@@ -5,8 +5,6 @@
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
 
-extern uint8_t xdata processed_out;
-
 // ----------------------------------------------------------------------------
 // Local Function Prototypes
 // ----------------------------------------------------------------------------
@@ -126,7 +124,6 @@ void IN_DATA_ROUTINE(void){
 void OUT_DATA_ROUTINE(void)
 {
    flag_usb_out = 1;
-   processed_out = 0;
 }
 
 // ----------------------------------------------------------------------------

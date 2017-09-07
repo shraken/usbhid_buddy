@@ -5,7 +5,6 @@
 #include <F3xx_USB0_ReportHandler.h>
 #include <c8051f3xx.h>
 #include <buddy.h>
-#include <data.h>
 #include <action.h>
 #include <support.h>
 #include <timers.h>
@@ -23,8 +22,6 @@ extern uint8_t xdata timer0_flag;
 
 extern bit SendPacketBusy;
 
-extern buddy_queue data queue_internal;
-
 extern uint16_t xdata adc_results[MAX_ANALOG_INPUTS];
 extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
 extern uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS];
@@ -34,19 +31,20 @@ extern uint8_t xdata adc_int_dec_max;
 extern uint8_t xdata adc_channel_index;
 extern uint8_t xdata adc_int_dec;
 
-extern buddy_queue queue;
-
 extern code firmware_info_t fw_info;
 
 extern void Delay(void);
 extern void DelayLong(void);
 
 unsigned char xdata flag_usb_out = 0;
+uint8_t new_dac_packet = 0;
 
 uint8_t xdata daq_state;
 
 uint8_t data in_packet_ready = false;
 uint8_t data in_packet_offset = 0;
+
+uint8_t data codec_byte_offset = 0;
 
 uint8_t xdata m_trigger = false;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
@@ -63,8 +61,6 @@ uint8_t data m_chan_enable[BUDDY_CHAN_LENGTH];
 
 int8_t xdata res_delta = 0;
 uint8_t xdata res_shift = 0;
-
-uint8_t xdata processed_out = 0;
 
 void ADC_Control_Set(uint8_t ctrl_value)
 {
@@ -156,8 +152,8 @@ void update_dac(general_packet_t *packet)
 				i, packet->channels[i], packet->channels[i]);
 			*/
 			
-			//printf("write chan %d with value %d (%x)\r\n",
-			//	i, dac_chan_value, dac_chan_value);
+			printf("write chan %d with value %d (%x)\r\n",
+				i, dac_chan_value, dac_chan_value);
 			//printf("%d\r\n", dac_chan_value);
 			//printf("%d\r\n", packet->channels[i]);
 			TLV563x_write(i, dac_chan_value);
@@ -167,100 +163,75 @@ void update_dac(general_packet_t *packet)
 
 void process_dac_stream(void)
 {
-	static xdata buddy_frame_t *frame = NULL;
-	general_packet_t xdata packet;
+	static uint8_t decode_count = 0;
+	uint8_t i;
+	uint16_t value;
+	uint8_t count;
+	uint8_t *frame;
 	
-	//printf("process_dac_stream invoked\r\n");
-	//printf("number items = %d\r\n", (int) queue_remain_items());
+	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
+	//printf("count = %bd\r\n", count);
+	//printf("decode_count = %bd\r\n", decode_count);
 	
-	// check if last packet decoded from frame, in which
-	// case pull new frame from queue buffer.
-	if (frame) {
-		if (decode_packet(frame, &packet) == CODEC_STATUS_FULL) {
-			//debug(("decode_packet = CODEC_STATUS_FULL\r\n"));
-			if (!queue_is_empty(&queue_internal)) {
-				frame = queue_dequeue(&queue_internal);
-					
-				codec_reset();
-			} else {
-				frame = (buddy_frame_t *) NULL;
-			}
-		}
+	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
+	
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (m_chan_enable[i]) {
+			value = (*(frame + codec_byte_offset) << 8);
+			value |= *(frame + codec_byte_offset + 1);
+			codec_byte_offset += 2;
 				
-		// both CODEC_STATUS_FULL and CODEC_STATUS_CONTINUE will return
-		// a valid packet
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-		update_dac(&packet);
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		
-	} else if ((!frame) && (!queue_is_empty(&queue_internal))) {
-		frame = queue_dequeue(&queue_internal);
-		codec_reset();
+			printf("stream packet.channels[%bd] = %u\r\n", i, value);
+		}
 	}
+	
+	decode_count++;
+
+	// check if the next packet can fit in the packed array
+	if (((codec_byte_offset + (2 * m_chan_number)) > (MAX_REPORT_SIZE - 3)) ||
+     	 (decode_count >= count))	{
+		codec_byte_offset = 0;
+		new_dac_packet = 0;
+		decode_count = 0;
+				 
+		Enable_Out1();
+	}
+	
+	return;
 }
 
 void process_dac()
 {
-	buddy_frame_t xdata *frame;
+	uint8_t i;
+	uint8_t count;
+	uint8_t xdata *frame;
 	general_packet_t xdata packet;
 
-	//debug(("process_dac()\r\n"));
-
-	frame = (buddy_frame_t *) &OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
+	//printf("process_dac()\r\n");
+	
+	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
+	//printf("count = %bd\r\n", count);
+	
+	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
 	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-		//debug(("m_ctrl_mode = MODE_CTRL_IMMEDIATE\r\n"));
 		// decode packet, don't process the return code but immediately
 		// pull the buffer and send update
 		
-		decode_packet(frame, &packet);
-		codec_reset();
-		
-		update_dac(&packet);
-	} else if (m_ctrl_mode == MODE_CTRL_STREAM) {
-		// add packet to queue
-		//debug(("m_ctrl_mode = MODE_CTRL_STREAM\r\n"));
-	
-		//printf("got MODE_CTRL_STREAM packet\r\n");
-		
-		/*
-		printf("queue_number_items = %d\r\n", queue_number_items());
-		printf("queue_remain_items = %d\r\n", queue_remain_items());
-		printf("queue_is_full = %bd\r\n", queue_is_full());
-		*/
-		
-		/*
-			The logic for stream mode queue is as follows:
-				1. Check if internal queue is full, if not then simply
-				place the frame in the internal queue.  
-				2. If internal queue is full. then check the queue control
-				mode.
-					a. If queue wrap is enabled then check if external memory
-					is enabled, and attempt to enqueue packet in external
-					memory.  If external memory is full then drop the most
-					stale packet in external memory and re-enqueue in the
-					external memory with current frame.  If the external memory
-					is disabled then check if internal queue is full and drop
-					the most stale packet and re-enqueue with current frame.  
-		
-					b. If queue saturation is enabled then check if external
-					memory is enabled, and attempt to enqueue the frame in
-					external memory.  If the external memory is full then drop
-					the current frame.  Otherwise, if external memory is disabled
-					and internal queue is full then drop the current frame.
-		*/
-		
-		if (!queue_is_full(&queue_internal)) {
-			//debug(("process_dac: adding frame to queue\r\n"));
-			queue_enqueue(&queue_internal, frame);
-		} else {
-			if (m_ctrl_queue == QUEUE_CTRL_WRAP) {
-                // throw away next queue entry and add new one
-				debug(("process_dac: queue is full but wrapping\r\n"));
-	
-				queue_dequeue(&queue_internal);
-				queue_enqueue(&queue_internal, frame);
+		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+			if (m_chan_enable[i]) {
+				packet.channels[i] = (*(frame + codec_byte_offset) << 8);
+				packet.channels[i] |= *(frame + codec_byte_offset + 1);
+				
+				codec_byte_offset += 2;
+				printf("imm packet.channels[%bd] = %u\r\n", i, packet.channels[i]);
 			}
 		}
+		
+		codec_byte_offset = 0;
+		flag_usb_out = 0;
+		Enable_Out1();
+		
+		//update_dac(&packet);
 	}
 }
 
@@ -280,7 +251,6 @@ void process_ctrl_function(ctrl_general_t *p_general)
 		m_trigger = false;
 	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
-		queue_clear(&queue_internal);
 
 		in_packet_offset = 0;
 		in_packet_ready = false;
@@ -293,10 +263,7 @@ void process_ctrl_function(ctrl_general_t *p_general)
 	} else if (p_general->function == GENERAL_CTRL_NONE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
 		
-		//printf("queue_clear invoked\r\n");
-		queue_clear(&queue_internal);
-		daq_state = GENERAL_CTRL_NONE;
-							
+		daq_state = GENERAL_CTRL_NONE;					
 		ADC0_Disable();
 			
 		// turn off RX and TX LED
@@ -304,10 +271,6 @@ void process_ctrl_function(ctrl_general_t *p_general)
 		//gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_HIGH);
 		txrx_leds_off();
 	}
-						
-	// clear data queue for stream messages
-	//printf("queue_clear 2 invoked\r\n");
-	queue_clear(&queue_internal);
 }
 
 //void process_ctrl_mode_operation(uint8_t mode, uint8_t queue_type)
@@ -394,10 +357,12 @@ void process_ctrl_general(uint8_t *p)
 	process_ctrl_chan_res(p_general);
 	process_ctrl_function(p_general);
 	
+	/*
 	if (codec_init(m_ctrl_mode, m_ctrl_codec, m_chan_mask, m_res_mask) != CODEC_STATUS_NOERR) {
 		debug(("process_ctrl_chan_res: codec_init call failed\n"));
 		return;
 	}
+	*/
 }
 
 void process_ctrl_runtime(uint8_t *p)
@@ -566,38 +531,7 @@ int process_ctrl()
 void process_out()
 {
 	uint8_t xdata app_code;
-
-	// if stream mode is enabled then enable the HID OUT
-	// endpoint only if the previous OUT message has processed
-	// by placing on the queue buffer and that the queue buffer
-	// is not full so as to allow future OUT packet to be
-	// placed into buffer.
-	if (m_ctrl_mode == MODE_CTRL_STREAM) {
-		if (m_ctrl_queue == QUEUE_CTRL_WAIT) {
-			/*
-				USB HID OUT wait logic:
-					1. if external memory is enabled then check to see if external
-					   queue has room for additional frame.  If it does not then
-					   do not enable the USB HID out endpoint.
-					2. if external memory is disabled then check to see if internal
-						memory queue has room for additional frame.  If it does not then
-					   do not enable the USB HID out endpoint.
-			*/
-			
-			if ((processed_out) && (queue_remain_items(&queue_internal) > 0)) {
-				// 7/17/2017: added because otherwise USB host stack locks up and causes
-				// a halt with reset followed by a Clear Feature packet
-				DelayLong();
-				
-				//printf("Enable_Out1 2 internal invoked\r\n");
-				processed_out = 0;
-				Enable_Out1();
-			}
-		} else {
-			processed_out = 0;
-			Enable_Out1();
-		}
-	}
+	uint8_t i;
 	
 	// USB HID OUT message from host has been posted.  Check the
 	// header if its a CTRL, DAC, or TRIGGER message and process
@@ -613,10 +547,9 @@ void process_out()
 				break;
 						
 			case APP_CODE_DAC:
-				//debug(("APP_CODE_DAC\r\n"));
-				//printf("APP_CODE_DAC\r\n");
-	
+				new_dac_packet = 1;
 				/*
+			  printf("APP_CODE_DAC\r\n");
 				for (i = 0; i < 64; i++) {
 					printf("%02bx:", OUT_PACKET[i]);
 				}
@@ -645,12 +578,12 @@ void process_out()
 			default:
 				break;
 		}
-		
-		processed_out = 1;
 
 		// if stream mode not enabled then enable the HID OUT endpoint
 		// immediately after processing
 		if (m_ctrl_mode != MODE_CTRL_STREAM) {
+			Enable_Out1();
+		} else if (app_code != APP_CODE_DAC) {
 			Enable_Out1();
 		}
 	}
@@ -665,7 +598,7 @@ void process_out()
 		// if oneshot enabled and no trigger received  
 		// timer elapsed, if DAC mode then pull value from DAC queue
 		// and process.
-		if (daq_state == GENERAL_CTRL_DAC_ENABLE) {			
+		if ((daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) {			
 			process_dac_stream();
 		} 
 	}
@@ -673,6 +606,7 @@ void process_out()
 
 void build_adc_packet(void)
 {
+	static uint8_t encode_count = 0;
 	static uint16_t data channel_value = 0;
 	general_packet_t data packet;
 	uint8_t data i;
@@ -690,13 +624,13 @@ void build_adc_packet(void)
 		//if (m_chan_mask & (1 << i)) {
 	  if (m_chan_enable[i]) {	
   		#if defined(ADC_TEST)
-			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset] = ((channel_value & 0xFF00) >> 8);
-			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset + 1] = (channel_value & 0xFF);
+			IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset] = ((channel_value & 0xFF00) >> 8);
+			IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset + 1] = (channel_value & 0xFF);
 			
 			channel_value++;
 			#else
-			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset] = ((adc_results[current_channel] & 0xFF00) >> 8);
-			IN_PACKET[BUDDY_APP_INDIC_OFFSET + in_packet_offset + 1] = (adc_results[current_channel] & 0xFF);
+			IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset] = ((adc_results[current_channel] & 0xFF00) >> 8);
+			IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset + 1] = (adc_results[current_channel] & 0xFF);
 			
 			current_channel++;
 			#endif
@@ -705,9 +639,14 @@ void build_adc_packet(void)
 		}
 	}
 	
+	encode_count++;
+	
 	// check if subsequent packet will overflow buffer
 	if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
 		  ((in_packet_offset + (2 * m_chan_number)) > (MAX_REPORT_SIZE - 3))) {
+		IN_PACKET[BUDDY_APP_INDIC_OFFSET] = encode_count;
+				
+	  encode_count = 0;
 		in_packet_ready = true;
 		in_packet_offset = 0;
 	}

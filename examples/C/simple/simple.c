@@ -131,9 +131,9 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	}
 	*/
 
-	general_settings.resolution = CODEC_BIT_WIDTH_12;
+	//general_settings.resolution = CODEC_BIT_WIDTH_12;
 	//general_settings.resolution = CODEC_BIT_WIDTH_10;
-	//general_settings.resolution = CODEC_BIT_WIDTH_8;
+	general_settings.resolution = CODEC_BIT_WIDTH_8;
 
 	timing_settings.period = (uint32_t) FREQUENCY_TO_NSEC(sample_rate);
 	
@@ -149,7 +149,8 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	}
 	short_sleep(100);
 
-	for (k = 0; k <= ((1 << general_settings.resolution) - 1); k++) {
+	//for (k = 0; k <= ((1 << general_settings.resolution) - 1); k++) {
+	for (k = 0; k <= 50; k++) {
 		if (!active) {
 			return 0;
 		}
@@ -243,7 +244,7 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 			printf("test_seq_adc: buddy_send_adc call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}
-	} while (recv_packets < 100);
+	} while (recv_packets < 50);
 
 	return 0;
 }

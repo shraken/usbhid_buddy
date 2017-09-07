@@ -1,5 +1,4 @@
 #include <main.h>
-#include <data.h>
 #include <gpio.h>
 #include <init.h>
 #include <uart.h>
@@ -73,7 +72,6 @@ void print_device_info(void)
 void main(void)
 {
     System_Init();
-		queue_init();
 		gpio_init();
 	
     Usb_Init();
