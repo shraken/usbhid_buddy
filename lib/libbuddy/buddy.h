@@ -89,25 +89,6 @@ typedef enum _MODE_CTRL {
 } MODE_CTRL;
 
 /**
- * \enum QUEUE_CTRL
- * \brief defines how the queue operates on the device when encountering
- *		  a full buffer situation.  The frame is dropped if the queue is
- *		  full (saturate), the first item on queue deleted (wrapped), or
- *		  the USB communicated halt (wait).  
- * @see ctrl_general_t
- */
-typedef enum _QUEUE_CTRL {
-	QUEUE_CTRL_SATURATE = 0,
-	QUEUE_CTRL_WRAP,
-	QUEUE_CTRL_WAIT
-} QUEUE_CTRL;
-
-typedef enum _CODEC_CTRL {
-	CODEC_CTRL_DISABLED = 0,
-	CODEC_CTRL_ENABLED = 1,
-} CODEC_CTRL;
-
-/**
  * \enum CODEC_STATUS
  * \brief codec internal status error codes.  
  * @see encode_packet

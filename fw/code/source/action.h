@@ -4,7 +4,6 @@
 void ADC_Control_Set(uint8_t ctrl_value);
 void ADC_Reference_Set(uint8_t ctrl_value);
 void ADC_Configuration_Set(uint8_t ctrl_value);
-void update_dac(general_packet_t *packet);
 void build_adc_packet(void);
 void process_adc_stream(void);
 void process_dac_stream(void);

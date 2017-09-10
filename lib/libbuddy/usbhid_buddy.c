@@ -83,12 +83,12 @@ int encode(uint8_t *frame, general_packet_t *packet)
 {
 	uint8_t i;
 
-	printf("codec_byte_offset = %d\n", codec_byte_offset);
+	//printf("codec_byte_offset = %d\n", codec_byte_offset);
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
-			printf("encode(): write %d into offset %d\n",
-				packet->channels[i], BUDDY_APP_VALUE_OFFSET + codec_byte_offset);
+			//printf("encode(): write %d into offset %d\n",
+			//	packet->channels[i], BUDDY_APP_VALUE_OFFSET + codec_byte_offset);
 			*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset) = ((packet->channels[i] & 0xFF00) >> 8);
 			*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 1) = (packet->channels[i] & 0xFF);
 			codec_byte_offset += 2;
@@ -110,7 +110,7 @@ int decode(uint8_t *frame, general_packet_t *packet)
 	int i;
 
 	count = *(frame + BUDDY_APP_INDIC_OFFSET);
-	printf("decode() with count = %d\n", count);
+	//printf("decode() with count = %d\n", count);
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
@@ -232,7 +232,7 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 	static int count = 0;
 	int res;
 
-	printf("buddy_write_packet() invoked\r\n");
+	//printf("buddy_write_packet() invoked\r\n");
 
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
@@ -306,7 +306,7 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 
 	err_code = BUDDY_ERROR_OK;
 	if ((!streaming) || (encode_status == CODEC_STATUS_FULL)) {
-		printf("invoke buddy_read_packet()\r\n");
+		//printf("invoke buddy_read_packet()\r\n");
 
 		res = 0;
 		while (res == 0) {
@@ -332,7 +332,7 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 			codec_byte_offset = 0;
 			encode_status = decode(in_buf, packet);
 			
-			printf("buddy_read_adc(): immediate packet decode\n");
+			//printf("buddy_read_adc(): immediate packet decode\n");
 		} else {
 			// filler packet was detected
 			//debugf("filler packet detected!  BUDDY_ERROR_INVALID returned\n");
@@ -341,7 +341,7 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 	} else if ((streaming) && (encode_status == CODEC_STATUS_CONTINUE)) {
 		encode_status = decode(in_buf, packet);
 
-		printf("buddy_read_adc(): streaming packet decode\n");
+		//printf("buddy_read_adc(): streaming packet decode\n");
 	} else {
 		err_code = BUDDY_ERROR_GENERAL;
 		//debugf("BUDDY_ERROR_GENERAL returned\n");

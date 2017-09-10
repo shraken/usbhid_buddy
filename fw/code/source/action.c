@@ -17,7 +17,6 @@
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata IN_PACKET[];
 
-extern uint8_t xdata tlv563x_resolution;
 extern uint8_t xdata timer0_flag;
 
 extern bit SendPacketBusy;
@@ -48,8 +47,6 @@ uint8_t data codec_byte_offset = 0;
 
 uint8_t xdata m_trigger = false;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
-uint8_t xdata m_ctrl_queue = QUEUE_CTRL_SATURATE;
-uint8_t xdata m_ctrl_codec = CODEC_CTRL_DISABLED;
 
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
 uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
@@ -77,90 +74,6 @@ void ADC_Configuration_Set(uint8_t ctrl_value)
     m_adc_cfg = ctrl_value;
 }
 
-void update_dac(general_packet_t *packet)
-{	
-	int xdata i;
-	uint16_t xdata dac_chan_value;
-	uint8_t xdata type_dac_shift;
-	
-	//printf("update_dac invoked\r\n");
-	//debug(("m_chan_mask = %02bx\r\n", m_chan_mask));
-
-	for (i = REG_DAC_A; i <= REG_DAC_H; i++) {
-		//debug(("packet->channels[%d] = %d\r\n", i, packet->channels[i]));
-			
-		if (m_chan_mask & (1 << i)) {
-			//printf("res_delta = %bd (%bx)\r\n", res_delta, res_delta);
-			//printf("res_shift = %bd (%bx)\r\n", res_shift, res_shift);
-			
-			//debug(("unmodified value %d (%x)\r\n", 
-			//	packet->channels[i], packet->channels[i]));
-			
-			// adjust the DAC register value to be written to be left adjusted
-			// by proper amount given the DAC bit resolution
-			// 
-			// TLV5630 (12-bit) = 0x000 - 0xFFF (no shift)
-			// TLV5631 (10-bit) = 0x000 - 0xFFC (SHL by 2)
-			// TLV5632 (8-bit)  = 0x000 - 0xFF0 (SHL by 4)
-			
-			switch (fw_info.type_dac) {
-				case FIRMWARE_INFO_DAC_TYPE_TLV5632:
-					//dac_chan_value = (packet->channels[i] << 4);
-					type_dac_shift = 4;
-					break;
-				
-				case FIRMWARE_INFO_DAC_TYPE_TLV5631:
-					//dac_chan_value = (packet->channels[i] << 2);
-					type_dac_shift = 2;
-					break;
-				
-				case FIRMWARE_INFO_DAC_TYPE_TLV5630:
-				default:
-					//dac_chan_value = packet->channels[i];
-					type_dac_shift = 0;
-					break;
-			}
-			
-			//debug(("type_dac_shift = %bd (%bx)\r\n", type_dac_shift));
-			//debug(("DAC resolution compensated value %d (%x)\r\n", 
-			//	dac_chan_value, dac_chan_value));
-			
-			// left/right the incoming DAC code to the correct bit resolution of
-			// the TLV563x DAC
-			// (12 - 8)  = 4 > 0 (shift left)
-			// (12 - 16) = -4 < 0 (shift right)
-			if (res_delta > 0) {
-				dac_chan_value = (packet->channels[i] << (res_shift + type_dac_shift));
-			} else if (res_delta < 0) {
-				if (type_dac_shift > res_shift) {
-					dac_chan_value = (packet->channels[i] << type_dac_shift);
-					dac_chan_value = dac_chan_value >> res_shift;
-				} else {
-					dac_chan_value = (packet->channels[i] >> (res_shift - type_dac_shift));
-				}
-			} else {
-				dac_chan_value = (packet->channels[i] << type_dac_shift);
-			}
-			
-			//debug(("update_dac_count = %d\r\n", update_dac_count++));
-			/*
-			debug(("write chan %d with value %d (%x)\r\n", 
-				i, dac_chan_value, dac_chan_value));
-			*/
-			/*
-			printf("packet->channels[%d] = %u (%x)\r\n", 
-				i, packet->channels[i], packet->channels[i]);
-			*/
-			
-			printf("write chan %d with value %d (%x)\r\n",
-				i, dac_chan_value, dac_chan_value);
-			//printf("%d\r\n", dac_chan_value);
-			//printf("%d\r\n", packet->channels[i]);
-			TLV563x_write(i, dac_chan_value);
-		}
-	}
-}
-
 void process_dac_stream(void)
 {
 	static uint8_t decode_count = 0;
@@ -169,6 +82,7 @@ void process_dac_stream(void)
 	uint8_t count;
 	uint8_t *frame;
 	
+	P3 = P3 & ~0x40;
 	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 	//printf("count = %bd\r\n", count);
 	//printf("decode_count = %bd\r\n", decode_count);
@@ -181,7 +95,8 @@ void process_dac_stream(void)
 			value |= *(frame + codec_byte_offset + 1);
 			codec_byte_offset += 2;
 				
-			printf("stream packet.channels[%bd] = %u\r\n", i, value);
+			//printf("stream packet.channels[%bd] = %u\r\n", i, value);
+			TLV563x_write(i, value);
 		}
 	}
 	
@@ -197,21 +112,20 @@ void process_dac_stream(void)
 		Enable_Out1();
 	}
 	
+	P3 = P3 | 0x40;
+	
 	return;
 }
 
 void process_dac()
 {
 	uint8_t i;
-	uint8_t count;
 	uint8_t xdata *frame;
-	general_packet_t xdata packet;
+	uint16_t value;
 
 	//printf("process_dac()\r\n");
-	
-	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
-	//printf("count = %bd\r\n", count);
-	
+
+	P3 = P3 & ~0x40;
 	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
 	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
 		// decode packet, don't process the return code but immediately
@@ -219,19 +133,19 @@ void process_dac()
 		
 		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 			if (m_chan_enable[i]) {
-				packet.channels[i] = (*(frame + codec_byte_offset) << 8);
-				packet.channels[i] |= *(frame + codec_byte_offset + 1);
+				value = (*(frame + codec_byte_offset) << 8);
+				value |= *(frame + codec_byte_offset + 1);
 				
 				codec_byte_offset += 2;
-				printf("imm packet.channels[%bd] = %u\r\n", i, packet.channels[i]);
+				//printf("imm channel %bd value = %u\r\n", i, value);
+				TLV563x_write(i, value);
 			}
 		}
 		
 		codec_byte_offset = 0;
 		flag_usb_out = 0;
 		Enable_Out1();
-		
-		//update_dac(&packet);
+		P3 = P3 | 0x40;
 	}
 }
 
@@ -276,16 +190,8 @@ void process_ctrl_function(ctrl_general_t *p_general)
 //void process_ctrl_mode_operation(uint8_t mode, uint8_t queue_type)
 void process_ctrl_mode_operation(ctrl_general_t *p_general)
 {
-	/*
-	debug(("process_ctrl_mode_operation\r\n"));
-	m_ctrl_mode = mode;
-	m_ctrl_queue = queue_type;
-	*/
-	
 	debug(("process_ctrl_mode_operation\r\n"));
 	m_ctrl_mode = p_general->mode;
-	m_ctrl_queue =  p_general->queue;
-	m_ctrl_codec = p_general->codec;
 }
 
 //int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
@@ -296,8 +202,7 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	debug(("process_ctrl_channel_resolution\r\n"));
 	
 	m_chan_mask = p_general->channel_mask;
-	m_res_mask = p_general->resolution;
-		
+
 	// get number of channels activated
 	m_chan_number = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
@@ -309,10 +214,7 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 		}
 	}
 	
-	if (p_general->function == GENERAL_CTRL_DAC_ENABLE) {
-		res_delta = tlv563x_resolution - m_res_mask;
-		res_shift = abs(res_delta);
-	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
+	if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		adc_channel_count = 0;
 		adc_channel_index = 0;
 			
@@ -329,9 +231,6 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 		debug(("adc_channel_count = %bd\r\n", adc_channel_count));
 	}
 	
-	//debug(("m_chan_mask = %02bx\r\n", m_chan_mask));
-	//debug(("m_res_mask = %02bx\r\n", m_res_mask));
-		
 	return 0;
 }
 
@@ -343,26 +242,11 @@ void process_ctrl_general(uint8_t *p)
 	debug(("process_ctrl_general():\r\n"));
 	debug(("p_general->function = %bd (0x%bx)\r\n", p_general->function, p_general->function));
 	debug(("p_general->mode = %bd (0x%bx)\r\n", p_general->mode, p_general->mode));
-	debug(("p_general->queue = %bd (0x%bx)\r\n", p_general->queue, p_general->queue));
 	debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
-	debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
-		
-	/*
-	process_ctrl_mode_operation(p_general->mode, p_general->queue);
-	process_ctrl_chan_res(p_general->function, p_general->channel_mask, p_general->resolution);
-	process_ctrl_function(p_general->function);
-	*/
 	
 	process_ctrl_mode_operation(p_general);
 	process_ctrl_chan_res(p_general);
 	process_ctrl_function(p_general);
-	
-	/*
-	if (codec_init(m_ctrl_mode, m_ctrl_codec, m_chan_mask, m_res_mask) != CODEC_STATUS_NOERR) {
-		debug(("process_ctrl_chan_res: codec_init call failed\n"));
-		return;
-	}
-	*/
 }
 
 void process_ctrl_runtime(uint8_t *p)
