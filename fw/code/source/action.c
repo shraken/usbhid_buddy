@@ -492,7 +492,6 @@ void build_adc_packet(void)
 {
 	static uint8_t encode_count = 0;
 	static uint16_t data channel_value = 0;
-	general_packet_t data packet;
 	uint8_t data i;
 	uint8_t data current_channel = 0;
 	uint8_t err_code;
