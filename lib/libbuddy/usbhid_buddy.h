@@ -22,7 +22,7 @@
 
 // Defines
 #define BUDDY_USB_VID 0x10C4
-#define BUDDY_USB_PID 0x82CD
+#define BUDDY_USB_PID 0x86CD
 
 #define FREQUENCY_TO_NSEC(freq) ((1.0 / freq) * 1e9)
 #define MAX_CHAR_LENGTH 255
