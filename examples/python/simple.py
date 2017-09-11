@@ -8,7 +8,7 @@ import time
 import signal
 import csv
 
-BUDDY_TEST_ADC_FREQ = 1000      # 1 kHz
+BUDDY_TEST_ADC_FREQ = 4000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 
 hid_handle = None
@@ -22,12 +22,10 @@ def test_seq_dac(handle, fw_info, sample_rate, streaming):
     general_settings.function = bt.GENERAL_CTRL_DAC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.queue = bt.QUEUE_CTRL_WAIT
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
     general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
-    general_settings.resolution = bt.CODEC_BIT_WIDTH_12
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
@@ -46,7 +44,7 @@ def test_seq_dac(handle, fw_info, sample_rate, streaming):
     packet = bt.general_packet_t()
     test_seq_dac_count = 0
 
-    for k in range(0, ((1 << general_settings.resolution) - 1)):
+    for k in range(0, 4095):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.uint16_t_ptr_setitem(packet.channels, i, k)
 
@@ -79,12 +77,8 @@ def test_seq_adc(handle, fw_info, sample_rate, streaming, log_file):
     general_settings.function = bt.GENERAL_CTRL_ADC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.queue = bt.QUEUE_CTRL_SATURATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
-
-    general_settings.resolution = bt.CODEC_BIT_WIDTH_8
-    #general_settings.resolution = bt.CODEC_BIT_WIDTH_10
+    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
     timing_settings.averaging = 1

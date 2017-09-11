@@ -371,11 +371,6 @@
               <FilePath>..\code\source\adc.c</FilePath>
             </File>
             <File>
-              <FileName>data.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\source\data.c</FilePath>
-            </File>
-            <File>
               <FileName>F3xx_USB0_Descriptor.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\F3xx_USB0_Descriptor.c</FilePath>
@@ -429,11 +424,6 @@
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>buddy.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\lib\libbuddy\buddy.c</FilePath>
             </File>
           </Files>
         </Group>
