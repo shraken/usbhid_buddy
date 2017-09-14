@@ -61,22 +61,6 @@ typedef union {unsigned int i; unsigned char c[2];} WORD;
 #define  EP0_PACKET_SIZE         0x40
 #endif /* _USB_LOW_SPEED_ */
 
-/*
-#define  EP1_PACKET_SIZE         0x000A// Can range 0 - 1024 depending on data
-                                       // and transfer type
-
-#define  EP1_PACKET_SIZE_LE      0x0A00// IMPORTANT- this should be
-                                       // Little-Endian version of
-                                       //  EP1_PACKET_SIZE
-
-#define  EP2_PACKET_SIZE         0x000A// Can range 0 - 1024 depending on data
-                                       // and transfer type
-
-#define  EP2_PACKET_SIZE_LE      0x0A00// IMPORTANT- this should be
-                                       // Little-Endian version of
-                                       // EP2_PACKET_SIZE
-*/
-
 #define  EP1_PACKET_SIZE         0x0040// Can range 0 - 1024 depending on data
                                        // and transfer type
 
@@ -178,6 +162,12 @@ void Handle_In1(void);                 // used by SetConfiguration in
                                        // USB_STD_REQ to initialize
                                        // ReadyToTransfer
 void Enable_Out1(void);
+
+void Handle_In2 ();
+void Handle_Out2 ();
+
+void Send_Packet_ISR ();
+void Send_Packet_Foreground ();
 
 // Standard Requests
 void Get_Status(void);                 // These are called for each specific

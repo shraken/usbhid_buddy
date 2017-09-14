@@ -143,16 +143,13 @@ typedef /*code*/ struct
 typedef code struct {
    configuration_descriptor   hid_configuration_descriptor;
    interface_descriptor       hid_interface_descriptor;
-   class_descriptor        hid_descriptor;
-   endpoint_descriptor     hid_endpoint_in_descriptor;
-   endpoint_descriptor     hid_endpoint_out_descriptor;
-}
-hid_configuration_descriptor;
-
-/*
-#define HID_REPORT_DESCRIPTOR_SIZE 0x0062
-#define HID_REPORT_DESCRIPTOR_SIZE_LE 0x6200
-*/
+   class_descriptor        		hid_descriptor;
+   endpoint_descriptor     		hid_endpoint_in_descriptor;
+   endpoint_descriptor     		hid_endpoint_out_descriptor;
+	 interface_descriptor       bulk_interface_descriptor;
+	 endpoint_descriptor     		bulk_endpoint_in_descriptor;
+   endpoint_descriptor     		bulk_endpoint_out_descriptor;
+} buddy_configuration_descriptor;
 
 #define HID_REPORT_DESCRIPTOR_SIZE 0x0026
 #define HID_REPORT_DESCRIPTOR_SIZE_LE 0x2600

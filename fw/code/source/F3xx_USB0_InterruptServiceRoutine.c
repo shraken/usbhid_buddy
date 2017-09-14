@@ -24,6 +24,11 @@ unsigned char EP_STATUS[3] = {EP_IDLE, EP_HALT, EP_HALT};
 
 bit SendPacketBusy = 0;
 
+extern unsigned char xdata OUT_PACKET[];
+extern unsigned char xdata IN_PACKET[];
+extern unsigned char xdata BULK_OUT_PACKET[];
+extern unsigned char xdata BULK_IN_PACKET[];
+
 //-----------------------------------------------------------------------------
 // Local Function Definitions
 //-----------------------------------------------------------------------------
@@ -45,7 +50,8 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char, unsigned int,
                                        // Used for multiple byte
                                        // writes of Endpoint fifos
 
-
+extern U8 data Bulk_In_Packet_Ready;
+extern U8 data Bulk_Out_Packet_Ready;
 //-----------------------------------------------------------------------------
 // Usb_ISR
 //-----------------------------------------------------------------------------
@@ -82,6 +88,14 @@ void Usb_ISR (void) interrupt 8        // Top-level USB ISR
       {                                // data off endpoint 2 fifo
          Handle_Out1 ();
       }
+			if (bIn & rbIN2)                 // Handle In Packet sent, put new data
+			{                                // on endpoint 1 fifo
+					Handle_In2 ();
+			}
+			if (bOut & rbOUT2)               // Handle Out packet received, take
+			{                                // data off endpoint 1 fifo
+					Handle_Out2 ();
+			}
       if (bCommon & rbSUSINT)          // Handle Suspend interrupt
       {
          Usb_Suspend ();
@@ -360,6 +374,106 @@ void Handle_Control (void)
 
 }
 
+// Called from ISR
+void Send_Packet_ISR ()
+{
+   U8 controlReg;
+
+   POLL_WRITE_BYTE(INDEX, 2);           // Set index to endpoint 1 registers
+   POLL_READ_BYTE(EINCSR1, controlReg); // Read contol register for IN_EP1
+
+   if (EP_STATUS[2] != EP_HALT)
+   {
+      // If the IN FIFO has room for a packet
+      if (!(controlReg & rbInINPRDY))
+      {
+         // If In_Packet has data, then write to the IN FIFO
+         if (Bulk_In_Packet_Ready)
+         {
+            // Write new data to IN FIFO
+						Fifo_Write_InterruptServiceRoutine (FIFO_EP2, EP2_PACKET_SIZE,
+                                            (unsigned char*)BULK_IN_PACKET);
+            // Clear in packet ready
+            Bulk_In_Packet_Ready = 0;
+      
+            // Set In Packet ready bit, indicating a packet is ready
+            // to send to the host
+            POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
+         }
+      }
+   }
+}
+
+// Called from foreground
+void Send_Packet_Foreground ()
+{
+   U8 controlReg;
+
+   POLL_WRITE_BYTE(INDEX, 2);           // Set index to endpoint 1 registers
+   POLL_READ_BYTE(EINCSR1, controlReg); // Read contol register for IN_EP1
+
+   if (EP_STATUS[2] != EP_HALT)
+   {
+      // If the IN FIFO has room for a packet
+      if (!(controlReg & rbInINPRDY))
+      {
+         // If In_Packet has data, then write to the IN FIFO
+         if (Bulk_In_Packet_Ready)
+         {
+            // Write new data to IN FIFO
+						Fifo_Write_Foreground (FIFO_EP2, EP2_PACKET_SIZE,
+                    (unsigned char *)BULK_OUT_PACKET);
+					 
+            // Clear in packet ready
+            Bulk_In_Packet_Ready = 0;
+      
+            // Set In Packet ready bit, indicating a packet is ready
+            // to send to the host
+            POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
+         }
+      }
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Receive_Packet
+//-----------------------------------------------------------------------------
+//
+// Return Value : None
+// Parameters   : None
+//
+// Receive the packet from the USB OUT FIFO and copy to Out_Packet if
+// available.
+//
+// - Copy a packet from In_Packet to IN FIFO if available and not halted
+//   and set IN packet ready to eventually transmit the packet to the host
+//
+//-----------------------------------------------------------------------------
+static void Receive_Packet ()
+{
+   U8 count = 0;
+   U8 controlReg;
+
+   POLL_WRITE_BYTE (INDEX, 2);             // Set index to endpoint 1 registers
+   POLL_READ_BYTE (EOUTCSR1, controlReg);  // Read contol register for OUT_EP1
+
+   if (EP_STATUS[2] != EP_HALT)
+   {
+      // If the OUT FIFO has data
+      if (controlReg & rbOutOPRDY)
+      {
+         // If Out_Packet has room for a packet
+         if (!Bulk_Out_Packet_Ready)
+         {
+            POLL_READ_BYTE (EOUTCNTL, count);
+						
+            // Clear Out Packet ready bit
+            POLL_WRITE_BYTE (EOUTCSR1, 0);
+         }
+      }
+   }
+}
+
 //-----------------------------------------------------------------------------
 // Handle_In1
 //-----------------------------------------------------------------------------
@@ -371,10 +485,8 @@ void Handle_Control (void)
 //-----------------------------------------------------------------------------
 void Handle_In1 ()
 {
-	//printf("Handle_In1\r\n");
-	
     EP_STATUS[1] = EP_IDLE;
-	SendPacketBusy = 0;
+		SendPacketBusy = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -386,7 +498,6 @@ void Handle_In1 ()
 //-----------------------------------------------------------------------------
 void Handle_Out1 ()
 {
-
    unsigned char xdata Count = 0;
    unsigned char xdata ControlReg;
 
@@ -418,6 +529,56 @@ void Handle_Out1 ()
 
       ReportHandler_OUT (OUT_BUFFER.Ptr[0]);
    }
+}
+
+void Handle_In2 ()
+{
+   U8 controlReg;
+
+   POLL_WRITE_BYTE (INDEX, 2);           // Set index to endpoint 2 registers
+   POLL_READ_BYTE (EINCSR1, controlReg); // Read contol register for IN_EP2
+
+   // If endpoint is currently halted, send a stall
+   if (EP_STATUS[2] == EP_HALT)
+   {
+      POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
+   }
+   // Otherwise send last updated
+   else
+   {
+      // Clear sent stall if last packet returned a stall
+      if (controlReg & rbInSTSTL)
+      {
+         POLL_WRITE_BYTE (EINCSR1, rbInCLRDT);
+      }
+   }
+
+   Send_Packet_ISR ();
+}
+
+void Handle_Out2 ()
+{
+		U8 controlReg;
+
+		POLL_WRITE_BYTE (INDEX, 2);             // Set index to endpoint 1 registers
+		POLL_READ_BYTE (EOUTCSR1, controlReg);  // Read contol register for OUT_EP1
+
+		// If endpoint is halted, send a stall
+		if (EP_STATUS[2] == EP_HALT)
+		{
+			POLL_WRITE_BYTE (EOUTCSR1, rbOutSDSTL);
+		}
+		// Otherwise read packet from host
+		else
+		{
+				// Clear sent stall bit if last packet was a stall
+				if (controlReg & rbOutSTSTL)
+				{
+					POLL_WRITE_BYTE (EOUTCSR1, rbOutCLRDT);
+				}
+		}
+
+		Receive_Packet ();
 }
 
 void Enable_Out1(void)
@@ -548,8 +709,6 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char addr,
 
 void Force_Stall (void)
 {
-   //printf("Force_Stall invoked\r\n");
-	
    POLL_WRITE_BYTE (INDEX, 0);
    POLL_WRITE_BYTE (E0CSR, rbSDSTL);   // Set the send stall bit
    EP_STATUS[0] = EP_STALL;            // Put the endpoint in stall status

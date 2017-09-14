@@ -34,6 +34,9 @@ extern unsigned char xdata flag_usb_out;
 unsigned char xdata OUT_PACKET[64];
 unsigned char xdata IN_PACKET[64];
 
+unsigned char xdata BULK_OUT_PACKET[64];
+unsigned char xdata BULK_IN_PACKET[64];
+
 // ----------------------------------------------------------------------------
 // Global Constant Declaration
 // ----------------------------------------------------------------------------

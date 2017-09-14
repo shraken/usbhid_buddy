@@ -20,7 +20,7 @@ code const device_descriptor DEVICEDESC =
    0x00,                               // bDeviceProtocol
    EP0_PACKET_SIZE,                    // bMaxPacketSize0
    0xC410,                             // idVendor
-   0xCD82,                             // idProduct
+   0x0240,                             // idProduct
    0x0000,                             // bcdDevice
    0x01,                               // iManufacturer
    0x02,                               // iProduct
@@ -33,14 +33,15 @@ code const device_descriptor DEVICEDESC =
 // "When a Get_Descriptor(Configuration) request is issued,
 // it returns the Configuration descriptor, all Interface descriptors,
 // all Endpoint descriptors, and the HID descriptor for each interface."
-code const hid_configuration_descriptor HIDCONFIGDESC =
+code const buddy_configuration_descriptor BUDDYCONFIGDESC =
 {
 
 { // configuration_descriptor hid_configuration_descriptor
    0x09,                               // Length
    0x02,                               // Type
-   0x2900,                             // Totallength (= 9+9+9+7+7)
-   0x01,                               // NumInterfaces
+   //0x2900,                             // Totallength (= 9+9+9+7+7)
+   0x4000,														 // Totallength (= 9+9+9+7+7 + 9+7+7)
+	 0x02,                               // NumInterfaces
    0x01,                               // bConfigurationValue
    0x00,                               // iConfiguration
    0x80,                               // bmAttributes
@@ -86,9 +87,41 @@ code const hid_configuration_descriptor HIDCONFIGDESC =
    0x05,                               // bDescriptorType
    0x01,                               // bEndpointAddress
    0x03,                               // bmAttributes
+   EP1_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
+   1                                   // bInterval
+},
+
+{ // interface_descriptor bulk_interface_descriptor
+   0x09,                               // bLength
+   0x04,                               // bDescriptorType
+   0x01,                               // bInterfaceNumber
+   0x00,                               // bAlternateSetting
+   0x02,                               // bNumEndpoints
+   0xFF,                               // bInterfaceClass (Vendor specific)
+   0x00,                               // bInterfaceSubClass
+   0x00,                               // bInterfaceProcotol
+   0x00                                // iInterface
+},
+
+// IN bulk endpoint
+{ // endpoint_descriptor bulk_endpoint_in_descriptor
+   0x07,                               // bLength
+   0x05,                               // bDescriptorType
+   0x82,                               // bEndpointAddress
+   0x02,                               // bmAttributes
    EP2_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
    1                                   // bInterval
-}
+},
+
+// OUT bulk endpoint
+{ // endpoint_descriptor bulk_endpoint_out_descriptor
+   0x07,                               // bLength
+   0x05,                               // bDescriptorType
+   0x02,                               // bEndpointAddress
+   0x02,                               // bmAttributes
+   EP2_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
+   1                                   // bInterval
+},
 
 };
 

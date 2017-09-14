@@ -30,6 +30,11 @@ code firmware_info_t fw_info = {
 	//FIRMWARE_INFO_DAC_TYPE_TLV5632,
 };
 
+U8 data Bulk_In_Packet_Ready = 0;
+U8 data Bulk_Out_Packet_Ready = 0;
+
+extern unsigned char xdata BULK_IN_PACKET[64];
+
 void print_device_info(void)
 {
     printf("                                 \r\n");
@@ -71,6 +76,9 @@ void print_device_info(void)
 //-----------------------------------------------------------------------------
 void main(void)
 {
+		U8 data count = 0;
+		U8 data EA_Save;
+	
     System_Init();
 		gpio_init();
 	
@@ -90,7 +98,18 @@ void main(void)
     debug(("TLV563x_DAC_Init passed\r\n"));
 
     while (1) {
-			process();
+			//process();
+			
+			EA_Save = EA;
+      EA = 0;
+			
+			if (!Bulk_In_Packet_Ready) {
+				BULK_IN_PACKET[0] = count++;
+				Bulk_In_Packet_Ready = 1;
+				Send_Packet_Foreground ();
+			}
+			
+			EA = EA_Save;
 	}
 }
 

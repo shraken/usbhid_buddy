@@ -12,7 +12,7 @@ extern device_descriptor code DEVICEDESC;   // These are created in F3xx_USB0_De
 extern unsigned char* xdata STRINGDESCTABLE[];
 
 // Additional declarations for HID:
-extern code const hid_configuration_descriptor HIDCONFIGDESC;
+extern code const buddy_configuration_descriptor BUDDYCONFIGDESC;
 extern hid_report_descriptor code HIDREPORTDESC;
 
 extern setup_buffer xdata SETUP;             // Buffer for current device request
@@ -34,11 +34,14 @@ extern unsigned char xdata USB0_STATE;       // Determines current usb device st
 // Redefine existing variable names to refer to the descriptors within the
 // HID configuration descriptor.
 // This minimizes the impact on the existing source code.
-#define ConfigDesc      (HIDCONFIGDESC.hid_configuration_descriptor)
-#define InterfaceDesc   (HIDCONFIGDESC.hid_interface_descriptor)
-#define HidDesc      (HIDCONFIGDESC.hid_descriptor)
-#define Endpoint1Desc   (HIDCONFIGDESC.hid_endpoint_in_descriptor)
-#define Endpoint2Desc   (HIDCONFIGDESC.hid_endpoint_out_descriptor)
+#define ConfigDesc      	(BUDDYCONFIGDESC.hid_configuration_descriptor)
+#define InterfaceHidDesc 	(BUDDYCONFIGDESC.hid_interface_descriptor)
+#define HidDesc      			(BUDDYCONFIGDESC.hid_descriptor)
+#define Endpoint1InDesc   (BUDDYCONFIGDESC.hid_endpoint_in_descriptor)
+#define Endpoint1OutDesc  (BUDDYCONFIGDESC.hid_endpoint_out_descriptor)
+#define InterfaceBulkDesc (BUDDYCONFIGDESC.bulk_interface_descriptor)
+#define Endpoint2InDesc   (BUDDYCONFIGDESC.bulk_endpoint_in_descriptor)
+#define Endpoint2OutDesc  (BUDDYCONFIGDESC.bulk_endpoint_out_descriptor)
 
 //-----------------------------------------------------------------------------
 // Get_Status
@@ -342,8 +345,13 @@ void Get_Descriptor (void)             // This routine sets the data pointer
          break;
 
       case DSC_INTERFACE:
-         DATAPTR = (unsigned char*) &InterfaceDesc;
-         DATASIZE = InterfaceDesc.bLength;
+				 //printf("DSC_INTERFACE\r\n");
+			
+				 //if ( (SETUP.wValue.c[LSB] == 0x00) )
+         //{
+						DATAPTR = (unsigned char*) &InterfaceHidDesc;
+						DATASIZE = InterfaceHidDesc.bLength;
+				 //}
          break;
 
       case DSC_ENDPOINT:
@@ -353,13 +361,23 @@ void Get_Descriptor (void)             // This routine sets the data pointer
          // OUT endpoint 1 is referred to as Endpoint 2.
          if ( (SETUP.wValue.c[LSB] == IN_EP1) )
          {
-            DATAPTR = (unsigned char*) &Endpoint1Desc;
-            DATASIZE = Endpoint1Desc.bLength;
+            DATAPTR = (unsigned char*) &Endpoint1InDesc;
+            DATASIZE = Endpoint1InDesc.bLength;
          }
          else if ( (SETUP.wValue.c[LSB] == OUT_EP1) )
          {
-            DATAPTR = (unsigned char*) &Endpoint2Desc;
-            DATASIZE = Endpoint2Desc.bLength;
+            DATAPTR = (unsigned char*) &Endpoint1OutDesc;
+            DATASIZE = Endpoint1OutDesc.bLength;
+         } 
+				 else if ( (SETUP.wValue.c[LSB] == IN_EP2) )
+         {
+            DATAPTR = (unsigned char*) &Endpoint2InDesc;
+            DATASIZE = Endpoint2InDesc.bLength;
+         }
+				 else if ( (SETUP.wValue.c[LSB] == OUT_EP2) )
+         {
+            DATAPTR = (unsigned char*) &Endpoint2OutDesc;
+            DATASIZE = Endpoint2OutDesc.bLength;
          }
          else
          {
@@ -483,7 +501,8 @@ void Set_Configuration (void)          // This routine allows host to change
                                  // to 1
          USB0_STATE = DEV_CONFIGURED;
          EP_STATUS[1] = EP_IDLE;       // Set endpoint status to idle (enabled)
-
+				 EP_STATUS[2] = EP_IDLE;
+				
          POLL_WRITE_BYTE (INDEX, 1);   // Change index to endpoint 1
          // Set DIRSEL to indicate endpoint 1 is IN/OUT
          POLL_WRITE_BYTE (EINCSR2, rbInSPLIT);
