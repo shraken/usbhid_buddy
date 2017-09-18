@@ -4,7 +4,7 @@
 #include <F3xx_USB0_ReportHandler.h>
 
 extern unsigned char xdata OUT_PACKET[];
-extern unsigned char xdata IN_PACKET[];
+extern unsigned char data IN_PACKET[];
 
 //-----------------------------------------------------------------------------
 // Descriptor Declarations
@@ -74,7 +74,7 @@ code const hid_configuration_descriptor HIDCONFIGDESC =
 { // endpoint_descriptor hid_endpoint_in_descriptor
    0x07,                               // bLength
    0x05,                               // bDescriptorType
-   0x81,                               // bEndpointAddress
+   0x82,                               // bEndpointAddress
    0x03,                               // bmAttributes
    EP1_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
    1                                   // bInterval
@@ -84,7 +84,7 @@ code const hid_configuration_descriptor HIDCONFIGDESC =
 { // endpoint_descriptor hid_endpoint_out_descriptor
    0x07,                               // bLength
    0x05,                               // bDescriptorType
-   0x01,                               // bEndpointAddress
+   0x02,                               // bEndpointAddress
    0x03,                               // bmAttributes
    EP2_PACKET_SIZE_LE,                 // MaxPacketSize (LITTLE ENDIAN)
    1                                   // bInterval

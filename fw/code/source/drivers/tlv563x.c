@@ -76,7 +76,7 @@ void TLV563x_DAC_Reset(void)
 	// set all DAC channels to zero outputs
 	for (i = REG_DAC_A; i <= REG_DAC_H; i++) {
 		TLV563x_write(i, 0);  
-    }
+  }
 }
 
 void TLV563x_DAC_set_power_mode(uint8_t power_state)

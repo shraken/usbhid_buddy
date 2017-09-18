@@ -24,6 +24,8 @@ uint16_t xdata adc_results[MAX_ANALOG_INPUTS];
 
 uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS] = { 0 };
 
+uint16_t adc_timer_count;
+
 uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 	ADC_P2_0,	// ADC0_IN
 	ADC_P2_1,	// ADC1_IN
@@ -72,6 +74,8 @@ void ADC0_ISR (void) interrupt 10
 	static long xdata adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };
 	int xdata i;
 
+	P3 = P3 & ~0x40;
+
 	// clear ADC interrupt
 	AD0INT = 0;
 
@@ -88,6 +92,7 @@ void ADC0_ISR (void) interrupt 10
 				adc_accumulator[i] = 0;
 			}
 				 
+			adc_timer_count++;
 			adc_complete = 1;
 		}
 				
@@ -95,4 +100,6 @@ void ADC0_ISR (void) interrupt 10
 	} else {
 		adc_channel_index++;
 	}
+	
+	P3 = P3 | 0x40;
 }
