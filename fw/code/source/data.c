@@ -36,9 +36,9 @@ int8_t queue_enqueue(buddy_queue *queue, buddy_frame_t *p)
 	if (!queue_is_full(queue)) {
 		queue->tail++;
 		
-		P3 = P3 & ~0x40;
+		//P3 = P3 & ~0x40;
     memcpy(&queue->buffer[queue->tail % queue->max_size], p, sizeof(buddy_frame_t));
-    P3 = P3 | 0x40;
+    //P3 = P3 | 0x40;
 	} else {
 		return -1;
 	}

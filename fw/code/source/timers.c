@@ -144,11 +144,11 @@ void Timer0_ISR (void) interrupt 1
 	timer0_flag = 1;
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
-        if (adc_channel_index == (adc_channel_count - 1)) {
-            AMX0P = adc_mux_tbl[0];
-        }
-        else {
-            AMX0P = adc_mux_tbl[adc_channel_index + 1];
-        }
+		if (adc_channel_index == (adc_channel_count - 1)) {
+			AMX0P = adc_mux_tbl[0];
     }
+    else {
+      AMX0P = adc_mux_tbl[adc_channel_index + 1];
+    }
+  }
 }

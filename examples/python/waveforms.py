@@ -9,9 +9,9 @@ import signal
 import numpy as np
 from scipy import signal as scisig
 
-BUDDY_TEST_DAC_FREQ = 2000     # 1000 Hz
+BUDDY_TEST_DAC_FREQ = 10000     # 1000 Hz
 WAVEFORM_TIME = 20             # 20 seconds
-WAVEFORM_FREQUENCY = 100         # 1 Hz
+WAVEFORM_FREQUENCY = 10         # 1 Hz
 
 hid_handle = None
 hid_info = None
@@ -24,10 +24,9 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     general_settings.function = bt.GENERAL_CTRL_DAC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.queue = bt.QUEUE_CTRL_WAIT
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
     general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
-    general_settings.resolution = bt.CODEC_BIT_WIDTH_12
+    general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
@@ -46,7 +45,9 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     packet = bt.general_packet_t()
     test_seq_dac_count = 0
     
-    y_mag = ((1 << general_settings.resolution) - 1)
+    #y_mag = ((1 << general_settings.resolution) - 1)
+    #y_mag = 255
+    y_mag = 4095
     t = np.linspace(0, WAVEFORM_TIME, sample_rate * WAVEFORM_TIME, endpoint=False)
 
     if wave_type == 'square':    
@@ -74,9 +75,7 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
         if not streaming:
             time.sleep(1.0 / sample_rate)
 
-    if not bt.codec_buffer_empty():
-        print 'test_waveform_dac: flushing the buffer'
-        bt.buddy_flush(handle)
+    bt.buddy_flush(handle)
     time.sleep(0.1)
 
     return 0

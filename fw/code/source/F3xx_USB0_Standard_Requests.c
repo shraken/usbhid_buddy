@@ -104,9 +104,9 @@ void Get_Status (void)                 // This routine returns a two byte
          else
          {
          // Handle case if request is directed to EP 1
-            if (SETUP.wIndex.c[LSB] == IN_EP1)
+            if (SETUP.wIndex.c[LSB] == IN_EP2)
             {
-               if (EP_STATUS[1] == EP_HALT)
+               if (EP_STATUS[2] == EP_HALT)
                {                       // If endpoint is halted,
                                        // return 0x01,0x00
                   DATAPTR = (unsigned char*)&ONES_PACKET;
@@ -176,13 +176,13 @@ void Clear_Feature ()                  // This routine can clear Halt Endpoint
       // The feature selected was HALT_ENDPOINT
       (SETUP.wValue.c[LSB] == ENDPOINT_HALT)  &&
       // And that the request was directed at EP 1 in
-      ((SETUP.wIndex.c[LSB] == IN_EP1) ) )
+      ((SETUP.wIndex.c[LSB] == IN_EP2) ) )
       {
-         if (SETUP.wIndex.c[LSB] == IN_EP1)
+         if (SETUP.wIndex.c[LSB] == IN_EP2)
          {
-            POLL_WRITE_BYTE (INDEX, 1);// Clear feature endpoint 1 halt
+            POLL_WRITE_BYTE (INDEX, 2);// Clear feature endpoint 1 halt
             POLL_WRITE_BYTE (EINCSR1, rbInCLRDT);
-            EP_STATUS[1] = EP_IDLE;    // Set endpoint 1 status back to idle
+            EP_STATUS[2] = EP_IDLE;    // Set endpoint 1 status back to idle
          }
       }
       else
@@ -231,14 +231,14 @@ void Set_Feature (void)                // This routine will set the EP Halt
       if ( (SETUP.bmRequestType == IN_ENDPOINT)&&
       // endpoint feature is selected
       (SETUP.wValue.c[LSB] == ENDPOINT_HALT) &&
-      ((SETUP.wIndex.c[LSB] == IN_EP1)        ||
+      ((SETUP.wIndex.c[LSB] == IN_EP2)        ||
       (SETUP.wIndex.c[LSB] == OUT_EP2) ) )
       {
-         if (SETUP.wIndex.c[LSB] == IN_EP1)
+         if (SETUP.wIndex.c[LSB] == IN_EP2)
          {
-            POLL_WRITE_BYTE (INDEX, 1);// Set feature endpoint 1 halt
+            POLL_WRITE_BYTE (INDEX, 2);// Set feature endpoint 1 halt
             POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
-            EP_STATUS[1] = EP_HALT;
+            EP_STATUS[2] = EP_HALT;
          }
       }
       else
@@ -351,12 +351,12 @@ void Get_Descriptor (void)             // This routine sets the data pointer
          // IN endpoint and an OUT endpoint
          // In the ...Descriptor.c and ...Descriptor.h files,
          // OUT endpoint 1 is referred to as Endpoint 2.
-         if ( (SETUP.wValue.c[LSB] == IN_EP1) )
+         if ( (SETUP.wValue.c[LSB] == IN_EP2) )
          {
             DATAPTR = (unsigned char*) &Endpoint1Desc;
             DATASIZE = Endpoint1Desc.bLength;
          }
-         else if ( (SETUP.wValue.c[LSB] == OUT_EP1) )
+         else if ( (SETUP.wValue.c[LSB] == OUT_EP2) )
          {
             DATAPTR = (unsigned char*) &Endpoint2Desc;
             DATASIZE = Endpoint2Desc.bLength;
@@ -482,11 +482,14 @@ void Set_Configuration (void)          // This routine allows host to change
       {                                // results in configuration being set
                                  // to 1
          USB0_STATE = DEV_CONFIGURED;
-         EP_STATUS[1] = EP_IDLE;       // Set endpoint status to idle (enabled)
+         EP_STATUS[2] = EP_IDLE;       // Set endpoint status to idle (enabled)
 
-         POLL_WRITE_BYTE (INDEX, 1);   // Change index to endpoint 1
+         POLL_WRITE_BYTE (INDEX, 2);   // Change index to endpoint 1
          // Set DIRSEL to indicate endpoint 1 is IN/OUT
-         POLL_WRITE_BYTE (EINCSR2, rbInSPLIT);
+         // Set double buffer (DBIEN) 
+				 POLL_WRITE_BYTE (EINCSR2, rbInSPLIT | rbInDBIEN);
+				 //POLL_WRITE_BYTE (EINCSR2, rbInSPLIT);
+				
          POLL_WRITE_BYTE (INDEX, 0);   // Set index back to endpoint 0
 
          Handle_In1();
@@ -494,7 +497,7 @@ void Set_Configuration (void)          // This routine allows host to change
       else
       {
          USB0_STATE = DEV_ADDRESS;     // Unconfigures device by setting state
-         EP_STATUS[1] = EP_HALT;       // to address, and changing endpoint
+         EP_STATUS[2] = EP_HALT;       // to address, and changing endpoint
                                        // 1 and 2
       }
    }

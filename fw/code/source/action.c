@@ -5,7 +5,6 @@
 #include <F3xx_USB0_ReportHandler.h>
 #include <c8051f3xx.h>
 #include <buddy.h>
-#include <data.h>
 #include <action.h>
 #include <support.h>
 #include <timers.h>
@@ -16,14 +15,11 @@
 #include <utility.h>
 
 extern unsigned char xdata OUT_PACKET[];
-extern unsigned char xdata IN_PACKET[];
+extern unsigned char data IN_PACKET[];
 
-extern uint8_t xdata tlv563x_resolution;
 extern uint8_t xdata timer0_flag;
 
 extern bit SendPacketBusy;
-
-extern buddy_queue data queue_internal;
 
 extern uint16_t xdata adc_results[MAX_ANALOG_INPUTS];
 extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
@@ -34,31 +30,37 @@ extern uint8_t xdata adc_int_dec_max;
 extern uint8_t xdata adc_channel_index;
 extern uint8_t xdata adc_int_dec;
 
-extern buddy_queue queue;
-
 extern code firmware_info_t fw_info;
 
 extern void Delay(void);
 extern void DelayLong(void);
 
 unsigned char xdata flag_usb_out = 0;
+uint8_t new_dac_packet = 0;
 
 uint8_t xdata daq_state;
 
+uint8_t data in_packet_ready = false;
+uint8_t data in_packet_offset = 0;
+
+uint8_t data codec_byte_offset = 0;
+
 uint8_t xdata m_trigger = false;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
-uint8_t xdata m_ctrl_queue = QUEUE_CTRL_SATURATE;
 
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
 uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
 uint8_t xdata m_adc_cfg = DEFAULT_ADC0CF;
 uint8_t xdata m_chan_mask = 0;
-uint8_t xdata m_res_mask = 0;
+uint8_t xdata m_resolution = RESOLUTION_CTRL_HIGH;
+uint8_t xdata m_data_size = 2;
+uint8_t xdata m_chan_number;
+uint8_t data m_chan_enable[BUDDY_CHAN_LENGTH];
 
 int8_t xdata res_delta = 0;
 uint8_t xdata res_shift = 0;
 
-uint8_t xdata processed_out = 0;
+extern uint16_t adc_timer_count;
 
 void ADC_Control_Set(uint8_t ctrl_value)
 {
@@ -75,194 +77,132 @@ void ADC_Configuration_Set(uint8_t ctrl_value)
     m_adc_cfg = ctrl_value;
 }
 
-void update_dac(general_packet_t *packet)
-{	
-	int xdata i;
-	uint16_t xdata dac_chan_value;
-	uint8_t xdata type_dac_shift;
-	
-	//printf("update_dac invoked\r\n");
-	//debug(("m_chan_mask = %02bx\r\n", m_chan_mask));
-
-	for (i = REG_DAC_A; i <= REG_DAC_H; i++) {
-		//debug(("packet->channels[%d] = %d\r\n", i, packet->channels[i]));
-			
-		if (m_chan_mask & (1 << i)) {
-			//printf("res_delta = %bd (%bx)\r\n", res_delta, res_delta);
-			//printf("res_shift = %bd (%bx)\r\n", res_shift, res_shift);
-			
-			//debug(("unmodified value %d (%x)\r\n", 
-			//	packet->channels[i], packet->channels[i]));
-			
-			// adjust the DAC register value to be written to be left adjusted
-			// by proper amount given the DAC bit resolution
-			// 
-			// TLV5630 (12-bit) = 0x000 - 0xFFF (no shift)
-			// TLV5631 (10-bit) = 0x000 - 0xFFC (SHL by 2)
-			// TLV5632 (8-bit)  = 0x000 - 0xFF0 (SHL by 4)
-			
-			switch (fw_info.type_dac) {
-				case FIRMWARE_INFO_DAC_TYPE_TLV5632:
-					//dac_chan_value = (packet->channels[i] << 4);
-					type_dac_shift = 4;
-					break;
-				
-				case FIRMWARE_INFO_DAC_TYPE_TLV5631:
-					//dac_chan_value = (packet->channels[i] << 2);
-					type_dac_shift = 2;
-					break;
-				
-				case FIRMWARE_INFO_DAC_TYPE_TLV5630:
-				default:
-					//dac_chan_value = packet->channels[i];
-					type_dac_shift = 0;
-					break;
-			}
-			
-			//debug(("type_dac_shift = %bd (%bx)\r\n", type_dac_shift));
-			//debug(("DAC resolution compensated value %d (%x)\r\n", 
-			//	dac_chan_value, dac_chan_value));
-			
-			// left/right the incoming DAC code to the correct bit resolution of
-			// the TLV563x DAC
-			// (12 - 8)  = 4 > 0 (shift left)
-			// (12 - 16) = -4 < 0 (shift right)
-			if (res_delta > 0) {
-				dac_chan_value = (packet->channels[i] << (res_shift + type_dac_shift));
-			} else if (res_delta < 0) {
-				if (type_dac_shift > res_shift) {
-					dac_chan_value = (packet->channels[i] << type_dac_shift);
-					dac_chan_value = dac_chan_value >> res_shift;
-				} else {
-					dac_chan_value = (packet->channels[i] >> (res_shift - type_dac_shift));
-				}
-			} else {
-				dac_chan_value = (packet->channels[i] << type_dac_shift);
-			}
-			
-			//debug(("update_dac_count = %d\r\n", update_dac_count++));
-			/*
-			debug(("write chan %d with value %d (%x)\r\n", 
-				i, dac_chan_value, dac_chan_value));
-			*/
-			/*
-			printf("packet->channels[%d] = %u (%x)\r\n", 
-				i, packet->channels[i], packet->channels[i]);
-			*/
-			
-			//printf("write chan %d with value %d (%x)\r\n",
-			//	i, dac_chan_value, dac_chan_value);
-			//printf("%d\r\n", dac_chan_value);
-			//printf("%d\r\n", packet->channels[i]);
-			TLV563x_write(i, dac_chan_value);
-		}
-	}
-}
-
 void process_dac_stream(void)
 {
-	static xdata buddy_frame_t *frame = NULL;
-	general_packet_t xdata packet;
+	static uint8_t decode_count = 0;
+	uint8_t i;
+	uint16_t value;
+	uint8_t count;
+	uint8_t *frame;
 	
-	//printf("process_dac_stream invoked\r\n");
-	//printf("number items = %d\r\n", (int) queue_remain_items());
+	P3 = P3 & ~0x40;
+	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
+	//printf("count = %bd\r\n", count);
+	//printf("decode_count = %bd\r\n", decode_count);
 	
-	// check if last packet decoded from frame, in which
-	// case pull new frame from queue buffer.
-	if (frame) {
-		if (decode_packet(frame, &packet) == CODEC_STATUS_FULL) {
-			//debug(("decode_packet = CODEC_STATUS_FULL\r\n"));
-			if (!queue_is_empty(&queue_internal)) {
-				frame = queue_dequeue(&queue_internal);
-					
-				codec_reset();
-			} else {
-				frame = (buddy_frame_t *) NULL;
-			}
-		}
+	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
+	
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (m_chan_enable[i]) {				
+			if (m_resolution == RESOLUTION_CTRL_HIGH) {
+				value = (*(frame + codec_byte_offset) << 8);
+				value |= *(frame + codec_byte_offset + 1);
+			} else if (m_resolution == RESOLUTION_CTRL_LOW) {
+				value = (*(frame + codec_byte_offset));
 				
-		// both CODEC_STATUS_FULL and CODEC_STATUS_CONTINUE will return
-		// a valid packet
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_LOW);
-		update_dac(&packet);
-		//gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-		
-	} else if ((!frame) && (!queue_is_empty(&queue_internal))) {
-		frame = queue_dequeue(&queue_internal);
-		codec_reset();
+				// if low resolution mode enabled, then shift values
+				// up to equivalent native TLV563x size
+				switch (fw_info.type_dac) {
+					case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
+						value = value << 4;
+						break;
+					
+					case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
+						value = value << 2;
+						break;
+					
+					case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
+					default:
+						// do nothing, already in 8-bit
+						break;
+				}
+			} else {
+				return;
+			}
+			
+			codec_byte_offset += m_data_size;
+			
+			//printf("stream packet.channels[%bd] = %u\r\n", i, value);
+			TLV563x_write(i, value);
+		}
 	}
+	
+	decode_count++;
+
+	// check if the next packet can fit in the packed array
+	if (((codec_byte_offset + (m_data_size * m_chan_number)) > (MAX_REPORT_SIZE - 3)) ||
+     	 (decode_count >= count))	{
+		codec_byte_offset = 0;
+		new_dac_packet = 0;
+		decode_count = 0;
+				 
+		Enable_Out1();
+	}
+	
+	P3 = P3 | 0x40;
+	
+	return;
 }
 
 void process_dac()
 {
-	buddy_frame_t xdata *frame;
-	general_packet_t xdata packet;
+	uint8_t i;
+	uint8_t xdata *frame;
+	uint16_t value;
 
-	//debug(("process_dac()\r\n"));
+	//printf("process_dac()\r\n");
 
-	frame = (buddy_frame_t *) &OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
+	P3 = P3 & ~0x40;
+	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
 	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-		//debug(("m_ctrl_mode = MODE_CTRL_IMMEDIATE\r\n"));
 		// decode packet, don't process the return code but immediately
 		// pull the buffer and send update
 		
-		decode_packet(frame, &packet);
-		codec_reset();
-		
-		update_dac(&packet);
-	} else if (m_ctrl_mode == MODE_CTRL_STREAM) {
-		// add packet to queue
-		//debug(("m_ctrl_mode = MODE_CTRL_STREAM\r\n"));
-	
-		//printf("got MODE_CTRL_STREAM packet\r\n");
-		
-		/*
-		printf("queue_number_items = %d\r\n", queue_number_items());
-		printf("queue_remain_items = %d\r\n", queue_remain_items());
-		printf("queue_is_full = %bd\r\n", queue_is_full());
-		*/
-		
-		/*
-			The logic for stream mode queue is as follows:
-				1. Check if internal queue is full, if not then simply
-				place the frame in the internal queue.  
-				2. If internal queue is full. then check the queue control
-				mode.
-					a. If queue wrap is enabled then check if external memory
-					is enabled, and attempt to enqueue packet in external
-					memory.  If external memory is full then drop the most
-					stale packet in external memory and re-enqueue in the
-					external memory with current frame.  If the external memory
-					is disabled then check if internal queue is full and drop
-					the most stale packet and re-enqueue with current frame.  
-		
-					b. If queue saturation is enabled then check if external
-					memory is enabled, and attempt to enqueue the frame in
-					external memory.  If the external memory is full then drop
-					the current frame.  Otherwise, if external memory is disabled
-					and internal queue is full then drop the current frame.
-		*/
-		
-		if (!queue_is_full(&queue_internal)) {
-			//debug(("process_dac: adding frame to queue\r\n"));
-			queue_enqueue(&queue_internal, frame);
-		} else {
-			if (m_ctrl_queue == QUEUE_CTRL_WRAP) {
-                // throw away next queue entry and add new one
-				debug(("process_dac: queue is full but wrapping\r\n"));
-	
-				queue_dequeue(&queue_internal);
-				queue_enqueue(&queue_internal, frame);
+		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+			if (m_chan_enable[i]) {
+				if (m_resolution == RESOLUTION_CTRL_HIGH) {
+					value = (*(frame + codec_byte_offset) << 8);
+					value |= *(frame + codec_byte_offset + 1);
+				} else if (m_resolution == RESOLUTION_CTRL_LOW) {
+					value = (*(frame + codec_byte_offset));
+				
+					// if low resolution mode enabled, then shift values
+					// up to equivalent native TLV563x size
+					switch (fw_info.type_dac) {
+						case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
+							value = value << 4;
+							break;
+					
+						case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
+							value = value << 2;
+							break;
+					
+						case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
+						default:
+							// do nothing, already in 8-bit
+							break;
+					}
+				} else {
+					return;
+				}
+
+				codec_byte_offset += m_data_size;
+				TLV563x_write(i, value);
 			}
 		}
+		
+		codec_byte_offset = 0;
+		flag_usb_out = 0;
+		Enable_Out1();
+		P3 = P3 | 0x40;
 	}
 }
 
-void process_ctrl_function(uint8_t function)
+void process_ctrl_function(ctrl_general_t *p_general)
 {
 	debug(("process_ctrl_function()\r\n"));
 	
-	if (function == GENERAL_CTRL_DAC_ENABLE) {
+	if (p_general->function == GENERAL_CTRL_DAC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_DAC_ENABLE\r\n"));
 		daq_state = GENERAL_CTRL_DAC_ENABLE;
 		ADC0_Disable();
@@ -271,22 +211,21 @@ void process_ctrl_function(uint8_t function)
 		//TLV563x_DAC_set_power_mode(1);
 		TLV563x_DAC_Reset();
 		m_trigger = false;
-	} else if (function == GENERAL_CTRL_ADC_ENABLE) {
+	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
-		queue_clear(&queue_internal);
 
+		in_packet_offset = 0;
+		in_packet_ready = false;
+		
 		ADC0_Enable();
 		daq_state = GENERAL_CTRL_ADC_ENABLE;
 
 		// disable TLV563x SPI DAC by setting power down (PD) register value
 		TLV563x_DAC_set_power_mode(0);
-	} else if (function == GENERAL_CTRL_NONE) {
+	} else if (p_general->function == GENERAL_CTRL_NONE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
 		
-		//printf("queue_clear invoked\r\n");
-		queue_clear(&queue_internal);
-		daq_state = GENERAL_CTRL_NONE;
-							
+		daq_state = GENERAL_CTRL_NONE;					
 		ADC0_Disable();
 			
 		// turn off RX and TX LED
@@ -294,32 +233,41 @@ void process_ctrl_function(uint8_t function)
 		//gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_HIGH);
 		txrx_leds_off();
 	}
-						
-	// clear data queue for stream messages
-	//printf("queue_clear 2 invoked\r\n");
-	queue_clear(&queue_internal);
 }
 
-void process_ctrl_mode_operation(uint8_t mode, uint8_t queue_type)
+void process_ctrl_mode_operation(ctrl_general_t *p_general)
 {
 	debug(("process_ctrl_mode_operation\r\n"));
-	m_ctrl_mode = mode;
-	m_ctrl_queue = queue_type;
+	m_ctrl_mode = p_general->mode;
 }
 
-int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
+int process_ctrl_chan_res(ctrl_general_t *p_general)
 {
-	int xdata i;
+	int i;
 	
 	debug(("process_ctrl_channel_resolution\r\n"));
 	
-	m_chan_mask = chan_mask;
-	m_res_mask = res;
-		
-	if (function == GENERAL_CTRL_DAC_ENABLE) {
-		res_delta = tlv563x_resolution - m_res_mask;
-		res_shift = abs(res_delta);
-	} else if (function == GENERAL_CTRL_ADC_ENABLE) {
+	m_chan_mask = p_general->channel_mask;
+	m_resolution = p_general->resolution;
+	
+	if (m_resolution == RESOLUTION_CTRL_HIGH) {
+		m_data_size = 2;
+	} else if (m_resolution == RESOLUTION_CTRL_LOW) {
+		m_data_size = 1;
+	}
+	
+	// get number of channels activated
+	m_chan_number = 0;
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (m_chan_mask & (1 << i)) {
+			m_chan_enable[i] = 1;
+			m_chan_number++;	
+		} else {
+			m_chan_enable[i] = 0;
+		}
+	}
+	
+	if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		adc_channel_count = 0;
 		adc_channel_index = 0;
 			
@@ -336,14 +284,6 @@ int process_ctrl_chan_res(uint8_t function, uint8_t chan_mask, uint8_t res)
 		debug(("adc_channel_count = %bd\r\n", adc_channel_count));
 	}
 	
-	//debug(("m_chan_mask = %02bx\r\n", m_chan_mask));
-	//debug(("m_res_mask = %02bx\r\n", m_res_mask));
-				
-	if (codec_init(m_ctrl_mode, m_chan_mask, m_res_mask) != CODEC_STATUS_NOERR) {
-		debug(("process_ctrl_chan_res: codec_init call failed\n"));
-		return -1;
-	}
-		
 	return 0;
 }
 
@@ -352,17 +292,15 @@ void process_ctrl_general(uint8_t *p)
 	ctrl_general_t xdata *p_general;
 	
 	p_general = (ctrl_general_t *) p;
-	//debug(("process_ctrl_general():\r\n"));
-	//debug(("p_general->function = %bd (0x%bx)\r\n", p_general->function, p_general->function));
-	//debug(("p_general->mode = %bd (0x%bx)\r\n", p_general->mode, p_general->mode));
-	//debug(("p_general->operation = %bd (0x%bx)\r\n", p_general->operation, p_general->operation));
-	//debug(("p_general->queue = %bd (0x%bx)\r\n", p_general->queue, p_general->queue));
-	//debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
-	//debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
-				
-	process_ctrl_mode_operation(p_general->mode, p_general->queue);
-	process_ctrl_chan_res(p_general->function, p_general->channel_mask, p_general->resolution);
-	process_ctrl_function(p_general->function);
+	debug(("process_ctrl_general():\r\n"));
+	debug(("p_general->function = %bd (0x%bx)\r\n", p_general->function, p_general->function));
+	debug(("p_general->mode = %bd (0x%bx)\r\n", p_general->mode, p_general->mode));
+	debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
+	debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
+	
+	process_ctrl_mode_operation(p_general);
+	process_ctrl_chan_res(p_general);
+	process_ctrl_function(p_general);
 }
 
 void process_ctrl_runtime(uint8_t *p)
@@ -455,28 +393,6 @@ void process_ctrl_runtime(uint8_t *p)
 	ADC0_Set_Reference(adc_reg_value);
 }
 
-/*
-void process_ctrl_register(uint8_t *p)
-{
-		ctrl_register_t *p_registers;
-	
-		p_registers = (ctrl_register_t *) p;
-		debug(("process_ctrl_register():\r\n"));
-		debug(("p_registers->adc_ctrl = %bd (0x%bx)\r\n", p_registers->adc_ctrl, p_registers->adc_ctrl));
-		debug(("p_registers->adc_ref = %bd (0x%bx)\r\n", p_registers->adc_ref, p_registers->adc_ref));
-		debug(("p_registers->adc_cfg = %bd (0x%bx)\r\n", p_registers->adc_cfg, p_registers->adc_cfg));
-				
-		if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
-				TLV563x_write(REG_CTRL0, p_registers->dac_ctrl0);
-				TLV563x_write(REG_CTRL1, p_registers->dac_ctrl1);
-		} else if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
-				ADC0_Set_Control(p_registers->adc_ctrl);
-				ADC0_Set_Configuration(p_registers->adc_cfg);
-				ADC0_Set_Configuration(p_registers->adc_ref);
-		}
-}
-*/
-
 void process_ctrl_timing(uint8_t *p)
 {
 	ctrl_timing_t xdata *p_timing;
@@ -531,38 +447,7 @@ int process_ctrl()
 void process_out()
 {
 	uint8_t xdata app_code;
-
-	// if stream mode is enabled then enable the HID OUT
-	// endpoint only if the previous OUT message has processed
-	// by placing on the queue buffer and that the queue buffer
-	// is not full so as to allow future OUT packet to be
-	// placed into buffer.
-	if (m_ctrl_mode == MODE_CTRL_STREAM) {
-		if (m_ctrl_queue == QUEUE_CTRL_WAIT) {
-			/*
-				USB HID OUT wait logic:
-					1. if external memory is enabled then check to see if external
-					   queue has room for additional frame.  If it does not then
-					   do not enable the USB HID out endpoint.
-					2. if external memory is disabled then check to see if internal
-						memory queue has room for additional frame.  If it does not then
-					   do not enable the USB HID out endpoint.
-			*/
-			
-			if ((processed_out) && (queue_remain_items(&queue_internal) > 0)) {
-				// 7/17/2017: added because otherwise USB host stack locks up and causes
-				// a halt with reset followed by a Clear Feature packet
-				DelayLong();
-				
-				//printf("Enable_Out1 2 internal invoked\r\n");
-				processed_out = 0;
-				Enable_Out1();
-			}
-		} else {
-			processed_out = 0;
-			Enable_Out1();
-		}
-	}
+	uint8_t i;
 	
 	// USB HID OUT message from host has been posted.  Check the
 	// header if its a CTRL, DAC, or TRIGGER message and process
@@ -578,10 +463,9 @@ void process_out()
 				break;
 						
 			case APP_CODE_DAC:
-				//debug(("APP_CODE_DAC\r\n"));
-				//printf("APP_CODE_DAC\r\n");
-	
+				new_dac_packet = 1;
 				/*
+			  printf("APP_CODE_DAC\r\n");
 				for (i = 0; i < 64; i++) {
 					printf("%02bx:", OUT_PACKET[i]);
 				}
@@ -610,12 +494,12 @@ void process_out()
 			default:
 				break;
 		}
-		
-		processed_out = 1;
 
 		// if stream mode not enabled then enable the HID OUT endpoint
 		// immediately after processing
 		if (m_ctrl_mode != MODE_CTRL_STREAM) {
+			Enable_Out1();
+		} else if (app_code != APP_CODE_DAC) {
 			Enable_Out1();
 		}
 	}
@@ -630,7 +514,7 @@ void process_out()
 		// if oneshot enabled and no trigger received  
 		// timer elapsed, if DAC mode then pull value from DAC queue
 		// and process.
-		if (daq_state == GENERAL_CTRL_DAC_ENABLE) {			
+		if ((daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) {			
 			process_dac_stream();
 		} 
 	}
@@ -638,158 +522,80 @@ void process_out()
 
 void build_adc_packet(void)
 {
-	//static uint16_t data channel_value = 0;
-	//static uint8_t channel_value = 0;
-	buddy_frame_t xdata *frame;
-	general_packet_t data packet;
-	uint8_t xdata err_code;
-	uint8_t data current_channel;
+	static uint8_t encode_count = 0;
+	static uint16_t data channel_value = 0;
 	uint8_t data i;
-	int8_t data delta_width;
+	uint8_t data current_channel = 0;
+	uint8_t err_code;
+	uint16_t data value;
 	
-	// calculate bitshift left/right required to adjust ADC values
-	// to the expected bit width
-
-	delta_width = ADC_BIT_SIZE - m_res_mask;
-
+	// after IN_PACKET is copied into IN USB EP the in_packet_ready
+	// will be set to false
+	if (in_packet_ready) {
+		printf("build_adc_packet: in_packet_ready = true -- discard\r\n");
+		return;
+	}
+	
 	//P3 = P3 & ~0x40;
-	current_channel = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (m_chan_mask & (1 << i)) {
-			/*
-			debug(("adc_mux_ref_tbl[%bd] = %bx\r\n", i, adc_mux_ref_tbl[i]));
-			debug(("adc_mux_tbl[%bd] = %bx\r\n", current_channel, adc_mux_tbl[current_channel]));
-			debug(("adc_results[%bd] = %u\r\n\r\n", current_channel, adc_results[current_channel]));
-			*/
+	  if (m_chan_enable[i]) {
 			
 			#if defined(ADC_TEST)
-			current_channel++;
-			//channel_value = (channel_value + 1) % 255;
-			//channel_value = channel_value++;
-			
-			packet.channels[i] = channel_value++;
-			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
+			value = channel_value++;
+			//value = adc_timer_count;
 			#else
-
-			if (delta_width < 0) {
-				packet.channels[i] = adc_results[current_channel] << abs(delta_width);
-			} else if (delta_width > 0) {
-				packet.channels[i] = adc_results[current_channel] >> delta_width;
-			} else {
-				packet.channels[i] = adc_results[current_channel];
-			}
-
-			//printf("packet.channels[%bd] = %d\r\n", i, packet.channels[i]);
-			
+			value = adc_results[current_channel];
 			current_channel++;
 			#endif
-		}
-	}
-  //P3 = P3 | 0x40;
-	
-	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-		codec_reset();
-		codec_clear();
 			
-		err_code = encode_packet(&packet);
-	} else if (m_ctrl_mode == MODE_CTRL_STREAM) {
-		//P3 = P3 & ~0x40;
-		err_code = encode_packet(&packet);
-		//P3 = P3 | 0x40;
-        
-		adc_complete = 0;
-        
-    //P3 = P3 & ~0x40;
-		if (err_code == CODEC_STATUS_FULL) {
-			frame = codec_get_buffer();
-						
-			if (!queue_is_full(&queue_internal)) {
-				//debug(("build_adc_packet: add item to stream queue\r\n"));
-					
-        //P3 = P3 & ~0x40;
-				queue_enqueue(&queue_internal, frame);
-        //P3 = P3 | 0x40;
-                
-				//debug(("after enqueue = %ld\r\n", queue_remain_items()));
-				//debug(("after enqueue tail = %ld\r\n", queue.tail));
+			if (m_resolution == RESOLUTION_CTRL_HIGH) {
+				IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset] = ((value & 0xFF00) >> 8);
+				IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset + 1] = (value & 0xFF);
+			} else if (m_resolution == RESOLUTION_CTRL_LOW) {				
+				IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset] = ((value >> 2) & 0xFF);
 			} else {
-				if (m_ctrl_queue == QUEUE_CTRL_WRAP) {
-					//printf("process_dac: wrap on internal queue 1\r\n");
-					debug(("build_adc_packet: queue is full but wrapping\r\n"));
-					queue_dequeue(&queue_internal);
-					queue_enqueue(&queue_internal, frame);
-				} else if (m_ctrl_queue ==  QUEUE_CTRL_SATURATE) {
-					printf("build_adc_packet: queue is exhausted\r\n");
-					
-					// internal and external queue full -- do nothing
-					debug(("process_dac: queue is full\r\n"));
-				} else {
-					printf("build_adc_packet: queue is full\r\n");
-					//debug(("build_adc_packet: queue is full\r\n"));
-				}
+				return;
 			}
-				
-      //P3 = P3 & ~0x40;
-			codec_reset();
-			codec_clear();
-      //P3 = P3 | 0x40;
+			
+			in_packet_offset += m_data_size;
 		}
-        
-    //P3 = P3 | 0x40;
 	}
+	
+	encode_count++;
+	
+	// check if subsequent packet will overflow buffer
+	if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
+		  ((in_packet_offset + (m_data_size * m_chan_number)) > (MAX_REPORT_SIZE - 3))) {
+		IN_PACKET[BUDDY_APP_INDIC_OFFSET] = encode_count;
+				
+	  encode_count = 0;
+		in_packet_ready = true;
+		in_packet_offset = 0;
+	}
+	//P3 = P3 | 0x40;
 }
 
-void process_in()
+void process_in(void)
 {
-	buddy_frame_t xdata *frame;
 	static uint8_t xdata in_counter = 0;
-
-	// adc mode: if (daq_state = GENERAL_CTRL_ADC_ENABLE)
-	//   - if m_ctrl_mode != stream mode and adc_complete then immediately
-	//			copy frame to USBHID IN buffer
-	//   - if m_ctrl_mode = stream mode then check outgoing buffer and copy
-	//			frame to USBHID IN buffer
-	//   - for either case invoke the SendPacket routine to notify USB stack
-	// 			that outgoing USBHID IN buffer packet is ready
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		if (adc_complete) {
 			//P3 = P3 & ~0x40;
 			build_adc_packet();
+			adc_complete = 0;
 			//P3 = P3 | 0x40;
-			//adc_complete = 0;
 		}
 		
 		if (!SendPacketBusy) {
-			//if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-			if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) && (adc_complete)) {
-				//debug(("process_in: m_ctrl_mode == MODE_CTRL_IMMEDIATE\r\n"));
-				//printf("process_in: m_ctrl_mode == MODE_CTRL_IMMEDIATE\r\n");
-				adc_complete = 0;
-			
+			if (in_packet_ready) {
+				in_packet_ready = false;
 				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
-				//memcpy(&IN_PACKET[USBHID_APP_INDIC_OFFSET], codec_get_buffer(), sizeof(buddy_frame_t));
-				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], codec_get_buffer(), (MAX_OUT_SIZE - 3));
-							
-				tx_led_toggle();
-			} else if ((m_ctrl_mode == MODE_CTRL_STREAM) && (!queue_is_empty(&queue_internal))) {
-				//debug(("process_in: m_ctrl_mode == MODE_CTRL_STREAM\r\n"));
-							
-				frame = queue_dequeue(&queue_internal);
-				//debug(("queue dequeue, length = %ld\r\n", queue_remain_items()));
-							
-				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
-				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], frame, sizeof(buddy_frame_t));
-			} else {
-				//printf("sending ADC filler packet\r\n");
-				//memset(&IN_PACKET, 0x00, 64);
-				//IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_FILLER | (in_counter++ % BUDDY_MAX_COUNTER);
+				IN_PACKET[BUDDY_TYPE_OFFSET] = IN_DATA;
 				
-				return;
+				//printf("invoke SendPacket with counter %bd\r\n", IN_PACKET[BUDDY_APP_CODE_OFFSET] & 0x7F);
+				SendPacket(IN_DATA);
 			}
-						
-			IN_PACKET[BUDDY_TYPE_OFFSET] = IN_DATA;
-			SendPacket(IN_DATA);
 		}
 	}
 }
@@ -802,5 +608,6 @@ void process()
 	
 	// Device -> Host message
 	// USB IN
+	//process_in();
 	process_in();
 }

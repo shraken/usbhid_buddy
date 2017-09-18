@@ -11,7 +11,7 @@
 // C8051 System Clock Frequency
 #define SYSCLK     48000000
 
-#define MAX_REPORT_SIZE 64
+#define MAX_REPORT_SIZE 63
 #define MAX_OUT_SIZE MAX_REPORT_SIZE
 #define MAX_IN_SIZE MAX_REPORT_SIZE
 
@@ -89,18 +89,16 @@ typedef enum _MODE_CTRL {
 } MODE_CTRL;
 
 /**
- * \enum QUEUE_CTRL
- * \brief defines how the queue operates on the device when encountering
- *		  a full buffer situation.  The frame is dropped if the queue is
- *		  full (saturate), the first item on queue deleted (wrapped), or
- *		  the USB communicated halt (wait).  
+ * \enum RESOLUTION_CTRL 
+ * \brief defines the resolution of the value communicated
+ *		  in USB HID packet.  A high resolution uses 16-bits
+ *		  for each value while a low resolution uses 8-bits.	
  * @see ctrl_general_t
  */
-typedef enum _QUEUE_CTRL {
-	QUEUE_CTRL_SATURATE = 0,
-	QUEUE_CTRL_WRAP,
-	QUEUE_CTRL_WAIT
-} QUEUE_CTRL;
+typedef enum _RESOLUTION_CTRL {
+	RESOLUTION_CTRL_LOW = 0, // 8-bit
+	RESOLUTION_CTRL_HIGH,	 // 16-bit
+} RESOLUTION_CTRL;
 
 /**
  * \enum CODEC_STATUS
@@ -284,7 +282,6 @@ typedef struct _firmware_info_t {
 typedef struct _ctrl_general_t {
 	uint8_t function;
 	uint8_t mode;
-	uint8_t queue;
 	uint8_t channel_mask;
 	uint8_t resolution;
 } ctrl_general_t;
@@ -325,87 +322,5 @@ typedef struct _ctrl_timing_t {
 typedef struct _general_packet_t {
 	uint16_t channels[NUM_DAC_CHANNELS];
 } general_packet_t;
-
-/**
- * \struct buddy_frame_t
- * \brief Encoded packet representing one or more encoded
- *				 packets.  The header `count` field specifies
- *				 the number of packets in the frame and is used by
- *				 the decoder.  The payload 
- */
-typedef struct _buddy_frame_t {
-		uint8_t count;
-		uint8_t payload[MAX_REPORT_SIZE - 3];
-} buddy_frame_t;
-
-/** @brief initializes the codec for encoding/decoding.  Must be called
- *					before the `encode_packet` or `decode_packet` routines are
- *					called.  If streaming boolean is true then packets are encoded
- *					until the frame is completley full, otherwise single packets
- *					are pushed into the frame.
- *  @param streaming boolean indicating if stream mode is enabled
- *	@param channels_mask bitmask of channel values to be decoded or encoded by
- *						subsequent `encode_packet` or `decode_packet` calls.
- *  @param resolution enum of type CODEC_BIT_WIDTH specifying the resolution
- *					requested from the encoder or the resolution of the packed frames
- *				  if decoding.
- *  @return CODEC_STATUS_NOERR on success, CODEC_STATUS_ERROR otherwise for error 
- */
-int codec_init(bool streaming, uint8_t channels_mask, uint8_t resolution);
-
-/** @brief Encodes a general_packet_t structure and packs the result into an
- *					internal frame buffer.
- *  @param packet pointer to a packet type to be encoded
- *  @return CODEC_STATUS_FULL if packet was packed into frame and frame is full,
- *					CODEC_STATUS_CONTINUE if packet was packed into frame and frame is not full,
- *					CODEC_STATUS_ERROR if an error occured
- */
-int encode_packet(general_packet_t *packet);
-
-/** @brief Decodes a general_packet_t structure from the frame.
- *	@param frame pointer to a frame type to be decoded
- *  @param packet pointer to a packet type to be decoded
- *  @return CODEC_STATUS_FULL if frame was decoded into packet and is at end of frame
- *					CODEC_STATUS_CONTINUE if frame was decoded into packet and is not at end of frame
- *					CODEC_STATUS_ERROR if an error occured
- */
-int decode_packet(buddy_frame_t *frame, general_packet_t *packet);
-
-/** @brief Gets a pointer to the current codec frame buffer.
- *	@param frame pointer to a frame type to be decoded
- *  @return CODEC_STATUS_FULL if frame was decoded into packet and is at end of frame
- *					CODEC_STATUS_CONTINUE if frame was decoded into packet and is not at end of frame
- *					CODEC_STATUS_ERROR if an error occured
- */
-buddy_frame_t *codec_get_buffer(void);
-
-/** @brief Resets the bit offset used to calculate how many packets have
- *					been packed into the frame.
- *  @return void
- */
-void codec_reset(void);
-
-/** @brief Clears the current codec frame by resetting the counter and
- *					zeroing out the frame buffer memory.
- *  @return void
- */
-void codec_clear(void);
-
-/** @brief Helper routine for printing a dump of hex values from the
- *					encoder buffer.
- *  @return void
- */
-void codec_dump(void);
-
-/** @brief Specifies if the codec frame buffer is empty (does not have
- *					any packets packed into the frame).
- *  @return boolean, true if empty otherwise false
- */
-bool codec_buffer_empty(void);
-
-/** @brief Specifies if the codec has been initialized
- *  @return boolean, true if initialized otherwise false
- */
-bool is_codec_initialized(void);
 
 #endif

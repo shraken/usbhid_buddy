@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <hidapi.h>
 #include <simple.h>
+#include <buddy.h>
 #include <usbhid_buddy.h>
 #include <support.h>
 #include <utility.h>
@@ -101,43 +102,14 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	active = true;
 	general_settings.function = GENERAL_CTRL_DAC_ENABLE;
 	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
-
-	//general_settings.queue = QUEUE_CTRL_WRAP;
-	//general_settings.queue = QUEUE_CTRL_SATURATE;
-	general_settings.queue = QUEUE_CTRL_WAIT;
-
 	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
 	general_settings.channel_mask = BUDDY_CHAN_0_MASK;
-
-	/*
-	// set bit width of communication
-	switch (fw_info->type_dac) {
-		case FIRMWARE_INFO_DAC_TYPE_TLV5630:
-			general_settings.resolution = CODEC_BIT_WIDTH_12;
-			break;
-
-		case FIRMWARE_INFO_DAC_TYPE_TLV5631:
-			general_settings.resolution = CODEC_BIT_WIDTH_10;
-			break;
-
-		case FIRMWARE_INFO_DAC_TYPE_TLV5632:
-			general_settings.resolution = CODEC_BIT_WIDTH_8;
-			break;
-
-		default:
-			general_settings.resolution = CODEC_BIT_WIDTH_12;
-			break;
-	}
-	*/
-
-	general_settings.resolution = CODEC_BIT_WIDTH_12;
-	//general_settings.resolution = CODEC_BIT_WIDTH_10;
-	//general_settings.resolution = CODEC_BIT_WIDTH_8;
+	general_settings.resolution = RESOLUTION_CTRL_HIGH;
+	//general_settings.resolution = RESOLUTION_CTRL_LOW;
 
 	timing_settings.period = (uint32_t) FREQUENCY_TO_NSEC(sample_rate);
 	
 	runtime_settings.dac_power = RUNTIME_DAC_POWER_ON;
-	
 	runtime_settings.dac_ref = RUNTIME_DAC_REF_EXT;
 	//runtime_settings.dac_ref = RUNTIME_DAC_REF_INT_1V;
 	//runtime_settings.dac_ref = RUNTIME_DAC_REF_INT_2V;
@@ -148,7 +120,8 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	}
 	short_sleep(100);
 
-	for (k = 0; k <= ((1 << general_settings.resolution) - 1); k++) {
+	//for (k = 0; k <= ((1 << general_settings.resolution) - 1); k++) {
+	for (k = 0; k <= 4095; k++) {
 		if (!active) {
 			return 0;
 		}
@@ -195,15 +168,12 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 	active = true;
 	general_settings.function = GENERAL_CTRL_ADC_ENABLE;
 	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
-	general_settings.queue = QUEUE_CTRL_SATURATE;
 	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
 	//general_settings.channel_mask = BUDDY_CHAN_6_MASK | BUDDY_CHAN_0_MASK | BUDDY_CHAN_7_MASK;
 	general_settings.channel_mask = BUDDY_CHAN_1_MASK;
-	
-	//general_settings.resolution = CODEC_BIT_WIDTH_8;
-	general_settings.resolution = CODEC_BIT_WIDTH_10;
-	//general_settings.resolution = CODEC_BIT_WIDTH_12;
-	
+	general_settings.resolution = RESOLUTION_CTRL_HIGH;
+	//general_settings.resolution = RESOLUTION_CTRL_LOW;
+
 	timing_settings.period = (uint32_t) FREQUENCY_TO_NSEC(sample_rate);
 	timing_settings.averaging = 1;
 
@@ -238,12 +208,11 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 			printf("test_seq_adc: buddy_send_adc call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}
-	} while (recv_packets < 1200);
+	} while (recv_packets < 10000);
 
 	return 0;
 }
 
-//int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, char *argv[])
 {
 	buddy_hid_info_t hid_info;

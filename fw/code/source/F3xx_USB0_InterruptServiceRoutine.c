@@ -74,11 +74,11 @@ void Usb_ISR (void) interrupt 8        // Top-level USB ISR
       {                                // or packet transmitted if Endpoint 0
          Handle_Control();             // is in transmit mode
       }
-      if (bIn & rbIN1)                 // Handle In Packet sent, put new data
+      if (bIn & rbIN2)                 // Handle In Packet sent, put new data
       {                                // on endpoint 1 fifo
          Handle_In1 ();
       }
-      if (bOut & rbOUT1)               // Handle Out packet received, take
+      if (bOut & rbOUT2)               // Handle Out packet received, take
       {                                // data off endpoint 2 fifo
          Handle_Out1 ();
       }
@@ -371,10 +371,10 @@ void Handle_Control (void)
 //-----------------------------------------------------------------------------
 void Handle_In1 ()
 {
-	//printf("Handle_In1\r\n");
+	  //printf("Handle_In1\r\n");
 	
-    EP_STATUS[1] = EP_IDLE;
-	SendPacketBusy = 0;
+    EP_STATUS[2] = EP_IDLE;
+		SendPacketBusy = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -390,10 +390,10 @@ void Handle_Out1 ()
    unsigned char xdata Count = 0;
    unsigned char xdata ControlReg;
 
-   POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 2 registers
+   POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 2 registers
    POLL_READ_BYTE (EOUTCSR1, ControlReg);
 
-   if (EP_STATUS[1] == EP_HALT)        // If endpoint is halted, send a stall
+   if (EP_STATUS[2] == EP_HALT)        // If endpoint is halted, send a stall
    {
       POLL_WRITE_BYTE (EOUTCSR1, rbOutSDSTL);
    }
@@ -409,7 +409,7 @@ void Handle_Out1 ()
 
       Setup_OUT_BUFFER ();             // Configure buffer to save
                                        // received data
-      Fifo_Read(FIFO_EP1, OUT_BUFFER.Length, OUT_BUFFER.Ptr);
+      Fifo_Read(FIFO_EP2, OUT_BUFFER.Length, OUT_BUFFER.Ptr);
 
       // Process data according to received Report ID.
       // In systems with Report Descriptors that do not define report IDs,
@@ -422,7 +422,7 @@ void Handle_Out1 ()
 
 void Enable_Out1(void)
 {
-	POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
+	POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 1 registers
 	POLL_WRITE_BYTE (EOUTCSR1, 0);      // Clear Out Packet ready bit
 }
 
@@ -573,24 +573,24 @@ void SendPacket (unsigned char ReportID)
 	bit EAState;
 	unsigned char xdata ControlReg;
 
-	EAState = EA;
-	EA = 0;
+	//EAState = EA;
+	//EA = 0;
 	SendPacketBusy = 1;
 	 
-	POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
+	POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 1 registers
 	
 	// Read contol register for EP 1
     POLL_READ_BYTE (EINCSR1, ControlReg);
 
-   if (EP_STATUS[1] == EP_HALT)        // If endpoint is currently halted,
+   if (EP_STATUS[2] == EP_HALT)        // If endpoint is currently halted,
                                        // send a stall
    {
       POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
    }
-   else if(EP_STATUS[1] == EP_IDLE)
+   else if(EP_STATUS[2] == EP_IDLE)
    {
       // the state will be updated inside the ISR handler
-      EP_STATUS[1] = EP_TX;
+      EP_STATUS[2] = EP_TX;
 
       if (ControlReg & rbInSTSTL)      // Clear sent stall if last
                                        // packet returned a stall
@@ -606,11 +606,11 @@ void SendPacket (unsigned char ReportID)
       ReportHandler_IN_Foreground (ReportID);
 
       // Put new data on Fifo
-      Fifo_Write_Foreground (FIFO_EP1, IN_BUFFER.Length,
+      Fifo_Write_Foreground (FIFO_EP2, IN_BUFFER.Length,
                     (unsigned char *)IN_BUFFER.Ptr);
       POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
                                        // Set In Packet ready bit,
    }                                   // indicating fresh data on FIFO 1
 
-   EA = EAState;
+   //EA = EAState;
 }
