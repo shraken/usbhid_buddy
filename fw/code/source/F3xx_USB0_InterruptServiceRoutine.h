@@ -61,22 +61,6 @@ typedef union {unsigned int i; unsigned char c[2];} WORD;
 #define  EP0_PACKET_SIZE         0x40
 #endif /* _USB_LOW_SPEED_ */
 
-/*
-#define  EP1_PACKET_SIZE         0x000A// Can range 0 - 1024 depending on data
-                                       // and transfer type
-
-#define  EP1_PACKET_SIZE_LE      0x0A00// IMPORTANT- this should be
-                                       // Little-Endian version of
-                                       //  EP1_PACKET_SIZE
-
-#define  EP2_PACKET_SIZE         0x000A// Can range 0 - 1024 depending on data
-                                       // and transfer type
-
-#define  EP2_PACKET_SIZE_LE      0x0A00// IMPORTANT- this should be
-                                       // Little-Endian version of
-                                       // EP2_PACKET_SIZE
-*/
-
 #define  EP1_PACKET_SIZE         0x0040// Can range 0 - 1024 depending on data
                                        // and transfer type
 
@@ -170,11 +154,14 @@ typedef union {unsigned int i; unsigned char c[2];} WORD;
 #define  EP_SetReport            0x07  // Special Control Endpoint State for
                                        // SetReport HID Request
 
+#define FIFO_READ_FUNC	FIFO_Read_xdata
+#define FIFO_WRITE_FUNC	FIFO_Write_xdata
+
 // Function prototypes
 // USB Routines
 void Force_Stall(void);                // Forces a procedural stall on
                                        // Endpoint 0
-void Handle_In1(void);                 // used by SetConfiguration in
+void Handle_In2(void);                 // used by SetConfiguration in
                                        // USB_STD_REQ to initialize
                                        // ReadyToTransfer
 void Enable_Out1(void);

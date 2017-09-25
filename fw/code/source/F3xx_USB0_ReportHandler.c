@@ -32,7 +32,11 @@ void OUT_DATA_ROUTINE(void);
 extern unsigned char xdata flag_usb_out;
 
 unsigned char xdata OUT_PACKET[64];
-unsigned char data IN_PACKET[64];
+unsigned char xdata IN_PACKET[64 * 2];
+
+unsigned char xdata *P_IN_PACKET_SEND = &IN_PACKET[0];
+unsigned char xdata *P_IN_PACKET_RECORD = &IN_PACKET[0];
+unsigned char xdata in_packet_record_cycle = 0;
 
 // ----------------------------------------------------------------------------
 // Global Constant Declaration

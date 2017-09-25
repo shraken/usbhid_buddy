@@ -15,27 +15,32 @@
 #include <utility.h>
 
 extern unsigned char xdata OUT_PACKET[];
-extern unsigned char data IN_PACKET[];
+extern unsigned char xdata IN_PACKET[];
+
+extern unsigned char xdata *P_IN_PACKET_SEND;
+extern unsigned char xdata *P_IN_PACKET_RECORD;
+extern unsigned char xdata in_packet_record_cycle;
 
 extern uint8_t xdata timer0_flag;
 
 extern bit SendPacketBusy;
 
-extern uint16_t xdata adc_results[MAX_ANALOG_INPUTS];
+extern uint16_t data adc_results[MAX_ANALOG_INPUTS];
 extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
 extern uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS];
 extern uint8_t xdata adc_channel_count;
-extern uint8_t xdata adc_complete;
+extern uint8_t data adc_complete;
 extern uint8_t xdata adc_int_dec_max;
-extern uint8_t xdata adc_channel_index;
+extern uint8_t data adc_channel_index;
 extern uint8_t xdata adc_int_dec;
+extern uint16_t xdata adc_timer_count;
 
 extern code firmware_info_t fw_info;
 
 extern void Delay(void);
 extern void DelayLong(void);
 
-unsigned char xdata flag_usb_out = 0;
+uint8_t xdata flag_usb_out = 0;
 uint8_t new_dac_packet = 0;
 
 uint8_t xdata daq_state;
@@ -44,23 +49,16 @@ uint8_t data in_packet_ready = false;
 uint8_t data in_packet_offset = 0;
 
 uint8_t data codec_byte_offset = 0;
-
-uint8_t xdata m_trigger = false;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
 
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
 uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
 uint8_t xdata m_adc_cfg = DEFAULT_ADC0CF;
-uint8_t xdata m_chan_mask = 0;
-uint8_t xdata m_resolution = RESOLUTION_CTRL_HIGH;
-uint8_t xdata m_data_size = 2;
-uint8_t xdata m_chan_number;
+uint8_t data m_chan_mask = 0;
+uint8_t data m_resolution = RESOLUTION_CTRL_HIGH;
+uint8_t data m_data_size = 2;
+uint8_t data m_chan_number;
 uint8_t data m_chan_enable[BUDDY_CHAN_LENGTH];
-
-int8_t xdata res_delta = 0;
-uint8_t xdata res_shift = 0;
-
-extern uint16_t adc_timer_count;
 
 void ADC_Control_Set(uint8_t ctrl_value)
 {
@@ -85,7 +83,7 @@ void process_dac_stream(void)
 	uint8_t count;
 	uint8_t *frame;
 	
-	P3 = P3 & ~0x40;
+	//P3 = P3 & ~0x40;
 	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 	//printf("count = %bd\r\n", count);
 	//printf("decode_count = %bd\r\n", decode_count);
@@ -139,8 +137,7 @@ void process_dac_stream(void)
 		Enable_Out1();
 	}
 	
-	P3 = P3 | 0x40;
-	
+	//P3 = P3 | 0x40;
 	return;
 }
 
@@ -152,7 +149,7 @@ void process_dac()
 
 	//printf("process_dac()\r\n");
 
-	P3 = P3 & ~0x40;
+	//P3 = P3 & ~0x40;
 	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
 	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
 		// decode packet, don't process the return code but immediately
@@ -194,7 +191,7 @@ void process_dac()
 		codec_byte_offset = 0;
 		flag_usb_out = 0;
 		Enable_Out1();
-		P3 = P3 | 0x40;
+		//P3 = P3 | 0x40;
 	}
 }
 
@@ -210,7 +207,6 @@ void process_ctrl_function(ctrl_general_t *p_general)
 		// enable TLV563x SPI DAC by setting power down (PD) register value
 		//TLV563x_DAC_set_power_mode(1);
 		TLV563x_DAC_Reset();
-		m_trigger = false;
 	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
 
@@ -243,12 +239,14 @@ void process_ctrl_mode_operation(ctrl_general_t *p_general)
 
 int process_ctrl_chan_res(ctrl_general_t *p_general)
 {
-	int i;
+	uint8_t i;
 	
 	debug(("process_ctrl_channel_resolution\r\n"));
 	
 	m_chan_mask = p_general->channel_mask;
 	m_resolution = p_general->resolution;
+	
+	//printf("m_chan_mask = %bd (%bx)\r\n", m_chan_mask, m_chan_mask);
 	
 	if (m_resolution == RESOLUTION_CTRL_HIGH) {
 		m_data_size = 2;
@@ -260,9 +258,11 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	m_chan_number = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_chan_mask & (1 << i)) {
+			//printf("process_ctrl_chan_res(): channel %bd activated\r\n", i); 
 			m_chan_enable[i] = 1;
 			m_chan_number++;	
 		} else {
+			//printf("process_ctrl_chan_res(): channel %bd not activated\r\n", i);
 			m_chan_enable[i] = 0;
 		}
 	}
@@ -481,13 +481,14 @@ void process_out()
 						
 			case APP_CODE_TRIGGER:
 				debug(("APP_CODE_TRIGGER\r\n"));
-				m_trigger = true;
 				break;
 							
 			case APP_CODE_INFO:
 				debug(("APP_CODE_INFO\r\n"));
-				IN_PACKET[1] = BUDDY_RESPONSE_VALID;
-				memcpy(&IN_PACKET[2], &fw_info, sizeof(firmware_info_t));
+				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID;
+				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], &fw_info, sizeof(firmware_info_t));
+				
+				P_IN_PACKET_SEND = &IN_PACKET[0];
 				SendPacket(IN_DATA);
 				break;
 						
@@ -522,24 +523,15 @@ void process_out()
 
 void build_adc_packet(void)
 {
-	static uint8_t encode_count = 0;
+	static uint8_t data encode_count = 0;
 	static uint16_t data channel_value = 0;
 	uint8_t data i;
 	uint8_t data current_channel = 0;
-	uint8_t err_code;
 	uint16_t data value;
 	
-	// after IN_PACKET is copied into IN USB EP the in_packet_ready
-	// will be set to false
-	if (in_packet_ready) {
-		printf("build_adc_packet: in_packet_ready = true -- discard\r\n");
-		return;
-	}
-	
-	//P3 = P3 & ~0x40;
+	P3 = P3 & ~0x40;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 	  if (m_chan_enable[i]) {
-			
 			#if defined(ADC_TEST)
 			value = channel_value++;
 			//value = adc_timer_count;
@@ -549,10 +541,10 @@ void build_adc_packet(void)
 			#endif
 			
 			if (m_resolution == RESOLUTION_CTRL_HIGH) {
-				IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset] = ((value & 0xFF00) >> 8);
-				IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset + 1] = (value & 0xFF);
+				*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET) = ((value & 0xFF00) >> 8);
+				*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 1) = (value & 0xFF);
 			} else if (m_resolution == RESOLUTION_CTRL_LOW) {				
-				IN_PACKET[BUDDY_APP_VALUE_OFFSET + in_packet_offset] = ((value >> 2) & 0xFF);
+				*(P_IN_PACKET_RECORD + BUDDY_APP_VALUE_OFFSET + in_packet_offset) = ((value >> 2) & 0xFF);
 			} else {
 				return;
 			}
@@ -566,13 +558,23 @@ void build_adc_packet(void)
 	// check if subsequent packet will overflow buffer
 	if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
 		  ((in_packet_offset + (m_data_size * m_chan_number)) > (MAX_REPORT_SIZE - 3))) {
-		IN_PACKET[BUDDY_APP_INDIC_OFFSET] = encode_count;
+		*(P_IN_PACKET_RECORD + BUDDY_APP_INDIC_OFFSET) = encode_count;
+		P_IN_PACKET_SEND = P_IN_PACKET_RECORD;
+		
+		if (in_packet_record_cycle) {
+			P_IN_PACKET_RECORD = &IN_PACKET[0];
+			in_packet_record_cycle = 0;
+		} else {
+			P_IN_PACKET_RECORD = &IN_PACKET[64];
+			in_packet_record_cycle = 1;
+		}
 				
 	  encode_count = 0;
 		in_packet_ready = true;
 		in_packet_offset = 0;
 	}
-	//P3 = P3 | 0x40;
+	
+	P3 = P3 | 0x40;
 }
 
 void process_in(void)
@@ -580,21 +582,23 @@ void process_in(void)
 	static uint8_t xdata in_counter = 0;
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
+		/*
 		if (adc_complete) {
 			//P3 = P3 & ~0x40;
 			build_adc_packet();
 			adc_complete = 0;
 			//P3 = P3 | 0x40;
 		}
+		*/
 		
 		if (!SendPacketBusy) {
 			if (in_packet_ready) {
 				in_packet_ready = false;
-				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
-				IN_PACKET[BUDDY_TYPE_OFFSET] = IN_DATA;
+				*(P_IN_PACKET_SEND + BUDDY_APP_CODE_OFFSET) = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
 				
-				//printf("invoke SendPacket with counter %bd\r\n", IN_PACKET[BUDDY_APP_CODE_OFFSET] & 0x7F);
+				//P3 = P3 & ~0x40;
 				SendPacket(IN_DATA);
+				//P3 = P3 | 0x40;
 			}
 		}
 	}

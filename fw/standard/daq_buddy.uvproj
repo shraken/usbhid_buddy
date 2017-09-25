@@ -310,7 +310,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>..\code\include</IncludePath>
             </VariousControls>
           </Ax51>
           <Lx51>
@@ -354,6 +354,16 @@
               <FileName>STARTUP.A51</FileName>
               <FileType>2</FileType>
               <FilePath>..\code\A51\STARTUP.A51</FilePath>
+            </File>
+            <File>
+              <FileName>FIFO_RD_XD.a51</FileName>
+              <FileType>2</FileType>
+              <FilePath>..\code\A51\FIFO_RD_XD.a51</FilePath>
+            </File>
+            <File>
+              <FileName>FIFO_WT_XD.a51</FileName>
+              <FileType>2</FileType>
+              <FilePath>..\code\A51\FIFO_WT_XD.a51</FilePath>
             </File>
           </Files>
         </Group>

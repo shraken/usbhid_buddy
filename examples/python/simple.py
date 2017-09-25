@@ -8,7 +8,7 @@ import time
 import signal
 import csv
 
-BUDDY_TEST_ADC_FREQ = 25000      # 1 kHz
+BUDDY_TEST_ADC_FREQ = 20000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 50000       # 5 Hz
 
 hid_handle = None
@@ -45,7 +45,7 @@ def test_seq_dac(handle, fw_info, sample_rate, streaming):
     packet = bt.general_packet_t()
     test_seq_dac_count = 0
 
-    for k in range(0, 4095):
+    for k in range(0, 4095 + 1):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.uint16_t_ptr_setitem(packet.channels, i, k)
 
@@ -78,11 +78,11 @@ def test_seq_adc(handle, fw_info, sample_rate, streaming, log_file):
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
     general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
-    #general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
-    general_settings.resolution = bt.RESOLUTION_CTRL_LOW
+    general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
+    #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
-    timing_settings.averaging = 1
+    timing_settings.averaging = 25
 
     runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
 

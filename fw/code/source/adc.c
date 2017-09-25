@@ -8,6 +8,7 @@
 #include <utility.h>
 #include <globals.h>
 #include <gpio.h>
+#include <action.h>
 
 extern uint8_t xdata daq_state;
 
@@ -15,12 +16,12 @@ extern uint8_t xdata m_adc_control;
 extern uint8_t xdata m_adc_ref;
 extern uint8_t xdata m_adc_cfg;
 			
-uint8_t xdata adc_complete = 0;
-uint8_t xdata adc_channel_index = 0;
+uint8_t data adc_complete = 0;
+uint8_t data adc_channel_index = 0;
 uint8_t xdata adc_channel_count = 0;
 uint8_t xdata adc_int_dec = 1;
 uint8_t xdata adc_int_dec_max = 1;
-uint16_t xdata adc_results[MAX_ANALOG_INPUTS];            
+uint16_t data adc_results[MAX_ANALOG_INPUTS];            
 
 uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS] = { 0 };
 
@@ -74,7 +75,7 @@ void ADC0_ISR (void) interrupt 10
 	static long xdata adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };
 	int xdata i;
 
-	P3 = P3 & ~0x40;
+	//P3 = P3 & ~0x40;
 
 	// clear ADC interrupt
 	AD0INT = 0;
@@ -91,9 +92,9 @@ void ADC0_ISR (void) interrupt 10
 				adc_results[i] = adc_accumulator[i] / adc_int_dec_max;
 				adc_accumulator[i] = 0;
 			}
-				 
-			adc_timer_count++;
+
 			adc_complete = 1;
+			build_adc_packet();
 		}
 				
 		adc_channel_index = 0;
@@ -101,5 +102,16 @@ void ADC0_ISR (void) interrupt 10
 		adc_channel_index++;
 	}
 	
-	P3 = P3 | 0x40;
+	/*
+	adc_results[adc_channel_index] = ADC0;
+	adc_channel_index++;
+	
+	if (adc_channel_index == adc_channel_count) {
+		adc_complete = 1;
+		build_adc_packet();
+		adc_channel_index = 0;
+	}
+	*/
+	
+	//P3 = P3 | 0x40;
 }
