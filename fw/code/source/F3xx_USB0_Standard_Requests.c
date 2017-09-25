@@ -152,9 +152,7 @@ void Get_Status (void)                 // This routine returns a two byte
 //
 //-----------------------------------------------------------------------------
 void Clear_Feature ()                  // This routine can clear Halt Endpoint
-{                                      // features on endpoint 1
-   //printf("Clear_Feature invoked\r\n");
-	
+{                                      // features on endpoint 2
    // Send procedural stall if device isn't configured
    if ( (USB0_STATE != DEV_CONFIGURED) ||
    // Or request is made to host(remote wakeup not supported)
@@ -180,9 +178,9 @@ void Clear_Feature ()                  // This routine can clear Halt Endpoint
       {
          if (SETUP.wIndex.c[LSB] == IN_EP2)
          {
-            POLL_WRITE_BYTE (INDEX, 2);// Clear feature endpoint 1 halt
+            POLL_WRITE_BYTE (INDEX, 2);// Clear feature endpoint 2 halt
             POLL_WRITE_BYTE (EINCSR1, rbInCLRDT);
-            EP_STATUS[2] = EP_IDLE;    // Set endpoint 1 status back to idle
+            EP_STATUS[2] = EP_IDLE;    // Set endpoint 2 status back to idle
          }
       }
       else
@@ -211,9 +209,7 @@ void Clear_Feature ()                  // This routine can clear Halt Endpoint
 //
 //-----------------------------------------------------------------------------
 void Set_Feature (void)                // This routine will set the EP Halt
-{                                      // feature for endpoint 1
-   //printf("Set_Feature invoked\r\n");
-	
+{                                      // feature for endpoint 2
    // Make sure device is configured, SETUP data
    if ((USB0_STATE != DEV_CONFIGURED) ||
    // is all valid and that request is directed at an endpoint
@@ -236,7 +232,7 @@ void Set_Feature (void)                // This routine will set the EP Halt
       {
          if (SETUP.wIndex.c[LSB] == IN_EP2)
          {
-            POLL_WRITE_BYTE (INDEX, 2);// Set feature endpoint 1 halt
+            POLL_WRITE_BYTE (INDEX, 2);// Set feature endpoint 2 halt
             POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
             EP_STATUS[2] = EP_HALT;
          }
@@ -347,10 +343,10 @@ void Get_Descriptor (void)             // This routine sets the data pointer
          break;
 
       case DSC_ENDPOINT:
-         // This example splits endpoint 1 into an
+         // This example splits endpoint 2 into an
          // IN endpoint and an OUT endpoint
          // In the ...Descriptor.c and ...Descriptor.h files,
-         // OUT endpoint 1 is referred to as Endpoint 2.
+         // OUT endpoint 2 is referred to as Endpoint 2.
          if ( (SETUP.wValue.c[LSB] == IN_EP2) )
          {
             DATAPTR = (unsigned char*) &Endpoint1Desc;
@@ -484,15 +480,15 @@ void Set_Configuration (void)          // This routine allows host to change
          USB0_STATE = DEV_CONFIGURED;
          EP_STATUS[2] = EP_IDLE;       // Set endpoint status to idle (enabled)
 
-         POLL_WRITE_BYTE (INDEX, 2);   // Change index to endpoint 1
-         // Set DIRSEL to indicate endpoint 1 is IN/OUT
+         POLL_WRITE_BYTE (INDEX, 2);   // Change index to endpoint 2
+         // Set DIRSEL to indicate endpoint 2 is IN/OUT
          // Set double buffer (DBIEN) 
 				 POLL_WRITE_BYTE (EINCSR2, rbInSPLIT | rbInDBIEN);
 				 //POLL_WRITE_BYTE (EINCSR2, rbInSPLIT);
 				
          POLL_WRITE_BYTE (INDEX, 0);   // Set index back to endpoint 0
 
-         Handle_In1();
+         Handle_In2();
       }
       else
       {

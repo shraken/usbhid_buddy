@@ -41,8 +41,10 @@ void print_device_info(void)
     printf("                         |___/   \r\n");
 		printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
 				fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
-		printf("   serial id: %u (%08x)\r\n", fw_info.serial);
-		printf("   build datetime: %u (%08x)\r\n", fw_info.flash_datetime);
+		printf("   serial id: %lu (%08lx)\r\n", 
+				fw_info.serial, fw_info.serial);
+		printf("   build datetime: %lu (%08lx)\r\n", 
+				fw_info.flash_datetime, fw_info.flash_datetime);
 	
 	switch (fw_info.type_dac) {
 		case FIRMWARE_INFO_DAC_TYPE_TLV5630:

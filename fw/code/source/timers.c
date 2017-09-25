@@ -11,7 +11,7 @@
 
 extern uint8_t xdata daq_state;
 
-extern uint8_t xdata adc_channel_index;
+extern uint8_t data adc_channel_index;
 extern uint8_t xdata adc_channel_count;
 extern uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS];
 

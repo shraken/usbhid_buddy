@@ -30,8 +30,8 @@ bit SendPacketBusy = 0;
 void Usb_Resume (void);                // Resumes USB operation
 void Usb_Reset (void);                 // Called after USB bus reset
 void Handle_Control (void);            // Handle SETUP packet on EP 0
-void Handle_In1 (void);                // Handle in packet on EP 1
-void Handle_Out1 (void);               // Handle out packet on EP 1
+void Handle_In2 (void);                // Handle in packet on EP 2
+void Handle_Out2 (void);               // Handle out packet on EP 2
 void Usb_Suspend (void);               // This routine called when
                                        // Suspend signalling on bus
 void Fifo_Read (unsigned char, unsigned int, unsigned char *);
@@ -45,6 +45,13 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char, unsigned int,
                                        // Used for multiple byte
                                        // writes of Endpoint fifos
 
+typedef unsigned char BYTE;
+
+extern void FIFO_Read_xdata( BYTE fifo_adr, BYTE n, BYTE xdata * ptr );
+extern void FIFO_Write_xdata( BYTE fifo_adr, BYTE n, BYTE xdata * ptr  );
+
+extern unsigned char xdata *P_IN_PACKET_SEND;
+extern unsigned char xdata *P_IN_PACKET_RECORD;
 
 //-----------------------------------------------------------------------------
 // Usb_ISR
@@ -75,12 +82,12 @@ void Usb_ISR (void) interrupt 8        // Top-level USB ISR
          Handle_Control();             // is in transmit mode
       }
       if (bIn & rbIN2)                 // Handle In Packet sent, put new data
-      {                                // on endpoint 1 fifo
-         Handle_In1 ();
+      {                                // on endpoint 2 fifo
+         Handle_In2 ();
       }
       if (bOut & rbOUT2)               // Handle Out packet received, take
       {                                // data off endpoint 2 fifo
-         Handle_Out1 ();
+         Handle_Out2 ();
       }
       if (bCommon & rbSUSINT)          // Handle Suspend interrupt
       {
@@ -361,7 +368,7 @@ void Handle_Control (void)
 }
 
 //-----------------------------------------------------------------------------
-// Handle_In1
+// Handle_In2
 //-----------------------------------------------------------------------------
 //
 // Handler will be entered after the endpoint's buffer has been
@@ -369,22 +376,23 @@ void Handle_Control (void)
 // signals the foreground routine SendPacket that the Endpoint
 // is ready to transmit another packet.
 //-----------------------------------------------------------------------------
-void Handle_In1 ()
+void Handle_In2 ()
 {
-	  //printf("Handle_In1\r\n");
-	
     EP_STATUS[2] = EP_IDLE;
 		SendPacketBusy = 0;
+	
+		//P3 = P3 & ~0x40;
+		//P3 = P3 | 0x40;
 }
 
 //-----------------------------------------------------------------------------
-// Handle_Out1
+// Handle_Out2
 //-----------------------------------------------------------------------------
 // Take the received packet from the host off the fifo and put it into
 // the OUT_PACKET array.
 //
 //-----------------------------------------------------------------------------
-void Handle_Out1 ()
+void Handle_Out2 ()
 {
 
    unsigned char xdata Count = 0;
@@ -422,7 +430,7 @@ void Handle_Out1 ()
 
 void Enable_Out1(void)
 {
-	POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 1 registers
+	POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 2 registers
 	POLL_WRITE_BYTE (EOUTCSR1, 0);      // Clear Out Packet ready bit
 }
 
@@ -573,11 +581,10 @@ void SendPacket (unsigned char ReportID)
 	bit EAState;
 	unsigned char xdata ControlReg;
 
-	//EAState = EA;
-	//EA = 0;
+	EIE1 &= ~0x02;
 	SendPacketBusy = 1;
 	 
-	POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 1 registers
+	POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 2 registers
 	
 	// Read contol register for EP 1
     POLL_READ_BYTE (EINCSR1, ControlReg);
@@ -602,15 +609,15 @@ void SendPacket (unsigned char ReportID)
       {
          POLL_WRITE_BYTE (EINCSR1, 0x00);
       }
-
-      ReportHandler_IN_Foreground (ReportID);
-
-      // Put new data on Fifo
-      Fifo_Write_Foreground (FIFO_EP2, IN_BUFFER.Length,
-                    (unsigned char *)IN_BUFFER.Ptr);
-      POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
+			
+			*(P_IN_PACKET_SEND + 0x00) = IN_DATA;
+			FIFO_WRITE_FUNC(FIFO_EP2, 
+										  IN_DATA_SIZE + 1,
+										  P_IN_PACKET_SEND);
+			
+			POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
                                        // Set In Packet ready bit,
    }                                   // indicating fresh data on FIFO 1
 
-   //EA = EAState;
+	 EIE1 |= 0x02;
 }
