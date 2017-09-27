@@ -9,8 +9,8 @@ a host polled or asynchronous update mode for maximum flexibility.
 
 The firmware is written in C for the Silicon Labs C8051F380/EFM8UB2 chip.  
 
-No bootloader solution exists currently but support is planned for
-a future release.  
+The open-source gboot bootloader is used.  Support is provided for the Windows
+and Linux platform.   
 
 ## Hardware
 
