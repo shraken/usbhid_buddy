@@ -1,3 +1,12 @@
+/**
+ * @file support.h
+ * @author Nicholas Shrake <shraken@gmail.com>
+ *
+ * @date 2017-09-26
+ * @brief Helper routines for activating status LEDs
+ *			
+ */
+
 #ifndef  _SUPPORT_H_
 #define  _SUPPORT_H_
 

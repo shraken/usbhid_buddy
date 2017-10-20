@@ -1,17 +1,17 @@
+/**
+ * @file adc.h
+ * @author Nicholas Shrake <shraken@gmail.com>
+ *
+ * @date 2017-09-26
+ * @brief Analog to digital converter (ADC) configuration and
+ *				data retrieval routines.
+ *			
+ */
+
 #ifndef  _ADC_H
 #define  _ADC_H
 
 #include <buddy.h>
-
-/*
-//#define DEFAULT_ADC0CN 0x02
-#define DEFAULT_ADC0CN 0x01
-
-//#define DEFAULT_REF0CN 0x03
-#define DEFAULT_REF0CN 0x8F
-
-#define DEFAULT_ADC0CF (((SYSCLK/3000000)-1)<<3)
-*/
 
 #define ADC_BIT_SIZE 10
 #define MAX_ANALOG_INPUTS 8

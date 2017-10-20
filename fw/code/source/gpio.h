@@ -1,3 +1,13 @@
+/**
+ * @file gpio.h
+ * @author Nicholas Shrake <shraken@gmail.com>
+ *
+ * @date 2017-09-26
+ * @brief Simple GPIO wrapper library to set GPIO pin modes and output
+ *				states.  
+ *			
+ */
+
 #ifndef  _GPIO_H_
 #define  _GPIO_H_
 

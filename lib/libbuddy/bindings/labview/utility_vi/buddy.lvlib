@@ -13,5 +13,6 @@
 	<Item Name="init.vi" Type="VI" URL="../VIs/init.vi"/>
 	<Item Name="read adc.vi" Type="VI" URL="../VIs/read adc.vi"/>
 	<Item Name="send dac.vi" Type="VI" URL="../VIs/send dac.vi"/>
+	<Item Name="send_pwm.vi" Type="VI" URL="../VIs/send_pwm.vi"/>
 	<Item Name="trigger.vi" Type="VI" URL="../VIs/trigger.vi"/>
 </Library>

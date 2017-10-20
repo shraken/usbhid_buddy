@@ -296,7 +296,7 @@
             <InterruptVectorAddress>0</InterruptVectorAddress>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>C8051. NDEBUG</Define>
+              <Define>C8051</Define>
               <Undefine></Undefine>
               <IncludePath>..\code\include;..\code\A51;..\code\source;..\code\source\drivers;..\..\lib\libbuddy;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
             </VariousControls>
@@ -434,6 +434,11 @@
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\pwm.c</FilePath>
             </File>
           </Files>
         </Group>

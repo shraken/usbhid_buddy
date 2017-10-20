@@ -9,9 +9,9 @@ import signal
 import numpy as np
 from scipy import signal as scisig
 
-BUDDY_TEST_DAC_FREQ = 10000     # 1000 Hz
+BUDDY_TEST_DAC_FREQ = 1000     # 1000 Hz
 WAVEFORM_TIME = 20             # 20 seconds
-WAVEFORM_FREQUENCY = 10         # 1 Hz
+WAVEFORM_FREQUENCY = 100         # 1 Hz
 
 hid_handle = None
 hid_info = None
@@ -45,7 +45,6 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     packet = bt.general_packet_t()
     test_seq_dac_count = 0
     
-    #y_mag = ((1 << general_settings.resolution) - 1)
     #y_mag = 255
     y_mag = 4095
     t = np.linspace(0, WAVEFORM_TIME, sample_rate * WAVEFORM_TIME, endpoint=False)
@@ -61,7 +60,7 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
 
     for k in y:
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7):
-            bt.uint16_t_ptr_setitem(packet.channels, i, int(k))
+            bt.uint32_t_ptr_setitem(packet.channels, i, int(k))
 
         print 'test_waveform_dac: sending %d packet with value %d' % (test_seq_dac_count, k)
         test_seq_dac_count += 1
