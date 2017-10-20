@@ -8,6 +8,7 @@
 #include <action.h>
 #include <tlv563x.h>
 #include <utility.h>
+#include <pwm.h>
 #include <stdio.h>
 #include <string.h>
 #include <c8051f3xx.h>
@@ -74,6 +75,7 @@ void print_device_info(void)
 void main(void)
 {
     System_Init();
+		
 		gpio_init();
 	
     Usb_Init();
@@ -85,14 +87,37 @@ void main(void)
 		print_device_info();
 		Timer0_Init();
 
-    EA = 1;
-    
     TLV563x_DAC_Init();
-
+		TLV563x_DAC_set_power_mode(0);
+	
     debug(("TLV563x_DAC_Init passed\r\n"));
-
-    while (1) {
+	
+		PCA0MD = 0x00;                      // Disable watchdog timer
+		EA = 1;                             // Globally enable interrupts
+		
+		/*
+		//pwm_init(RUNTIME_PWM_MODE_DUTY_CYCLE, PWM_RESOLUTION_8B, BUDDY_CHAN_0_MASK);
+		//pwm_init(RUNTIME_PWM_MODE_DUTY_CYCLE, PWM_RESOLUTION_16B, BUDDY_CHAN_0_MASK);
+		pwm_init(RUNTIME_PWM_MODE_FREQUENCY, RESOLUTION_CTRL_LOW, BUDDY_CHAN_0_MASK);
+		pwm_set_timebase(RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12);
+		//pwm_set_timebase(RUNTIME_PWM_TIMEBASE_SYSCLK);
+		pwm_set_frequency(BUDDY_CHAN_0, 25000);
+		//pwm_set_duty_cycle(BUDDY_CHAN_0, 50000);
+		//pwm_set_duty_cycle(BUDDY_CHAN_0, 128);
+		pwm_enable(); 
+		
+		//pwm_set_duty_cycle(BUDDY_CHAN_0, 64);
+		while (1) {
+		
+		}
+			
+		while (1) {
+			
+		}
+		*/
+		
+		while (1) {
 			process();
-	}
+		}
 }
 

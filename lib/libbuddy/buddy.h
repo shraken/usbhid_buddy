@@ -62,6 +62,7 @@ typedef enum _GENERAL_CTRL {
 	GENERAL_CTRL_DAC_ENABLE,
 	GENERAL_CTRL_PWM_ENABLE,
 	GENERAL_CTRL_ADC_ENABLE,
+	GENERAL_CTRL_LENGTH
 } GENERAL_CTRL;
 
 /**
@@ -91,13 +92,13 @@ typedef enum _MODE_CTRL {
 /**
  * \enum RESOLUTION_CTRL 
  * \brief defines the resolution of the value communicated
- *		  in USB HID packet.  A high resolution uses 16-bits
- *		  for each value while a low resolution uses 8-bits.	
+ *		  in USB HID packet.
  * @see ctrl_general_t
  */
 typedef enum _RESOLUTION_CTRL {
-	RESOLUTION_CTRL_LOW = 0, // 8-bit
-	RESOLUTION_CTRL_HIGH,	 // 16-bit
+	RESOLUTION_CTRL_LOW = 0, 	// 8-bit
+	RESOLUTION_CTRL_HIGH,	 	// 16-bit
+	RESOLUTION_CTRL_SUPER,   	// 32-bit
 } RESOLUTION_CTRL;
 
 /**
@@ -153,7 +154,39 @@ typedef enum _RUNTIME_ADC_REF {
 typedef enum _RUNTIME_ADC_GAIN {
 	RUNTIME_ADC_GAIN_1X = 0,
 	RUNTIME_ADC_GAIN_2X,
-}  RUNTIME_ADC_GAIN;
+} RUNTIME_ADC_GAIN;
+
+/**
+ * \enum RUNTIME_PWM_MODE 
+ * \brief C8051 PWM mode (configuration)
+ * @see ctrl_runtime_t
+ */
+typedef enum _RUNTIME_PWM_MODE {
+	RUNTIME_PWM_MODE_FREQUENCY,
+	RUNTIME_PWM_MODE_DUTY_CYCLE,
+} RUNTIME_PWM_MODE;
+
+/**
+ * \enum RUNTIME_PWM_MODE 
+ * \brief C8051 PWM mode (configuration)
+ * @see ctrl_runtime_t
+ */
+typedef enum _RUNTIME_PWM_TIMEBASE {
+	RUNTIME_PWM_TIMEBASE_SYSCLK = 0,
+	RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_4 = 1,
+	RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12 = 2,
+	RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW = 3,
+} RUNTIME_PWM_TIMEBASE;
+
+/**
+* \enum BUDDY_DATA_SIZE
+* \brief 
+*/
+typedef enum _BUDDY_DATA_SIZE {
+	BUDDY_DATA_SIZE_LOW = 1,		// 8-bit
+	BUDDY_DATA_SIZE_HIGH = 2,		// 16-bit
+	BUDDY_DATA_SIZE_SUPER = 4,	// 32-bit
+} BUDDY_DATA_SIZE;
 
 /**
  * \enum BUDDY_RESPONSE
@@ -179,7 +212,7 @@ typedef enum _BUDDY_CHANNELS {
 	BUDDY_CHAN_5,
 	BUDDY_CHAN_6,
 	BUDDY_CHAN_7,
-    BUDDY_CHAN_LENGTH,
+  BUDDY_CHAN_LENGTH,
 } BUDDY_CHANNELS;
 
 /**
@@ -288,16 +321,16 @@ typedef struct _ctrl_general_t {
 
 /**
  * \struct ctrl_runtime_t
- * \brief ctrl_runtime_t structure used for DAC and ADC-specific
- *					configuration settings.  Allows control of ADC
- *					reference voltage and gain.  Allows control of DAC
- *					power mode and reference voltage.
+ * \brief ctrl_runtime_t structure used for DAC, ADC, and PWM
+ *					configuration settings.  
  */
 typedef struct _ctrl_runtime_t {
 	uint8_t dac_power;
 	uint8_t dac_ref;
 	uint8_t adc_ref;
 	uint8_t adc_gain;
+	uint8_t pwm_mode;
+	uint8_t pwm_timebase;
 } ctrl_runtime_t;
 
 /**
@@ -320,7 +353,7 @@ typedef struct _ctrl_timing_t {
  *				 are encoded into a frame.
  */
 typedef struct _general_packet_t {
-	uint16_t channels[NUM_DAC_CHANNELS];
+	uint32_t channels[NUM_DAC_CHANNELS];
 } general_packet_t;
 
 #endif

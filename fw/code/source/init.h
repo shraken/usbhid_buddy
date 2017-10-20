@@ -1,3 +1,12 @@
+/**
+ * @file init.h
+ * @author Nicholas Shrake <shraken@gmail.com>
+ *
+ * @date 2017-09-26
+ * @brief Device initialization routines.  
+ *			
+ */
+
 #ifndef _INIT_H
 #define _INIT_H
 

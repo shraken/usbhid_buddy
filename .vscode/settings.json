@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "utility.h": "c",
+        "usbhid_buddy.h": "c"
+    }
+}

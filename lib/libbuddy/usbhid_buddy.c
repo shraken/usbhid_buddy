@@ -10,6 +10,7 @@
 #include <utility.h>
 
 static bool _stream_mode = false;
+static uint8_t _daq_function = 0;
 static uint8_t _chan_mask = 0;
 static uint8_t _chan_number = 0;
 static uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
@@ -21,6 +22,7 @@ static uint8_t encode_count = 0;
 static uint8_t decode_count = 0;
 
 static uint8_t out_hold_buf[MAX_OUT_SIZE] = { 0 };
+static buddy_driver_context driver_ctx = { 0 };
 
 char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH] = {
 	"None",
@@ -86,7 +88,12 @@ int encode(uint8_t *frame, general_packet_t *packet)
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
-			if (_resolution_mode == RESOLUTION_CTRL_HIGH) {
+			if (_resolution_mode == RESOLUTION_CTRL_SUPER) {
+				*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset) = ((packet->channels[i] & 0xFF000000) >> 24);
+				*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 1) = ((packet->channels[i] & 0xFF0000) >> 16);
+				*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 2) = ((packet->channels[i] & 0xFF00) >> 8);
+				*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 3) = (packet->channels[i] & 0xFF);
+			} else if (_resolution_mode == RESOLUTION_CTRL_HIGH) {
 				*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset) = ((packet->channels[i] & 0xFF00) >> 8);
 				*(frame + BUDDY_APP_VALUE_OFFSET + codec_byte_offset + 1) = (packet->channels[i] & 0xFF);
 			} else if (_resolution_mode == RESOLUTION_CTRL_LOW) {
@@ -271,6 +278,129 @@ int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 	return res;
 }
 
+int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
+{
+	int err_code;
+	int i;
+
+	printf("buddy_send_pwm() entered\n");
+	/*
+	// check if PWM frequency mode is enabled and attempt made to send
+	// result using low (8-bit) resolution.  Return error as this is not
+	// allowed -- PWM frequency requires a full 16-bit value.
+	if ((driver_ctx.runtime.pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) &&
+	    (driver_ctx.general.resolution == RESOLUTION_CTRL_LOW)) {
+		return BUDDY_ERROR_INVALID;
+	}
+	*/
+
+	// boundary check PWM value
+	// (1) duty cycle - if resolution is RESOLUTION_CTRL_LOW (8-bit) then
+	// validate that value is greater than or equal to 1 and less than or
+	// equal to 255.  If resolution is RESOLUTION_CTRL_HIGH (16-bit) then
+	// validate that value is greater than or equal to 1 and less than or
+	// equal to 25 .
+	// (2) frequency output - check if (PWM_timbase / (2 * frequency)) as
+	// computed as an integer is less than 1 or greater than 255 and if
+	// so return an BUDDY_ERROR_OUT_OF_BOUND.  This check is performed
+	// regardless of the resolution value
+
+	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (_chan_enable[i]) {
+			printf("buddy_send_pwm(): packet->channels[%d] = %d\n", i, packet->channels[i]);
+
+			switch (driver_ctx.general.resolution) {
+				case RESOLUTION_CTRL_SUPER:
+					// super (32-bit) transfer disallowed for duty cycle mode
+					if (driver_ctx.runtime.pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
+						return BUDDY_ERROR_INVALID;
+					}
+
+					if ((packet->channels[i] < BUDDY_SUPER_RESOLUTION_MIN) || 
+						(packet->channels[i] > BUDDY_SUPER_RESOLUTION_MAX)) {
+						return BUDDY_ERROR_OUT_OF_BOUND;
+					}
+					break;
+
+				case RESOLUTION_CTRL_HIGH:
+					if ((packet->channels[i] < BUDDY_HIGH_RESOLUTION_MIN) || 
+						(packet->channels[i] > BUDDY_HIGH_RESOLUTION_MAX)) {
+						return BUDDY_ERROR_OUT_OF_BOUND;
+					}
+					break;
+
+				case RESOLUTION_CTRL_LOW:
+					if ((packet->channels[i] < BUDDY_LOW_RESOLUTION_MIN) || 
+						(packet->channels[i] > BUDDY_LOW_RESOLUTION_MAX)) {
+						return BUDDY_ERROR_OUT_OF_BOUND;
+					}
+					break;
+
+				default:
+					// resolution is of unknown value -- fail gracefully
+					return BUDDY_ERROR_INVALID;
+
+			}
+
+			if (driver_ctx.runtime.pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
+				float check_value;
+
+				switch (driver_ctx.runtime.pwm_timebase) {
+					case RUNTIME_PWM_TIMEBASE_SYSCLK:
+						check_value	= (SYSCLK / (2 * packet->channels[i]));
+						break;
+
+					case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_4:
+						check_value = ((SYSCLK / 4.0) / (2 * packet->channels[i]));
+						break;
+
+					case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12:
+						check_value = ((SYSCLK / 12.0) / (2 * packet->channels[i]));
+						break;
+
+					case RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW:
+					default:
+						return BUDDY_ERROR_INVALID;
+				}
+
+				// frequency output sets PCA0CPHN so the resulting check_value
+				// must be an unsigned 8-bit integer.
+				if ((check_value < BUDDY_LOW_RESOLUTION_MIN) ||
+					(check_value > BUDDY_LOW_RESOLUTION_MAX)) {
+					return BUDDY_ERROR_OUT_OF_BOUND;	
+				}
+			} else if (driver_ctx.runtime.pwm_mode != RUNTIME_PWM_MODE_DUTY_CYCLE) {
+				return BUDDY_ERROR_INVALID;
+			}
+		}
+	}
+
+	err_code = encode(out_hold_buf, packet);
+	encode_count++;
+
+	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
+		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
+		out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_PWM;
+		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
+
+		printf("buddy_send_pwm() with encode_count = %d\n", encode_count);
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
+			critical(("buddy_send_pwm: buddy_write_packet call failed\n"));
+			return BUDDY_ERROR_GENERAL;
+		}
+
+		encode_count = 0;
+		codec_byte_offset = 0;
+
+		return BUDDY_ERROR_OK;
+	} else if (err_code == CODEC_STATUS_CONTINUE) {
+		return BUDDY_ERROR_OK;
+	} else {
+		printf("buddy_send_pwm: err_code = BUDDY_ERROR_GENERAL\n");
+		return BUDDY_ERROR_GENERAL;
+	}
+}
+
 int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 {
 	int err_code;
@@ -285,8 +415,8 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 
 		printf("buddy_send_dac() with encode_count = %d\n", encode_count);
 		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
-			//critical(("buddy_send_dac: buddy_write_packet call failed\n"));
-			printf("buddy_send_dac: buddy_write_packet call failed\n");
+			critical(("buddy_send_dac: buddy_write_packet call failed\n"));
+			//printf("buddy_send_dac: buddy_write_packet call failed\n");
 			return BUDDY_ERROR_GENERAL;
 		}
 
@@ -356,10 +486,17 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 int buddy_flush(hid_device *handle)
 {
 	if (codec_byte_offset) {
-		printf("flushing the buffer\r\n");
+		//printf("flushing the buffer\r\n");
+
+		if (_daq_function == GENERAL_CTRL_DAC_ENABLE) {
+			out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
+		} else if (_daq_function == GENERAL_CTRL_PWM_ENABLE) {
+			out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_PWM;
+		} else {
+			return BUDDY_ERROR_GENERAL;
+		}
 
 		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-		out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
 		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
 
 		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
@@ -397,6 +534,13 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 		return BUDDY_ERROR_MEMORY;
 	}
 
+	memcpy( (ctrl_general_t *) &driver_ctx.general, 
+			general, sizeof(ctrl_general_t));
+	memcpy( (ctrl_runtime_t *) &driver_ctx.runtime,
+			runtime, sizeof(ctrl_runtime_t));
+	memcpy( (ctrl_timing_t *) &driver_ctx.timing,
+			timing, sizeof(ctrl_timing_t));
+
 	/*
 	debugf("buddy_configure entered\r\n");
 	sprintf(buffer, "handle = %p\r\n", handle);
@@ -409,15 +553,25 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	debugf(buffer);
 	*/
 
+	_daq_function = general->function;
 	_chan_mask = general->channel_mask;
 	_resolution_mode = general->resolution;
 
-	if (_resolution_mode == RESOLUTION_CTRL_HIGH) {
-		_data_size = 2;
-	} else if (_resolution_mode == RESOLUTION_CTRL_LOW) {
-		_data_size = 1;
-	} else {
-		return BUDDY_ERROR_GENERAL;
+	switch (_resolution_mode) {
+		case RESOLUTION_CTRL_SUPER:
+			_data_size = BUDDY_DATA_SIZE_SUPER;
+			break;
+
+		case RESOLUTION_CTRL_HIGH:
+			_data_size = BUDDY_DATA_SIZE_HIGH;
+			break;
+
+		case RESOLUTION_CTRL_LOW:
+			_data_size = BUDDY_DATA_SIZE_LOW;
+			break;
+
+		default:
+			return 10;
 	}
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
@@ -538,13 +692,11 @@ int buddy_trigger(hid_device *handle)
 				(uint8_t *) NULL, 0);
 }
 
-int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info)
+int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_disable)
 {
 	ctrl_general_t general_settings = { 0 };
 
 	//debugf("buddy_cleanup entered\n");
-
-	general_settings.function = GENERAL_CTRL_NONE;
 
 #if !defined(LABVIEW_BUILD)
 	// free the strings from the USB HID device info structure
@@ -570,11 +722,12 @@ int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info)
 	hid_info->str_index_1 = NULL;
 #endif
 
-	general_settings.function = GENERAL_CTRL_NONE;
-
-	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_GENERAL, 
-		(uint8_t *) &general_settings, sizeof(ctrl_general_t)) != BUDDY_ERROR_OK) {
-		return BUDDY_ERROR_GENERAL;
+	if (device_disable) {
+		general_settings.function = GENERAL_CTRL_NONE;
+		if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_GENERAL, 
+			(uint8_t *) &general_settings, sizeof(ctrl_general_t)) != BUDDY_ERROR_OK) {
+			return BUDDY_ERROR_GENERAL;
+		}	
 	}
 
 	hid_close(handle);

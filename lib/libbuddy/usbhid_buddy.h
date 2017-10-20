@@ -29,6 +29,13 @@
 
 #define BUDDY_MAX_IO_ATTEMPTS 5
 
+#define BUDDY_LOW_RESOLUTION_MIN 1
+#define BUDDY_LOW_RESOLUTION_MAX 255
+#define BUDDY_HIGH_RESOLUTION_MIN 1
+#define BUDDY_HIGH_RESOLUTION_MAX 65535
+#define BUDDY_SUPER_RESOLUTION_MIN 1
+#define BUDDY_SUPER_RESOLUTION_MAX 4294967295
+
 typedef struct _buddy_hid_info_t {
 	char *str_mfr;
 	char *str_product;
@@ -36,11 +43,18 @@ typedef struct _buddy_hid_info_t {
 	char *str_index_1;
 } buddy_hid_info_t;
 
+typedef struct _buddy_driver_context {
+	ctrl_general_t general;
+	ctrl_runtime_t runtime;
+	ctrl_timing_t timing;	
+} buddy_driver_context;
+
 typedef enum _BUDDY_ERROR {
 	BUDDY_ERROR_OK = 1,
 	BUDDY_ERROR_GENERAL = 0,
 	BUDDY_ERROR_INVALID = -1,
 	BUDDY_ERROR_MEMORY = -2,
+	BUDDY_ERROR_OUT_OF_BOUND = -3,
 } BUDDY_ERROR;
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
@@ -122,7 +136,7 @@ BUDDY_EXPORT hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t 
  *	@param hid_info pointer to structure to store USB device information
  *  @return BUDDY_ERROR_OK on success, BUDDY_ERROR_GENERAL on failure.
  */
-BUDDY_EXPORT int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info);
+BUDDY_EXPORT int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_disable);
 
 /** @brief sends a USB OUT request with the specified binary data
 *   @param hidapi handle pointer
@@ -133,6 +147,8 @@ BUDDY_EXPORT int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info);
 *   @return BUDDY_ERROR_OK on success, BUDDY_ERROR_GENERAL on failure.
 */
 int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *raw, uint8_t length);
+
+BUDDY_EXPORT int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming);
 
 /** @brief encodes the packet using codec and sends either immediately or if using
 *			streaming then waits for codec buffer to be full before sending.

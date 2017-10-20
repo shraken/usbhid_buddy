@@ -10,6 +10,7 @@
 #include <timers.h>
 #include <adc.h>
 #include <gpio.h>
+#include <pwm.h>
 #include <tlv563x.h>
 #include <globals.h>
 #include <utility.h>
@@ -42,6 +43,7 @@ extern void DelayLong(void);
 
 uint8_t xdata flag_usb_out = 0;
 uint8_t new_dac_packet = 0;
+uint8_t new_pwm_packet = 0;
 
 uint8_t xdata daq_state;
 
@@ -51,12 +53,14 @@ uint8_t data in_packet_offset = 0;
 uint8_t data codec_byte_offset = 0;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
 
+uint8_t xdata m_pwm_mode = RUNTIME_PWM_MODE_FREQUENCY;
+uint8_t xdata m_pwm_timebase = RUNTIME_PWM_TIMEBASE_SYSCLK;
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
 uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
 uint8_t xdata m_adc_cfg = DEFAULT_ADC0CF;
 uint8_t data m_chan_mask = 0;
 uint8_t data m_resolution = RESOLUTION_CTRL_HIGH;
-uint8_t data m_data_size = 2;
+uint8_t data m_data_size = BUDDY_DATA_SIZE_HIGH;
 uint8_t data m_chan_number;
 uint8_t data m_chan_enable[BUDDY_CHAN_LENGTH];
 
@@ -75,94 +79,36 @@ void ADC_Configuration_Set(uint8_t ctrl_value)
     m_adc_cfg = ctrl_value;
 }
 
-void process_dac_stream(void)
+void execute_out_stream(void)
 {
 	static uint8_t decode_count = 0;
 	uint8_t i;
-	uint16_t value;
+	uint32_t value;
 	uint8_t count;
 	uint8_t *frame;
-	
+
 	//P3 = P3 & ~0x40;
 	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
-	//printf("count = %bd\r\n", count);
-	//printf("decode_count = %bd\r\n", decode_count);
-	
 	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
 	
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (m_chan_enable[i]) {				
-			if (m_resolution == RESOLUTION_CTRL_HIGH) {
-				value = (*(frame + codec_byte_offset) << 8);
-				value |= *(frame + codec_byte_offset + 1);
+		if (m_chan_enable[i]) {
+			if (m_resolution == RESOLUTION_CTRL_SUPER) {
+				value = (( ((uint32_t) (*(frame + codec_byte_offset)) ) << 24) | 
+									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) ) << 16) | 
+									 ( ((uint32_t) (*(frame + codec_byte_offset + 2)) ) << 8) | 
+									 (  (uint32_t) (*(frame + codec_byte_offset + 3)) ));
+			} else if (m_resolution == RESOLUTION_CTRL_HIGH) {
+				value =  ( ((uint32_t) (*(frame + codec_byte_offset)) << 8) | 
+								 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) )));
 			} else if (m_resolution == RESOLUTION_CTRL_LOW) {
-				value = (*(frame + codec_byte_offset));
-				
-				// if low resolution mode enabled, then shift values
-				// up to equivalent native TLV563x size
-				switch (fw_info.type_dac) {
-					case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
-						value = value << 4;
-						break;
-					
-					case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
-						value = value << 2;
-						break;
-					
-					case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
-					default:
-						// do nothing, already in 8-bit
-						break;
-				}
+				value = (uint32_t) (*(frame + codec_byte_offset));
 			} else {
 				return;
 			}
 			
-			codec_byte_offset += m_data_size;
-			
-			//printf("stream packet.channels[%bd] = %u\r\n", i, value);
-			TLV563x_write(i, value);
-		}
-	}
-	
-	decode_count++;
-
-	// check if the next packet can fit in the packed array
-	if (((codec_byte_offset + (m_data_size * m_chan_number)) > (MAX_REPORT_SIZE - 3)) ||
-     	 (decode_count >= count))	{
-		codec_byte_offset = 0;
-		new_dac_packet = 0;
-		decode_count = 0;
-				 
-		Enable_Out1();
-	}
-	
-	//P3 = P3 | 0x40;
-	return;
-}
-
-void process_dac()
-{
-	uint8_t i;
-	uint8_t xdata *frame;
-	uint16_t value;
-
-	//printf("process_dac()\r\n");
-
-	//P3 = P3 & ~0x40;
-	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
-	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-		// decode packet, don't process the return code but immediately
-		// pull the buffer and send update
-		
-		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-			if (m_chan_enable[i]) {
-				if (m_resolution == RESOLUTION_CTRL_HIGH) {
-					value = (*(frame + codec_byte_offset) << 8);
-					value |= *(frame + codec_byte_offset + 1);
-				} else if (m_resolution == RESOLUTION_CTRL_LOW) {
-					value = (*(frame + codec_byte_offset));
-				
+			if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
+				if (m_resolution == RESOLUTION_CTRL_LOW) {
 					// if low resolution mode enabled, then shift values
 					// up to equivalent native TLV563x size
 					switch (fw_info.type_dac) {
@@ -179,12 +125,103 @@ void process_dac()
 							// do nothing, already in 8-bit
 							break;
 					}
-				} else {
-					return;
 				}
 
+				TLV563x_write(i, (uint16_t) value);
+			} else if (daq_state == GENERAL_CTRL_PWM_ENABLE) {
+				if (m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
+					pwm_set_frequency(i, value);
+				} else if (m_pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
+					pwm_set_duty_cycle(i, (uint16_t) value);
+				}
+			}
+			
+			codec_byte_offset += m_data_size;
+		}
+	}
+	
+	decode_count++;
+
+	// check if the next packet can fit in the packed array
+	if (((codec_byte_offset + (m_data_size * m_chan_number)) > (MAX_REPORT_SIZE - 3)) ||
+     	 (decode_count >= count))	{
+		codec_byte_offset = 0;
+		
+		if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
+			new_dac_packet = 0;
+		} else if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
+			new_pwm_packet = 0;
+		}
+				 
+		decode_count = 0;		 
+		Enable_Out1();
+	}
+	
+	//P3 = P3 | 0x40;
+	return;	
+}
+
+void execute_out(void)
+{
+	uint8_t i;
+	uint8_t xdata *frame;
+	uint32_t value;
+
+	//P3 = P3 & ~0x40;
+	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
+	if (m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
+		// decode packet, don't process the return code but immediately
+		// pull the buffer and send update
+		
+		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+			if (m_chan_enable[i]) {
+				if (m_resolution == RESOLUTION_CTRL_SUPER) {
+					value = (( ((uint32_t) (*(frame + codec_byte_offset)) ) << 24) | 
+									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) ) << 16) | 
+									 ( ((uint32_t) (*(frame + codec_byte_offset + 2)) ) << 8) | 
+									 ( (uint32_t) (*(frame + codec_byte_offset + 3)) ));
+					//printf("value (super) = %lu (%08lx)\r\n", value, value);
+				} else if (m_resolution == RESOLUTION_CTRL_HIGH) {
+					value =  ( ((uint32_t) (*(frame + codec_byte_offset)) << 8) | 
+									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) )));
+					
+					//printf("value (high) = %lu (%08lx)\r\n", value, value);
+				} else if (m_resolution == RESOLUTION_CTRL_LOW) {
+					value = (uint32_t) (*(frame + codec_byte_offset));
+					
+					//printf("value (low) = %bd (%04bx)\r\n", value, value);
+				}
+				
+				if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
+					if (m_resolution == RESOLUTION_CTRL_LOW) {
+						// if low resolution mode enabled, then shift values
+						// up to equivalent native TLV563x size
+						switch (fw_info.type_dac) {
+							case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
+								value = value << 4;
+								break;
+					
+							case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
+								value = value << 2;
+								break;
+					
+							case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
+							default:
+								// do nothing, already in 8-bit
+								break;
+						}	
+					}
+					
+					TLV563x_write(i, (uint16_t) value);
+				} else if (daq_state == GENERAL_CTRL_PWM_ENABLE) {
+					if (m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
+						pwm_set_frequency(i, value);
+					} else if (m_pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
+						pwm_set_duty_cycle(i, (uint16_t) value);
+					}
+				}
+				
 				codec_byte_offset += m_data_size;
-				TLV563x_write(i, value);
 			}
 		}
 		
@@ -197,37 +234,83 @@ void process_dac()
 
 void process_ctrl_function(ctrl_general_t *p_general)
 {
+	uint8_t pwm_resolution;
+	
 	debug(("process_ctrl_function()\r\n"));
 	
-	if (p_general->function == GENERAL_CTRL_DAC_ENABLE) {
-		debug(("CTRL_GENERAL = GENERAL_CTRL_DAC_ENABLE\r\n"));
-		daq_state = GENERAL_CTRL_DAC_ENABLE;
-		ADC0_Disable();
-							
-		// enable TLV563x SPI DAC by setting power down (PD) register value
-		//TLV563x_DAC_set_power_mode(1);
-		TLV563x_DAC_Reset();
-	} else if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
-		debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
-
-		in_packet_offset = 0;
-		in_packet_ready = false;
-		
-		ADC0_Enable();
-		daq_state = GENERAL_CTRL_ADC_ENABLE;
-
-		// disable TLV563x SPI DAC by setting power down (PD) register value
+	if ((p_general->function < GENERAL_CTRL_NONE) ||
+		  (p_general->function >= GENERAL_CTRL_LENGTH)) {
+		daq_state = GENERAL_CTRL_NONE;
+	  return;
+  } else {
+		daq_state = p_general->function;
+	}
+	
+	/*
+	if (p_general->function != GENERAL_CTRL_DAC_ENABLE) {
+		// disable TLV563x SPI DAC by setting 
+		// power down (PD) register value
 		TLV563x_DAC_set_power_mode(0);
-	} else if (p_general->function == GENERAL_CTRL_NONE) {
-		debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
 		
-		daq_state = GENERAL_CTRL_NONE;					
-		ADC0_Disable();
+		// force PWM disable
+		pwm_disable();
+	}
+	*/
+	
+	switch (p_general->function) {
+		case GENERAL_CTRL_DAC_ENABLE:
+			debug(("CTRL_GENERAL = GENERAL_CTRL_DAC_ENABLE\r\n"));
+			ADC0_Disable();
+			pwm_disable();
+		
+			// enable TLV563x SPI DAC by setting power down (PD) register value
+			//TLV563x_DAC_set_power_mode(1);
+			TLV563x_DAC_Reset();
+			break;
+		
+		case GENERAL_CTRL_ADC_ENABLE:
+			debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
+	
+			//TLV563x_DAC_set_power_mode(0);
+			TLV563x_DAC_set_power_mode(0);
+			pwm_disable();
+		
+			in_packet_offset = 0;
+			in_packet_ready = false;
+		
+			ADC0_Enable();
+			break;
+		
+		case GENERAL_CTRL_PWM_ENABLE:
+			debug(("CTRL_GENERAL = GENERAL_CTRL_PWM_ENABLE\r\n"));
 			
-		// turn off RX and TX LED
-		//gpio_set_pin_value(STATUS_RX_LED_PIN, GPIO_VALUE_HIGH);
-		//gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_HIGH);
-		txrx_leds_off();
+			ADC0_Disable();
+			TLV563x_DAC_set_power_mode(0);
+		
+			if (pwm_init(m_pwm_mode, m_resolution, m_chan_mask) != PWM_ERROR_CODE_OK) {
+				debug(("process_ctrl_function(): pwm_init failed\r\n"));
+				return;
+			}
+		
+			if (pwm_set_timebase(m_pwm_timebase) != PWM_ERROR_CODE_OK) {
+				debug(("process_ctrl_function(): pwm_set_timebase failed\r\n"));
+				return;
+			}
+			
+			pwm_enable();
+			break;
+		
+		case GENERAL_CTRL_NONE:
+		default:
+			debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
+						
+			ADC0_Disable();
+			pwm_disable();
+			TLV563x_DAC_set_power_mode(0);
+		
+			// turn off RX and TX LED
+			txrx_leds_off();
+			break;
 	}
 }
 
@@ -248,10 +331,12 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	
 	//printf("m_chan_mask = %bd (%bx)\r\n", m_chan_mask, m_chan_mask);
 	
-	if (m_resolution == RESOLUTION_CTRL_HIGH) {
-		m_data_size = 2;
+	if (m_resolution == RESOLUTION_CTRL_SUPER) {
+		m_data_size = BUDDY_DATA_SIZE_SUPER;
+	} else if (m_resolution == RESOLUTION_CTRL_HIGH) {
+		m_data_size = BUDDY_DATA_SIZE_HIGH;
 	} else if (m_resolution == RESOLUTION_CTRL_LOW) {
-		m_data_size = 1;
+		m_data_size = BUDDY_DATA_SIZE_LOW;
 	}
 	
 	// get number of channels activated
@@ -315,7 +400,9 @@ void process_ctrl_runtime(uint8_t *p)
 	debug(("p_runtime->dac_ref = %bd (0x%bx)\r\n", p_runtime->dac_ref, p_runtime->dac_ref));
 	debug(("p_runtime->adc_ref = %bd (0x%bx)\r\n", p_runtime->adc_ref, p_runtime->adc_ref));
 	debug(("p_runtime->adc_gain = %bd (0x%bx)\r\n", p_runtime->adc_gain, p_runtime->adc_gain));
-
+	debug(("p_runtime->pwm_mode = %bd (0x%bx)\r\n", p_runtime->pwm_mode, p_runtime->pwm_mode));
+	debug(("p_runtime->pwm_timebase = %bd (0x%bx)\r\n", p_runtime->pwm_timebase, p_runtime->pwm_timebase));
+	
 	// set TLV563X DAC reference voltage (external, or 1/2 Volt internal)
 	switch (p_runtime->dac_ref) {
 		case RUNTIME_DAC_REF_EXT:
@@ -391,6 +478,9 @@ void process_ctrl_runtime(uint8_t *p)
 	}
 				
 	ADC0_Set_Reference(adc_reg_value);
+	
+	m_pwm_mode = p_runtime->pwm_mode;
+	m_pwm_timebase = p_runtime->pwm_timebase;
 }
 
 void process_ctrl_timing(uint8_t *p)
@@ -464,21 +554,25 @@ void process_out()
 						
 			case APP_CODE_DAC:
 				new_dac_packet = 1;
-				/*
-			  printf("APP_CODE_DAC\r\n");
-				for (i = 0; i < 64; i++) {
-					printf("%02bx:", OUT_PACKET[i]);
-				}
-				printf("\r\n");
-				*/
-			
 				if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
-					process_dac();
+					//process_dac();
+					execute_out();
 				}
 				
 				rx_led_toggle();
 				break;
 						
+			case APP_CODE_PWM:
+				//debug(("APP_CODE_PWM\r\n"));
+				new_pwm_packet = 1;
+				if (daq_state == GENERAL_CTRL_PWM_ENABLE) {
+					//process_pwm();
+					execute_out();
+				}
+				
+				rx_led_toggle();
+				break;
+				
 			case APP_CODE_TRIGGER:
 				debug(("APP_CODE_TRIGGER\r\n"));
 				break;
@@ -515,9 +609,18 @@ void process_out()
 		// if oneshot enabled and no trigger received  
 		// timer elapsed, if DAC mode then pull value from DAC queue
 		// and process.
+		/*
 		if ((daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) {			
 			process_dac_stream();
-		} 
+		} else if ((daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet)) {
+			process_pwm_stream();
+		}
+		*/
+		
+		if (((daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) ||
+			  ((daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet))) {
+			execute_out_stream();		
+		}
 	}
 }
 
@@ -582,15 +685,6 @@ void process_in(void)
 	static uint8_t xdata in_counter = 0;
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
-		/*
-		if (adc_complete) {
-			//P3 = P3 & ~0x40;
-			build_adc_packet();
-			adc_complete = 0;
-			//P3 = P3 | 0x40;
-		}
-		*/
-		
 		if (!SendPacketBusy) {
 			if (in_packet_ready) {
 				in_packet_ready = false;

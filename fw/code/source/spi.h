@@ -1,3 +1,13 @@
+/**
+ * @file spi.h
+ * @author Nicholas Shrake <shraken@gmail.com>
+ *
+ * @date 2017-09-26
+ * @brief SPI driver library for configuration and data
+ *				transmission using the SPI peripheral.
+ *			
+ */
+
 #ifndef  _SPI_H_
 #define  _SPI_H_
 

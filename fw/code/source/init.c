@@ -91,25 +91,25 @@ void Port_Init(void)
 
     P0MDOUT   = 0x10;
 
-	//P1MDOUT   = 0x9D;
-	P1MDOUT   = 0x85;
+		//P1MDOUT   = 0x9D;
+		P1MDOUT   = 0x85;
 	
-	P3MDOUT   = 0x30;
+		P3MDOUT   = 0x30;
 	
-	P4MDOUT   = 0x80;
+		P4MDOUT   = 0x80;
 	
     P0SKIP    = 0xCF;
     //P1SKIP    = 0xF0;
-	P1SKIP = 0x00;
-	P2SKIP    = 0xFF;
+		P1SKIP = 0x00;
+		P2SKIP    = 0xFF;
     P3SKIP    = 0x30;
 	
     XBR0      = 0x03;
     XBR1      = 0x40;
 	
-	// set SPI chip select DAC and external memory to be disabled by default
-	gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
-	gpio_set_pin_value(SPI_MEM_CS_PIN, GPIO_VALUE_HIGH);
+		// set SPI chip select DAC and external memory to be disabled by default
+		gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
+		gpio_set_pin_value(SPI_MEM_CS_PIN, GPIO_VALUE_HIGH);
 }
 
 //-----------------------------------------------------------------------------
