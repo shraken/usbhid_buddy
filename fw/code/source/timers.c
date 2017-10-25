@@ -13,7 +13,8 @@ extern uint8_t xdata daq_state;
 
 extern uint8_t data adc_channel_index;
 extern uint8_t xdata adc_channel_count;
-extern uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS];
+extern uint8_t xdata adc_mux_tbl_n[MAX_ANALOG_INPUTS];
+extern uint8_t xdata adc_mux_tbl_p[MAX_ANALOG_INPUTS];
 
 uint8_t xdata timer0_flag = 0;
 
@@ -145,10 +146,12 @@ void Timer0_ISR (void) interrupt 1
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		if (adc_channel_index == (adc_channel_count - 1)) {
-			AMX0P = adc_mux_tbl[0];
+			AMX0P = adc_mux_tbl_n[0];
+			AMX0N = adc_mux_tbl_p[0];
     }
     else {
-      AMX0P = adc_mux_tbl[adc_channel_index + 1];
-    }
+      AMX0P = adc_mux_tbl_n[adc_channel_index + 1];
+			AMX0N = adc_mux_tbl_p[adc_channel_index + 1];
+		}
   }
 }

@@ -44,6 +44,9 @@
 #define ADC_P4_6 0x0F // 001111b
 #define ADC_P4_7 0x22 // 100010b
 
+#define ADC_GND 0x1F  // 011111b
+#define ADC_VREF 0x1E // 011110b
+
 // error code used globally for all routines
 enum _config_error
 {

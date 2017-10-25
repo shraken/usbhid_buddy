@@ -21,9 +21,10 @@ uint8_t data adc_channel_index = 0;
 uint8_t xdata adc_channel_count = 0;
 uint8_t xdata adc_int_dec = 1;
 uint8_t xdata adc_int_dec_max = 1;
-uint16_t data adc_results[MAX_ANALOG_INPUTS];            
+int16_t data adc_results[MAX_ANALOG_INPUTS];            
 
-uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS] = { 0 };
+uint8_t xdata adc_mux_tbl_n[MAX_ANALOG_INPUTS] = { 0 };
+uint8_t xdata adc_mux_tbl_p[MAX_ANALOG_INPUTS] = { 0 };
 
 uint16_t adc_timer_count;
 
@@ -58,8 +59,8 @@ void ADC0_Init(void)
 	REF0CN = DEFAULT_REF0CN;
 	ADC0CF = DEFAULT_ADC0CF;
 	
-	AMX0P = adc_mux_tbl[0];
-	AMX0N = 0x1F;
+	AMX0P = adc_mux_tbl_n[0];
+	AMX0N = ADC_GND;
 	
 	EIE1 |= 0x08;
 }
@@ -72,7 +73,7 @@ void ADC0_Set_Reference(uint8_t value)
 
 void ADC0_ISR (void) interrupt 10
 {
-	static long xdata adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };
+	static int32_t xdata adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };
 	int xdata i;
 
 	//P3 = P3 & ~0x40;
@@ -89,7 +90,7 @@ void ADC0_ISR (void) interrupt 10
 			adc_int_dec = adc_int_dec_max;
 
 			for(i = 0; i < adc_channel_count; i++) {
-				adc_results[i] = adc_accumulator[i] / adc_int_dec_max;
+				adc_results[i] = (int16_t) (adc_accumulator[i] / adc_int_dec_max);
 				adc_accumulator[i] = 0;
 			}
 
@@ -101,17 +102,6 @@ void ADC0_ISR (void) interrupt 10
 	} else {
 		adc_channel_index++;
 	}
-	
-	/*
-	adc_results[adc_channel_index] = ADC0;
-	adc_channel_index++;
-	
-	if (adc_channel_index == adc_channel_count) {
-		adc_complete = 1;
-		build_adc_packet();
-		adc_channel_index = 0;
-	}
-	*/
 	
 	//P3 = P3 | 0x40;
 }

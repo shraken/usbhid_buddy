@@ -8,7 +8,7 @@ import signal
 import csv
 import buddy as bt
 
-BUDDY_TEST_ADC_FREQ = 20000      # 1 kHz
+BUDDY_TEST_ADC_FREQ = 10000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
 hid_handle = None
@@ -51,7 +51,7 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
     #for k in range(100000, (100000 + 1)):
     for k in range(45000, (45000 +1)):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
-            bt.uint32_t_ptr_setitem(packet.channels, i, k)
+            bt.int32_t_ptr_setitem(packet.channels, i, k)
 
         print 'test_seq_pwm_freq: sending %d packet with value %d' % \
                 (test_seq_pwm_count, k)
@@ -107,7 +107,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     for k in range(32767, 32768):
     #for k in range(16383, 16384):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
-            bt.uint32_t_ptr_setitem(packet.channels, i, k)
+            bt.int32_t_ptr_setitem(packet.channels, i, k)
 
         print 'test_seq_pwm_duty: sending %d packet with value %d' % \
                 (test_seq_pwm_count, k)
@@ -160,7 +160,7 @@ def test_seq_dac(handle, sample_rate, streaming):
 
     for k in range(0, 4095 + 1):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
-            bt.uint32_t_ptr_setitem(packet.channels, i, k)
+            bt.int32_t_ptr_setitem(packet.channels, i, k)
 
         print 'test_seq_dac: sending %d packet with value %d' % \
                 (test_seq_dac_count, k)
@@ -197,6 +197,8 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
     timing_settings.averaging = 1
 
+    #runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_SINGLE_ENDED
+    runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_DIFFERENTIAL
     runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
 
     print 'timing_settings.period = %d (0x%x)' % (timing_settings.period, timing_settings.period)
@@ -207,9 +209,14 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
         header.append('time')
         header.append('index')
 
-        for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
-            if (general_settings.channel_mask & (1 << j)):
-                header.append('sensor %d' % j)
+        if runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_SINGLE_ENDED:
+            for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
+                if (general_settings.channel_mask & (1 << j)):
+                    header.append('sensor %d' % j)
+        elif runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_DIFFERENTIAL:
+            for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_3 + 1):
+                if (general_settings.channel_mask & (1 << j)):
+                    header.append('sensor %d' % j)
 
         try:
             log_file.writerow(header)
@@ -240,12 +247,16 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
             entry.append('%f' % (time.time() - test_time_start))
             entry.append('%d' % recv_packets)
 
-            #print 'test_seq_adc: received packet %d' % recv_packets
-            for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
-                if (general_settings.channel_mask & (1 << j)):
-                    value = bt.uint32_t_ptr_getitem(packet.channels, j)
-                    #print 'packet.channels[%d] = %d' % (j, value)
-                    entry.append('%d' % value)
+            if runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_SINGLE_ENDED:
+                for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
+                    if (general_settings.channel_mask & (1 << j)):
+                        value = bt.int32_t_ptr_getitem(packet.channels, j)
+                        entry.append('%d' % value)
+            elif runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_DIFFERENTIAL:
+                for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_3 + 1):
+                    if (general_settings.channel_mask & (1 << j)):
+                        value = bt.int32_t_ptr_getitem(packet.channels, j)
+                        entry.append('%d' % value)
             recv_packets += 1
 
             if log_file:
