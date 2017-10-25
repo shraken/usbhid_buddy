@@ -26,9 +26,10 @@ extern uint8_t xdata timer0_flag;
 
 extern bit SendPacketBusy;
 
-extern uint16_t data adc_results[MAX_ANALOG_INPUTS];
+extern int16_t data adc_results[MAX_ANALOG_INPUTS];
 extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
-extern uint8_t xdata adc_mux_tbl[MAX_ANALOG_INPUTS];
+extern uint8_t xdata adc_mux_tbl_n[MAX_ANALOG_INPUTS];
+extern uint8_t xdata adc_mux_tbl_p[MAX_ANALOG_INPUTS];
 extern uint8_t xdata adc_channel_count;
 extern uint8_t data adc_complete;
 extern uint8_t xdata adc_int_dec_max;
@@ -53,6 +54,7 @@ uint8_t data in_packet_offset = 0;
 uint8_t data codec_byte_offset = 0;
 uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
 
+uint8_t xdata m_adc_mode = RUNTIME_ADC_MODE_SINGLE_ENDED;
 uint8_t xdata m_pwm_mode = RUNTIME_PWM_MODE_FREQUENCY;
 uint8_t xdata m_pwm_timebase = RUNTIME_PWM_TIMEBASE_SYSCLK;
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
@@ -355,14 +357,26 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	if (p_general->function == GENERAL_CTRL_ADC_ENABLE) {
 		adc_channel_count = 0;
 		adc_channel_index = 0;
-			
+		
 		// loop through mask setting and copy selective entries from
 		// adc_mux_ref_tbl into 
-		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-			if (m_chan_mask & (1 << i)) {
-				debug(("process_ctrl_chan_res: activating %d with value %bx\r\n", i, adc_mux_ref_tbl[i]));
-				adc_mux_tbl[adc_channel_count] = adc_mux_ref_tbl[i];
-				adc_channel_count++;
+		if (m_adc_mode == RUNTIME_ADC_MODE_SINGLE_ENDED) {
+			for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+				if (m_chan_enable[i]) {
+					debug(("process_ctrl_chan_res: activating SE %bd with value %bx\r\n", i, adc_mux_ref_tbl[i]));
+					adc_mux_tbl_n[adc_channel_count] = adc_mux_ref_tbl[i];
+					adc_mux_tbl_p[adc_channel_count] = ADC_GND;
+					adc_channel_count++;
+				}
+			}
+		} else if (m_adc_mode == RUNTIME_ADC_MODE_DIFFERENTIAL) {
+			for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i = i + 2) {
+				if (m_chan_enable[i]) {
+					debug(("process_ctrl_chan_res: activating DE %bd with value %bx\r\n", i, adc_mux_ref_tbl[i]));
+					adc_mux_tbl_n[adc_channel_count] = adc_mux_ref_tbl[i];
+					adc_mux_tbl_p[adc_channel_count] = adc_mux_ref_tbl[i + 1];
+					adc_channel_count++;
+				}
 			}
 		}
 				
@@ -438,6 +452,8 @@ void process_ctrl_runtime(uint8_t *p)
 	// write settings to CTRL0 register (pg. 12)
 	TLV563x_write(REG_CTRL0, dac_reg_value);
 
+	m_adc_mode = p_runtime->adc_mode;
+	
 	switch (p_runtime->adc_ref) {
 		case RUNTIME_ADC_REF_EXT:
 			debug(("p_runtime->adc_ref = RUNTIME_ADC_REF_EXT\r\n"));

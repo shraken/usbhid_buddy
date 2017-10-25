@@ -135,6 +135,11 @@ typedef enum _RUNTIME_DAC_REF {
 	RUNTIME_DAC_REF_INT_2V,
 } RUNTIME_DAC_REF;
 
+typedef enum _RUNTIME_ADC_MODE {
+	RUNTIME_ADC_MODE_SINGLE_ENDED = 0,
+	RUNTIME_ADC_MODE_DIFFERENTIAL,
+} RUNTIME_ADC_MODE;
+
 /**
  * \enum RUNTIME_ADC_REF 
  * \brief C8051 ADC reference voltage
@@ -327,6 +332,7 @@ typedef struct _ctrl_general_t {
 typedef struct _ctrl_runtime_t {
 	uint8_t dac_power;
 	uint8_t dac_ref;
+	uint8_t adc_mode;
 	uint8_t adc_ref;
 	uint8_t adc_gain;
 	uint8_t pwm_mode;
@@ -349,11 +355,11 @@ typedef struct _ctrl_timing_t {
 /**
  * \struct general_packet_t
  * \brief General-purpose encoder packet type.  Channel values
- *				 represent either DAC or ADC values before they are
- *				 are encoded into a frame.
+ *				 represent either DAC, ADC, or PWM values before 
+ *				 they are are encoded into a frame.
  */
 typedef struct _general_packet_t {
-	uint32_t channels[NUM_DAC_CHANNELS];
+	int32_t channels[NUM_DAC_CHANNELS];
 } general_packet_t;
 
 #endif
