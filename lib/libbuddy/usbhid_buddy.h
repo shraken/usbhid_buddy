@@ -148,6 +148,15 @@ BUDDY_EXPORT int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, b
 */
 int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *raw, uint8_t length);
 
+/** @brief 
+*   @param hidapi handle pointer
+*   @param pointer to general_packet_t structure with DAC values to be sent
+*	@param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+*   @param type enum of type APP_CODE specific to the send operation requested
+*   @return BUDDY_ERROR_OK on success, BUDDY_ERROR_GENERAL on failure.
+*/
+int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool streaming, uint8_t type);
+
 BUDDY_EXPORT int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming);
 
 /** @brief encodes the packet using codec and sends either immediately or if using
@@ -167,6 +176,8 @@ BUDDY_EXPORT int buddy_send_dac(hid_device *handle, general_packet_t *packet, bo
 *   @return BUDDY_ERROR_OK on success, BUDDY_ERROR_GENERAL on failure.
 */
 BUDDY_EXPORT int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming);
+
+BUDDY_EXPORT int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming);
 
 /** @brief writes the bytes that remain in the codec buffer.  This needs to be performed
 *		    on the last write to prevent stagnant data remaining in the codec buffer.

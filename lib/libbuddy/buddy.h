@@ -62,6 +62,7 @@ typedef enum _GENERAL_CTRL {
 	GENERAL_CTRL_DAC_ENABLE,
 	GENERAL_CTRL_PWM_ENABLE,
 	GENERAL_CTRL_ADC_ENABLE,
+	GENERAL_CTRL_COUNTER_ENABLE,
 	GENERAL_CTRL_LENGTH
 } GENERAL_CTRL;
 
@@ -135,6 +136,12 @@ typedef enum _RUNTIME_DAC_REF {
 	RUNTIME_DAC_REF_INT_2V,
 } RUNTIME_DAC_REF;
 
+/**
+ * \enum RUNTIME_ADC_MODE 
+ * \brief Specifies if ADC is operated in single ended or
+ * 		  differential mode.
+ * @see ctrl_runtime_t
+ */
 typedef enum _RUNTIME_ADC_MODE {
 	RUNTIME_ADC_MODE_SINGLE_ENDED = 0,
 	RUNTIME_ADC_MODE_DIFFERENTIAL,
@@ -182,6 +189,17 @@ typedef enum _RUNTIME_PWM_TIMEBASE {
 	RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12 = 2,
 	RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW = 3,
 } RUNTIME_PWM_TIMEBASE;
+
+/**
+ * \enum RUNTIME_COUNTER_CONTROL_ACTIVE 
+ * \brief Specifies if the counter should interrupt on
+ * 		  active low or high logic input.
+ * @see ctrl_runtime_t
+ */
+typedef enum _RUNTIME_COUNTER_CONTROL_ACTIVE {
+	RUNTIME_COUNTER_CONTROL_ACTIVE_LOW = 0,
+	RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH,
+} RUNTIME_COUNTER_CONTROL_ACTIVE;
 
 /**
 * \enum BUDDY_DATA_SIZE
@@ -337,6 +355,7 @@ typedef struct _ctrl_runtime_t {
 	uint8_t adc_gain;
 	uint8_t pwm_mode;
 	uint8_t pwm_timebase;
+	uint8_t counter_control;
 } ctrl_runtime_t;
 
 /**

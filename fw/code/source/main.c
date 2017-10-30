@@ -95,27 +95,6 @@ void main(void)
 		PCA0MD = 0x00;                      // Disable watchdog timer
 		EA = 1;                             // Globally enable interrupts
 		
-		/*
-		//pwm_init(RUNTIME_PWM_MODE_DUTY_CYCLE, PWM_RESOLUTION_8B, BUDDY_CHAN_0_MASK);
-		//pwm_init(RUNTIME_PWM_MODE_DUTY_CYCLE, PWM_RESOLUTION_16B, BUDDY_CHAN_0_MASK);
-		pwm_init(RUNTIME_PWM_MODE_FREQUENCY, RESOLUTION_CTRL_LOW, BUDDY_CHAN_0_MASK);
-		pwm_set_timebase(RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12);
-		//pwm_set_timebase(RUNTIME_PWM_TIMEBASE_SYSCLK);
-		pwm_set_frequency(BUDDY_CHAN_0, 25000);
-		//pwm_set_duty_cycle(BUDDY_CHAN_0, 50000);
-		//pwm_set_duty_cycle(BUDDY_CHAN_0, 128);
-		pwm_enable(); 
-		
-		//pwm_set_duty_cycle(BUDDY_CHAN_0, 64);
-		while (1) {
-		
-		}
-			
-		while (1) {
-			
-		}
-		*/
-		
 		while (1) {
 			process();
 		}

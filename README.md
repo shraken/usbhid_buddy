@@ -1,16 +1,16 @@
 # Buddy DAQ
 
 Buddy is a free, open source, and low-cost data acquisition (DAQ) instrument.  It has 8 configurable
-IO that can be configured for ADC or DAC operation.  The device uses USB HID with a custom descriptor
-for communication with the hidapi library on the host system.  The device can be configured as either
-a host polled or asynchronous update mode for maximum flexibility.  
+IO that can be configured for ADC, DAC, PWM, or counter operation.  The device uses USB HID with a 
+custom descriptor for communication with the hidapi library on the host system.  The device can be 
+configured as either a host polled or asynchronous update mode for maximum flexibility.  
 
 ## Firmware
 
 The firmware is written in C for the Silicon Labs C8051F380/EFM8UB2 chip.  
 
-The open-source gboot bootloader is used.  Support is provided for the Windows
-and Linux platform.   
+The open-source gboot bootloader is used.  Support is provided for the Windows, mac OS,
+and Linux platforms.
 
 ## Hardware
 
@@ -36,7 +36,7 @@ The pin mapping for the standard Bus Pirate 10-pin harness is provided below:
 
 The host software uses the free and open source hidapi library for driverless
 operation.  The examples provided build with the hidapi libray itself and
-are tested on Linux, Windows, and macOS systems.
+are tested on Linux, Windows, and mac OS systems.
 
 For building the host examples, the hidapi submodule must be cloned with the
 following command:

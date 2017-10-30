@@ -440,6 +440,11 @@
               <FileType>1</FileType>
               <FilePath>..\code\source\pwm.c</FilePath>
             </File>
+            <File>
+              <FileName>counter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\counter.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

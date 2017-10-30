@@ -11,6 +11,7 @@
 #include <adc.h>
 #include <gpio.h>
 #include <pwm.h>
+#include <counter.h>
 #include <tlv563x.h>
 #include <globals.h>
 #include <utility.h>
@@ -57,6 +58,7 @@ uint8_t xdata m_ctrl_mode = MODE_CTRL_IMMEDIATE;
 uint8_t xdata m_adc_mode = RUNTIME_ADC_MODE_SINGLE_ENDED;
 uint8_t xdata m_pwm_mode = RUNTIME_PWM_MODE_FREQUENCY;
 uint8_t xdata m_pwm_timebase = RUNTIME_PWM_TIMEBASE_SYSCLK;
+uint8_t xdata m_counter_control = RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH;
 uint8_t xdata m_adc_control = DEFAULT_ADC0CN;
 uint8_t xdata m_adc_ref = DEFAULT_REF0CN;
 uint8_t xdata m_adc_cfg = DEFAULT_ADC0CF;
@@ -79,6 +81,21 @@ void ADC_Reference_Set(uint8_t ctrl_value)
 void ADC_Configuration_Set(uint8_t ctrl_value)
 {	
     m_adc_cfg = ctrl_value;
+}
+
+void disable_all(void)
+{
+	// disable TLV563x SPI DAC
+	TLV563x_DAC_set_power_mode(0);
+	
+	// disable PWM
+	pwm_disable();
+	
+	// disable ADC
+	ADC0_Disable();
+	
+	// disable counter
+	counter_disable();
 }
 
 void execute_out_stream(void)
@@ -182,16 +199,12 @@ void execute_out(void)
 									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) ) << 16) | 
 									 ( ((uint32_t) (*(frame + codec_byte_offset + 2)) ) << 8) | 
 									 ( (uint32_t) (*(frame + codec_byte_offset + 3)) ));
-					//printf("value (super) = %lu (%08lx)\r\n", value, value);
 				} else if (m_resolution == RESOLUTION_CTRL_HIGH) {
 					value =  ( ((uint32_t) (*(frame + codec_byte_offset)) << 8) | 
 									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) )));
 					
-					//printf("value (high) = %lu (%08lx)\r\n", value, value);
 				} else if (m_resolution == RESOLUTION_CTRL_LOW) {
 					value = (uint32_t) (*(frame + codec_byte_offset));
-					
-					//printf("value (low) = %bd (%04bx)\r\n", value, value);
 				}
 				
 				if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
@@ -236,10 +249,9 @@ void execute_out(void)
 
 void process_ctrl_function(ctrl_general_t *p_general)
 {
-	uint8_t pwm_resolution;
-	
 	debug(("process_ctrl_function()\r\n"));
 	
+	// check if requested DAQ function value is in boundary
 	if ((p_general->function < GENERAL_CTRL_NONE) ||
 		  (p_general->function >= GENERAL_CTRL_LENGTH)) {
 		daq_state = GENERAL_CTRL_NONE;
@@ -247,17 +259,6 @@ void process_ctrl_function(ctrl_general_t *p_general)
   } else {
 		daq_state = p_general->function;
 	}
-	
-	/*
-	if (p_general->function != GENERAL_CTRL_DAC_ENABLE) {
-		// disable TLV563x SPI DAC by setting 
-		// power down (PD) register value
-		TLV563x_DAC_set_power_mode(0);
-		
-		// force PWM disable
-		pwm_disable();
-	}
-	*/
 	
 	switch (p_general->function) {
 		case GENERAL_CTRL_DAC_ENABLE:
@@ -272,10 +273,7 @@ void process_ctrl_function(ctrl_general_t *p_general)
 		
 		case GENERAL_CTRL_ADC_ENABLE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
-	
-			//TLV563x_DAC_set_power_mode(0);
-			TLV563x_DAC_set_power_mode(0);
-			pwm_disable();
+			disable_all();
 		
 			in_packet_offset = 0;
 			in_packet_ready = false;
@@ -285,9 +283,7 @@ void process_ctrl_function(ctrl_general_t *p_general)
 		
 		case GENERAL_CTRL_PWM_ENABLE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_PWM_ENABLE\r\n"));
-			
-			ADC0_Disable();
-			TLV563x_DAC_set_power_mode(0);
+			disable_all();
 		
 			if (pwm_init(m_pwm_mode, m_resolution, m_chan_mask) != PWM_ERROR_CODE_OK) {
 				debug(("process_ctrl_function(): pwm_init failed\r\n"));
@@ -302,13 +298,24 @@ void process_ctrl_function(ctrl_general_t *p_general)
 			pwm_enable();
 			break;
 		
+		case GENERAL_CTRL_COUNTER_ENABLE:
+			debug(("CTRL_GENERAL = GENERAL_CTRL_COUNTER_ENABLE\r\n"));
+			disable_all();
+		
+			in_packet_offset = 0;
+			in_packet_ready = false;
+		
+			if (counter_init(m_counter_control, m_chan_mask) != COUNTER_ERROR_CODE_OK) {
+				debug(("process_ctrl_function(): counter_init failed\r\n"));
+			}
+			
+			counter_enable();
+			break;
+			
 		case GENERAL_CTRL_NONE:
 		default:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
-						
-			ADC0_Disable();
-			pwm_disable();
-			TLV563x_DAC_set_power_mode(0);
+			disable_all();
 		
 			// turn off RX and TX LED
 			txrx_leds_off();
@@ -497,6 +504,7 @@ void process_ctrl_runtime(uint8_t *p)
 	
 	m_pwm_mode = p_runtime->pwm_mode;
 	m_pwm_timebase = p_runtime->pwm_timebase;
+	m_counter_control = p_runtime->counter_control;
 }
 
 void process_ctrl_timing(uint8_t *p)
@@ -582,7 +590,6 @@ void process_out()
 				//debug(("APP_CODE_PWM\r\n"));
 				new_pwm_packet = 1;
 				if (daq_state == GENERAL_CTRL_PWM_ENABLE) {
-					//process_pwm();
 					execute_out();
 				}
 				
@@ -620,19 +627,6 @@ void process_out()
 	if ((m_ctrl_mode == MODE_CTRL_STREAM) && (timer0_flag)) {
 		timer0_flag = 0;
 		
-		//printf("m_ctrl_mode = MODE_CTRL_STREAM and timer0_flag ON\r\n");
-		
-		// if oneshot enabled and no trigger received  
-		// timer elapsed, if DAC mode then pull value from DAC queue
-		// and process.
-		/*
-		if ((daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) {			
-			process_dac_stream();
-		} else if ((daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet)) {
-			process_pwm_stream();
-		}
-		*/
-		
 		if (((daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) ||
 			  ((daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet))) {
 			execute_out_stream();		
@@ -640,10 +634,73 @@ void process_out()
 	}
 }
 
+void build_counter_packet(void)
+{
+	static uint8_t data encode_count = 0;
+	uint8_t data i;
+	uint8_t data current_channel = 0;
+	uint16_t data value;
+	
+	int32_t counter_chan0;
+	int32_t counter_chan1;
+	
+	P3 = P3 & ~0x40;
+	if ((!m_chan_enable[COUNTER_CHANNEL_0]) && (!m_chan_enable[COUNTER_CHANNEL_1])) {
+		// TODO: verbose exit with failure
+		return;
+	}
+	
+	if (m_chan_enable[COUNTER_CHANNEL_0]) {
+		counter_chan0 = counter_get_chan0();
+
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET) = ((counter_chan0 & 0xFF000000) >> 24);
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 1) = ((counter_chan0 & 0x00FF0000) >> 16);
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 2) = ((counter_chan0 & 0x0000FF00) >> 8);
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 3) = (counter_chan0 & 0xFF);
+
+		encode_count++;
+		in_packet_offset += COUNTER_ITEM_SIZE;
+	}
+	
+	if (m_chan_enable[COUNTER_CHANNEL_1]) {
+		counter_chan1 = counter_get_chan1();
+
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET) = ((counter_chan1 & 0xFF000000) >> 24);
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 1) = ((counter_chan1 & 0x00FF0000) >> 16);
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 2) = ((counter_chan1 & 0x0000FF00) >> 8);
+		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 3) = (counter_chan1 & 0xFF);
+		
+		encode_count++;
+		in_packet_offset += COUNTER_ITEM_SIZE;
+	}
+	
+	// check if subsequent packet will overflow buffer
+	if ((m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
+		  ((in_packet_offset + (m_data_size * m_chan_number)) > (MAX_REPORT_SIZE - 3))) {
+		*(P_IN_PACKET_RECORD + BUDDY_APP_INDIC_OFFSET) = encode_count;
+		P_IN_PACKET_SEND = P_IN_PACKET_RECORD;
+		
+		if (in_packet_record_cycle) {
+			P_IN_PACKET_RECORD = &IN_PACKET[0];
+			in_packet_record_cycle = 0;
+		} else {
+			P_IN_PACKET_RECORD = &IN_PACKET[64];
+			in_packet_record_cycle = 1;
+		}
+				
+	  encode_count = 0;
+		
+		//printf("set in_packet_ready = true\n");
+		in_packet_ready = true;
+		in_packet_offset = 0;
+	}
+	
+	P3 = P3 | 0x40;
+}
+
 void build_adc_packet(void)
 {
 	static uint8_t data encode_count = 0;
-	static uint16_t data channel_value = 0;
 	uint8_t data i;
 	uint8_t data current_channel = 0;
 	uint16_t data value;
@@ -700,7 +757,8 @@ void process_in(void)
 {
 	static uint8_t xdata in_counter = 0;
 	
-	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
+	if ((daq_state == GENERAL_CTRL_ADC_ENABLE) ||
+     	(daq_state == GENERAL_CTRL_COUNTER_ENABLE)) {
 		if (!SendPacketBusy) {
 			if (in_packet_ready) {
 				in_packet_ready = false;
@@ -722,6 +780,5 @@ void process()
 	
 	// Device -> Host message
 	// USB IN
-	//process_in();
 	process_in();
 }

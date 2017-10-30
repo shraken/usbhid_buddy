@@ -11,9 +11,15 @@ import buddy as bt
 BUDDY_TEST_ADC_FREQ = 10000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
+BUDDY_TEST_COUNTER_FREQ = 10000     # 10 Hz
 hid_handle = None
 hid_info = None
 
+'''
+    configures buddy device for PWM frequency operation.  The pwm_timebase field
+    of the ctrl_runtime_t defines the base tick frequency.  The resolution is
+    specifies if an 8, 16, or 32-bit value will be sent. 
+'''
 def test_seq_pwm_freq(handle, sample_rate, streaming):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
@@ -71,6 +77,11 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
 
     return 0
 
+'''
+    configures buddy device for PWM duty cycle operation.  A 16-bit or 8-bit
+    value is sent to control the duty cycle of a fixed frequency controlled
+    by the pwm_timebase field of the ctrl_runtime_t structure.
+'''
 def test_seq_pwm_duty(handle, sample_rate, streaming):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
@@ -127,6 +138,10 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
 
     return 0
 
+'''
+    configures buddy device for DAC operation.  An iterative loop over all
+    the codes for a 12-bit DAC (0 - 4095) are sent.
+'''
 def test_seq_dac(handle, sample_rate, streaming):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
@@ -180,6 +195,97 @@ def test_seq_dac(handle, sample_rate, streaming):
 
     return 0
 
+'''
+    configures buddy device for counter operation where pos/neg edge ticks
+    are counted on IN0 and/or IN1 pins.  A total of 1,000 tick counts are
+    collected before the test is terminated. 
+'''
+def test_seq_counter(handle, sample_rate, streaming, log_file):
+    general_settings = bt.ctrl_general_t()
+    timing_settings = bt.ctrl_timing_t()
+    runtime_settings = bt.ctrl_runtime_t()
+    packet = bt.general_packet_t()
+
+    general_settings.function = bt.GENERAL_CTRL_COUNTER_ENABLE
+    general_settings.mode = \
+        bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
+    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
+    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
+    
+    general_settings.resolution = bt.RESOLUTION_CTRL_SUPER
+
+    timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
+    runtime_settings.counter_control = bt.RUNTIME_COUNTER_CONTROL_ACTIVE_LOW
+
+    # write CSV header
+    if log_file:
+        header = []
+        header.append('time')
+        header.append('index')
+
+        # counter operation can only occur on channel0 and channel1
+        for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_1 + 1):
+            if (general_settings.channel_mask & (1 << j)):
+                header.append('sensor %d' % j)
+
+        try:
+            log_file.writerow(header)
+        except csv.Error as e:
+            raise NameError('Could not write into CSV writer object')
+            return False
+
+    if (bt.buddy_configure(handle,
+                           general_settings,
+                           runtime_settings,
+                           timing_settings) != bt.BUDDY_ERROR_OK):
+        print 'test_seq_counter: could not configure Buddy device'
+        return -1
+
+    time.sleep(0.1)
+
+    recv_packets = 0;
+    first_packet = True
+    for i in range(0, 1000):
+        err_code = bt.buddy_read_counter(handle, packet, streaming)
+
+        if err_code == bt.BUDDY_ERROR_OK:
+            if first_packet:
+                test_time_start = time.time()
+                first_packet = False
+
+            entry = []
+            entry.append('%.10f' % (time.time() - test_time_start))
+            entry.append('%d' % recv_packets)
+
+            for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_1 + 1):
+                if (general_settings.channel_mask & (1 << j)):
+                    value = bt.int32_t_ptr_getitem(packet.channels, j)
+                    entry.append('%d' % value)
+            recv_packets += 1
+
+            if log_file:
+                try:
+                    log_file.writerow(entry)
+                except csv.Error as e:
+                    raise NameError('Could not write into CSV writer object')
+                    return False
+
+        elif err_code == bt.BUDDY_ERROR_GENERAL:
+            print 'test_seq_counter: could not read counter packet'
+            print 'err_code = %d' % err_code
+            return -1
+        else:
+            print 'unknown error code, err_code = %d' % err_code
+    
+    return 0;
+
+'''
+    configures buddy device for ADC operation.  A low/high resolution field specifies
+    if 8-bit or 16-bit ADC samples are to be returned.  Additionally, single ended
+    or differential ADC mode is specified.   A total of 1,000 tick counts are
+    collected before the test is terminated. 
+'''
 def test_seq_adc(handle, sample_rate, streaming, log_file):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
@@ -189,16 +295,16 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     general_settings.function = bt.GENERAL_CTRL_ADC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
+    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
     timing_settings.averaging = 1
 
-    #runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_SINGLE_ENDED
-    runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_DIFFERENTIAL
+    runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_SINGLE_ENDED
+    #runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_DIFFERENTIAL
     runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
 
     print 'timing_settings.period = %d (0x%x)' % (timing_settings.period, timing_settings.period)
@@ -221,7 +327,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
         try:
             log_file.writerow(header)
         except csv.Error as e:
-            raise NameError('Coud not write into CSV writer object')
+            raise NameError('Could not write into CSV writer object')
             return False
 
     if (bt.buddy_configure(handle,
@@ -235,7 +341,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
 
     recv_packets = 0;
     first_packet = True
-    for i in range(0, 10000):
+    for i in range(0, 100):
         err_code = bt.buddy_read_adc(handle, packet, streaming)
 
         if err_code == bt.BUDDY_ERROR_OK:
@@ -244,7 +350,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
                 first_packet = False
 
             entry = []
-            entry.append('%f' % (time.time() - test_time_start))
+            entry.append('%.10f' % (time.time() - test_time_start))
             entry.append('%d' % recv_packets)
 
             if runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_SINGLE_ENDED:
@@ -263,7 +369,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
                 try:
                     log_file.writerow(entry)
                 except csv.Error as e:
-                    raise NameError('Coud not write into CSV writer object')
+                    raise NameError('Could not write into CSV writer object')
                     return False
 
         elif err_code == bt.BUDDY_ERROR_GENERAL:
@@ -317,6 +423,8 @@ if __name__ == '__main__':
                         help='enable DAC (data to analog) mode')
     parser.add_argument('-a,--adc', action='store_true', dest='adc_mode',
                         help='enable ADC (analog to digital) mode')
+    parser.add_argument('-c,--counter', action='store_true', dest='counter_mode',
+                        help='enable counter mode')
     parser.add_argument('-p,--pwm_duty', action='store_true', dest='pwm_mode_duty',
                         help='enable PWM (pulse width modulation) duty cycle mode')
     parser.add_argument('-t,--pwm_freq', action='store_true', dest='pwm_mode_freq',
@@ -338,7 +446,7 @@ if __name__ == '__main__':
         sys.exit()
     '''
 
-    if args.output_file and args.adc_mode:
+    if args.output_file and (args.adc_mode or args.counter_mode):
         try:
             log_file = open(args.output_file[0], 'wb')
         except (OSError, IOError) as e:
@@ -383,6 +491,13 @@ if __name__ == '__main__':
                                 args.stream_mode,
                                 log_file_writer)
     
+    if args.counter_mode:
+        print 'running a counter mode test'
+        err_code = test_seq_counter(hid_handle,
+                                   BUDDY_TEST_COUNTER_FREQ,
+                                   args.stream_mode,
+                                   log_file_writer)
+
     if args.pwm_mode_duty:
         print 'running a PWM duty cycle mode test'
         err_code = test_seq_pwm_duty(hid_handle,
@@ -394,7 +509,6 @@ if __name__ == '__main__':
         err_code = test_seq_pwm_freq(hid_handle,
                                      BUDDY_TEST_PWM_FREQ,
                                      args.stream_mode)
-        
 
     time_end = time.time()
     time_diff = time_end - time_start
@@ -404,5 +518,6 @@ if __name__ == '__main__':
         bt.buddy_cleanup(hid_handle, hid_info, False)
     else:
         bt.buddy_cleanup(hid_handle, hid_info, True)
+
     if log_file:
         log_file.close()
