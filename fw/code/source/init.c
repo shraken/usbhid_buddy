@@ -100,7 +100,7 @@ void Port_Init(void)
 	
     P0SKIP    = 0xCF;
     //P1SKIP    = 0xF0;
-		P1SKIP = 0x00;
+		P1SKIP 	  = 0x00;
 		P2SKIP    = 0xFF;
     P3SKIP    = 0x30;
 	

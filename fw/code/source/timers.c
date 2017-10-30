@@ -9,6 +9,9 @@
 #include <utility.h>
 #include <c8051f3xx.h>
 
+extern void build_counter_packet(void);
+extern void build_adc_packet(void);
+
 extern uint8_t xdata daq_state;
 
 extern uint8_t data adc_channel_index;
@@ -145,6 +148,9 @@ void Timer0_ISR (void) interrupt 1
 	timer0_flag = 1;
 	
 	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
+		//P3 = P3 & ~0x40;
+		//P3 = P3 | 0x40;
+		
 		if (adc_channel_index == (adc_channel_count - 1)) {
 			AMX0P = adc_mux_tbl_n[0];
 			AMX0N = adc_mux_tbl_p[0];
@@ -153,5 +159,7 @@ void Timer0_ISR (void) interrupt 1
       AMX0P = adc_mux_tbl_n[adc_channel_index + 1];
 			AMX0N = adc_mux_tbl_p[adc_channel_index + 1];
 		}
-  }
+  } else if (daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
+		build_counter_packet();
+	}
 }

@@ -265,16 +265,9 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 	static int count = 0;
 	int res;
 
-	//printf("buddy_write_packet() invoked\r\n");
-
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
-		/*
-		critical(("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
-					hid_error(handle), handle));
-		*/
-		printf("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
-					hid_error(handle), handle);
+		printf("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", hid_error(handle), handle);
 		return BUDDY_ERROR_GENERAL;
 	} else {
 		//printf("buddy_write_packet successful, count = %d\n", count++);
@@ -287,25 +280,91 @@ int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 {
 	int res;
 
+	//printf("buddy_read_packet() entered\n");
+
 	res = hid_read(handle, buffer, length);
 	return res;
 }
 
-int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
+int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool streaming, uint8_t type)
 {
 	int err_code;
+
+	err_code = encode(out_hold_buf, packet);
+	encode_count++;
+
+	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
+		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
+		out_hold_buf[BUDDY_APP_CODE_OFFSET] = type;
+		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
+
+		//printf("buddy_send_pwm() with encode_count = %d\n", encode_count);
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
+			critical(("buddy_send_pwm: buddy_write_packet call failed\n"));
+			return BUDDY_ERROR_GENERAL;
+		}
+
+		encode_count = 0;
+		codec_byte_offset = 0;
+
+		return BUDDY_ERROR_OK;
+	} else if (err_code == CODEC_STATUS_CONTINUE) {
+		return BUDDY_ERROR_OK;
+	} else {
+		printf("buddy_send_pwm: err_code = BUDDY_ERROR_GENERAL\n");
+		return BUDDY_ERROR_GENERAL;
+	}
+}
+
+int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming)
+{
+	static int decode_status = CODEC_STATUS_FULL;
+	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
+	int err_code;
+	int res;
 	int i;
 
-	printf("buddy_send_pwm() entered\n");
-	/*
-	// check if PWM frequency mode is enabled and attempt made to send
-	// result using low (8-bit) resolution.  Return error as this is not
-	// allowed -- PWM frequency requires a full 16-bit value.
-	if ((driver_ctx.runtime.pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) &&
-	    (driver_ctx.general.resolution == RESOLUTION_CTRL_LOW)) {
-		return BUDDY_ERROR_INVALID;
+	// 
+	// 1. if streaming off/immediate on then read a HID IN packet and decode
+	// 2. if streaming on and decode_status equal to CODEC_STATUS_FULL then
+	//		read a HID IN packet and decode
+	// 3. if streaming on and decode_status equal to CODEC_STATUS_CONTINUE then
+	//		decode next packet in the frame
+
+	err_code = BUDDY_ERROR_OK;
+	if ((!streaming) || (decode_status == CODEC_STATUS_FULL)) {
+		res = 0;
+		while (res == 0) {
+			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE);
+
+			if (res < 0) {
+				printf("buddy_read_generic: could not buddy_read_packet\n");
+				//critical(("buddy_read_adc: could not buddy_read_packet\n"));
+				//debugf("res < 0: failed on buddy_read_packet\n");
+				return -1;
+			}
+		}
+
+		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_VALID) {
+			//printf("BUDDY_RESPONSE_VALID mask detected\n");
+			codec_byte_offset = 0;
+			decode_status = decode(in_buf, packet);
+		} else {
+			// filler packet was detected
+			err_code = BUDDY_ERROR_INVALID;
+		}
+	} else if ((streaming) && (decode_status == CODEC_STATUS_CONTINUE)) {
+		decode_status = decode(in_buf, packet);
+	} else {
+		err_code = BUDDY_ERROR_GENERAL;
 	}
-	*/
+
+	return err_code;
+}
+
+int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
+{
+	int i;
 
 	// boundary check PWM value
 	// (1) duty cycle - if resolution is RESOLUTION_CTRL_LOW (8-bit) then
@@ -388,119 +447,29 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 		}
 	}
 
-	err_code = encode(out_hold_buf, packet);
-	encode_count++;
-
-	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
-		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-		out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_PWM;
-		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
-
-		printf("buddy_send_pwm() with encode_count = %d\n", encode_count);
-		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
-			critical(("buddy_send_pwm: buddy_write_packet call failed\n"));
-			return BUDDY_ERROR_GENERAL;
-		}
-
-		encode_count = 0;
-		codec_byte_offset = 0;
-
-		return BUDDY_ERROR_OK;
-	} else if (err_code == CODEC_STATUS_CONTINUE) {
-		return BUDDY_ERROR_OK;
-	} else {
-		printf("buddy_send_pwm: err_code = BUDDY_ERROR_GENERAL\n");
-		return BUDDY_ERROR_GENERAL;
-	}
+	return buddy_send_generic(handle, packet, streaming, APP_CODE_PWM);
 }
 
 int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	int err_code;
+	return buddy_send_generic(handle, packet, streaming, APP_CODE_DAC);
+}
 
-	err_code = encode(out_hold_buf, packet);
-	encode_count++;
-
-	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
-		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-		out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
-		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
-
-		printf("buddy_send_dac() with encode_count = %d\n", encode_count);
-		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
-			critical(("buddy_send_dac: buddy_write_packet call failed\n"));
-			//printf("buddy_send_dac: buddy_write_packet call failed\n");
-			return BUDDY_ERROR_GENERAL;
-		}
-
-		encode_count = 0;
-		codec_byte_offset = 0;
-
-		return BUDDY_ERROR_OK;
-	} else if (err_code == CODEC_STATUS_CONTINUE) {
-		//printf("encode_packet: continue\r\n");
-		//debugf("buddy_send_dac exited 2\n");
-		return BUDDY_ERROR_OK;
-	} else {
-		printf("buddy_send_dac: err_code = BUDDY_ERROR_GENERAL\n");
-		return BUDDY_ERROR_GENERAL;
-	}
+int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming)
+{
+	//printf("buddy_read_counter() entered\n");
+	return buddy_read_generic(handle, packet, streaming);
 }
 
 int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	static int encode_status = CODEC_STATUS_FULL;
-	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
-	int err_code;
-	int res;
-	int i;
-
-	// 
-	// 1. if streaming off/immediate on then read a HID IN packet and decode
-	// 2. if streaming on and encode_status equal to CODEC_STATUS_FULL then
-	//		read a HID IN packet and decode
-	// 3. if streaming on and encode_status equal to CODEC_STATUS_CONTINUE then
-	//		decode next packet in the frame
-
-	err_code = BUDDY_ERROR_OK;
-	if ((!streaming) || (encode_status == CODEC_STATUS_FULL)) {
-		res = 0;
-		while (res == 0) {
-			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE);
-
-			if (res < 0) {
-				printf("buddy_read_adc: could not buddy_read_packet\n");
-				//critical(("buddy_read_adc: could not buddy_read_packet\n"));
-				//debugf("res < 0: failed on buddy_read_packet\n");
-				return -1;
-			}
-		}
-
-		//printf("in_buf[1] = %02x\r\n", in_buf[1]);
-		//printf("in_counter (valid) = %d\n", in_buf[1] & 0x7F);
-		//print_buffer(in_buf, MAX_IN_SIZE);
-		
-		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_VALID) {
-			codec_byte_offset = 0;
-			encode_status = decode(in_buf, packet);
-		} else {
-			// filler packet was detected
-			err_code = BUDDY_ERROR_INVALID;
-		}
-	} else if ((streaming) && (encode_status == CODEC_STATUS_CONTINUE)) {
-		encode_status = decode(in_buf, packet);
-	} else {
-		err_code = BUDDY_ERROR_GENERAL;
-	}
-
-	return err_code;
+	//printf("buddy_read_adc() entered\n");
+	return buddy_read_generic(handle, packet, streaming);
 }
 
 int buddy_flush(hid_device *handle)
 {
 	if (codec_byte_offset) {
-		//printf("flushing the buffer\r\n");
-
 		if (_daq_function == GENERAL_CTRL_DAC_ENABLE) {
 			out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
 		} else if (_daq_function == GENERAL_CTRL_PWM_ENABLE) {
@@ -596,9 +565,15 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 		}
 	}
 
-	// scale the input sample rate by the number of channels so that all
-	// ADC channels are sampling at the requested rate
-	timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
+	// if ADC, DAC, or PWM Mode then scale the input sample rate by the number of channels 
+	// so that all channels are sampling at the requested rate.  If counter mode then set
+	// period to user requested value.
+
+	if (general->function == GENERAL_CTRL_COUNTER_ENABLE) {
+		timing->period = swap_uint32(timing->period);
+	} else {
+		timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
+	}
 
 	// registers
 	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_RUNTIME, 

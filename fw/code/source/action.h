@@ -12,10 +12,12 @@
 #ifndef  _ACTION_H_
 #define  _ACTION_H_
 
+void disable_all(void);
 void ADC_Control_Set(uint8_t ctrl_value);
 void ADC_Reference_Set(uint8_t ctrl_value);
 void ADC_Configuration_Set(uint8_t ctrl_value);
 void build_adc_packet(void);
+void build_counter_packet(void);
 void execute_out_stream(void);
 void execute_out(void);
 void process_ctrl_function(ctrl_general_t *p_general);
