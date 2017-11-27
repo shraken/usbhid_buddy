@@ -246,18 +246,16 @@ int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *ra
 	out_buf[BUDDY_APP_INDIC_OFFSET] = indic;
 
 	copy_length = (length > (MAX_OUT_SIZE - 3)) ? (MAX_OUT_SIZE - 3) : length;
-	//debug(("buddy_write_raw: copy_length = %d\r\n", copy_length));
 
 	if (raw) {
 		memcpy(&out_buf[BUDDY_APP_VALUE_OFFSET], raw, copy_length);
 	}
 	
 	if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
-		//printf("buddy_write_raw: buddy_write_packet() failed\n");
-		return BUDDY_ERROR_GENERAL;
+		return BUDDY_ERROR_CODE_GENERAL;
 	}
 
-	return BUDDY_ERROR_OK;
+	return BUDDY_ERROR_CODE_OK;
 }
 
 int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
@@ -267,20 +265,17 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
-		printf("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", hid_error(handle), handle);
-		return BUDDY_ERROR_GENERAL;
-	} else {
-		//printf("buddy_write_packet successful, count = %d\n", count++);
+		critical(("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
+			hid_error(handle), handle));
+		return BUDDY_ERROR_CODE_GENERAL;
 	}
 
-	return BUDDY_ERROR_OK;
+	return BUDDY_ERROR_CODE_OK;
 }
 
 int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 {
 	int res;
-
-	//printf("buddy_read_packet() entered\n");
 
 	res = hid_read(handle, buffer, length);
 	return res;
@@ -301,18 +296,18 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 		//printf("buddy_send_pwm() with encode_count = %d\n", encode_count);
 		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
 			critical(("buddy_send_pwm: buddy_write_packet call failed\n"));
-			return BUDDY_ERROR_GENERAL;
+			return BUDDY_ERROR_CODE_GENERAL;
 		}
 
 		encode_count = 0;
 		codec_byte_offset = 0;
 
-		return BUDDY_ERROR_OK;
+		return BUDDY_ERROR_CODE_OK;
 	} else if (err_code == CODEC_STATUS_CONTINUE) {
-		return BUDDY_ERROR_OK;
+		return BUDDY_ERROR_CODE_OK;
 	} else {
-		printf("buddy_send_pwm: err_code = BUDDY_ERROR_GENERAL\n");
-		return BUDDY_ERROR_GENERAL;
+		printf("buddy_send_pwm: err_code = BUDDY_ERROR_CODE_GENERAL\n");
+		return BUDDY_ERROR_CODE_GENERAL;
 	}
 }
 
@@ -331,32 +326,33 @@ int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool stream
 	// 3. if streaming on and decode_status equal to CODEC_STATUS_CONTINUE then
 	//		decode next packet in the frame
 
-	err_code = BUDDY_ERROR_OK;
+	err_code = BUDDY_ERROR_CODE_OK;
 	if ((!streaming) || (decode_status == CODEC_STATUS_FULL)) {
 		res = 0;
 		while (res == 0) {
 			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE);
 
 			if (res < 0) {
-				printf("buddy_read_generic: could not buddy_read_packet\n");
-				//critical(("buddy_read_adc: could not buddy_read_packet\n"));
+				critical(("buddy_read_adc: could not buddy_read_packet\n"));
 				//debugf("res < 0: failed on buddy_read_packet\n");
 				return -1;
 			}
 		}
 
-		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_VALID) {
-			//printf("BUDDY_RESPONSE_VALID mask detected\n");
+		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
+			// remote data packet
 			codec_byte_offset = 0;
 			decode_status = decode(in_buf, packet);
+		} else if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_STATUS) {
+			// remote error status packet -- extract error code
+			err_code = in_buf[BUDDY_APP_INDIC_OFFSET];
 		} else {
-			// filler packet was detected
-			err_code = BUDDY_ERROR_INVALID;
+			err_code = BUDDY_ERROR_CODE_INVALID;
 		}
 	} else if ((streaming) && (decode_status == CODEC_STATUS_CONTINUE)) {
 		decode_status = decode(in_buf, packet);
 	} else {
-		err_code = BUDDY_ERROR_GENERAL;
+		err_code = BUDDY_ERROR_CODE_GENERAL;
 	}
 
 	return err_code;
@@ -385,32 +381,32 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 				case RESOLUTION_CTRL_SUPER:
 					// super (32-bit) transfer disallowed for duty cycle mode
 					if (driver_ctx.runtime.pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
-						return BUDDY_ERROR_INVALID;
+						return BUDDY_ERROR_CODE_INVALID;
 					}
 
 					if ((packet->channels[i] < BUDDY_SUPER_RESOLUTION_MIN) || 
 						(packet->channels[i] > BUDDY_SUPER_RESOLUTION_MAX)) {
-						return BUDDY_ERROR_OUT_OF_BOUND;
+						return BUDDY_ERROR_CODE_OUT_OF_BOUND;
 					}
 					break;
 
 				case RESOLUTION_CTRL_HIGH:
 					if ((packet->channels[i] < BUDDY_HIGH_RESOLUTION_MIN) || 
 						(packet->channels[i] > BUDDY_HIGH_RESOLUTION_MAX)) {
-						return BUDDY_ERROR_OUT_OF_BOUND;
+						return BUDDY_ERROR_CODE_OUT_OF_BOUND;
 					}
 					break;
 
 				case RESOLUTION_CTRL_LOW:
 					if ((packet->channels[i] < BUDDY_LOW_RESOLUTION_MIN) || 
 						(packet->channels[i] > BUDDY_LOW_RESOLUTION_MAX)) {
-						return BUDDY_ERROR_OUT_OF_BOUND;
+						return BUDDY_ERROR_CODE_OUT_OF_BOUND;
 					}
 					break;
 
 				default:
 					// resolution is of unknown value -- fail gracefully
-					return BUDDY_ERROR_INVALID;
+					return BUDDY_ERROR_CODE_INVALID;
 
 			}
 
@@ -432,17 +428,17 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 
 					case RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW:
 					default:
-						return BUDDY_ERROR_INVALID;
+						return BUDDY_ERROR_CODE_INVALID;
 				}
 
 				// frequency output sets PCA0CPHN so the resulting check_value
 				// must be an unsigned 8-bit integer.
 				if ((check_value < BUDDY_LOW_RESOLUTION_MIN) ||
 					(check_value > BUDDY_LOW_RESOLUTION_MAX)) {
-					return BUDDY_ERROR_OUT_OF_BOUND;	
+					return BUDDY_ERROR_CODE_OUT_OF_BOUND;	
 				}
 			} else if (driver_ctx.runtime.pwm_mode != RUNTIME_PWM_MODE_DUTY_CYCLE) {
-				return BUDDY_ERROR_INVALID;
+				return BUDDY_ERROR_CODE_INVALID;
 			}
 		}
 	}
@@ -475,7 +471,7 @@ int buddy_flush(hid_device *handle)
 		} else if (_daq_function == GENERAL_CTRL_PWM_ENABLE) {
 			out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_PWM;
 		} else {
-			return BUDDY_ERROR_GENERAL;
+			return BUDDY_ERROR_CODE_GENERAL;
 		}
 
 		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
@@ -483,14 +479,14 @@ int buddy_flush(hid_device *handle)
 
 		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
 			critical(("buddy_flush: buddy_write_packet call failed\n"));
-			return BUDDY_ERROR_GENERAL;
+			return BUDDY_ERROR_CODE_GENERAL;
 		}
 
 		codec_byte_offset = 0;
 		encode_count = 0;
 	}
 
-	return BUDDY_ERROR_OK;
+	return BUDDY_ERROR_CODE_OK;
 }
 
 int buddy_count_channels(uint8_t chan_mask)
@@ -511,9 +507,28 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 {
 	char buffer[128];
 	int i;
+	int j;
+	int8_t err_code;
+	buddy_cfg_reg_t cfg_regs[NUMBER_CFG_REG_ENTRIES] = {
+		{
+		  	.type_indic = CTRL_RUNTIME,
+		  	.record_cfg = runtime,
+		  	.record_len = sizeof(ctrl_runtime_t),
+		},
+		{
+			.type_indic = CTRL_TIMING,
+			.record_cfg = timing,
+			.record_len = sizeof(ctrl_timing_t),
+		},
+		{
+			.type_indic = CTRL_GENERAL,
+			.record_cfg = general,
+			.record_len = sizeof(ctrl_general_t),
+		}
+	};
 
 	if ((!handle) || (!general) || (!runtime) || (!timing)) {
-		return BUDDY_ERROR_MEMORY;
+		return BUDDY_ERROR_CODE_MEMORY;
 	}
 
 	memcpy( (ctrl_general_t *) &driver_ctx.general, 
@@ -522,18 +537,6 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 			runtime, sizeof(ctrl_runtime_t));
 	memcpy( (ctrl_timing_t *) &driver_ctx.timing,
 			timing, sizeof(ctrl_timing_t));
-
-	/*
-	debugf("buddy_configure entered\r\n");
-	sprintf(buffer, "handle = %p\r\n", handle);
-	debugf(buffer);
-	sprintf(buffer, "general = %p\r\n", general);
-	debugf(buffer);
-	sprintf(buffer, "runtime = %p\r\n", runtime);
-	debugf(buffer);
-	sprintf(buffer, "timing = %p\r\n", timing);
-	debugf(buffer);
-	*/
 
 	_daq_function = general->function;
 	_chan_mask = general->channel_mask;
@@ -575,28 +578,70 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 		timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
 	}
 
-	// registers
-	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_RUNTIME, 
-			(uint8_t *) runtime, sizeof(ctrl_runtime_t)) != BUDDY_ERROR_OK) {
-		return BUDDY_ERROR_GENERAL;
+	for (i = 0; i < NUMBER_CFG_REG_ENTRIES; i++) {
+		if (buddy_write_raw(handle, APP_CODE_CTRL, 
+							cfg_regs[i].type_indic, 
+							cfg_regs[i].record_cfg, 
+							cfg_regs[i].record_len) == BUDDY_ERROR_CODE_OK) {
+							
+			if ((err_code = buddy_get_response(handle, NULL, 0)) == BUDDY_ERROR_CODE_OK) {
+				short_sleep(100);
+			} else {
+				short_sleep(100);
+			}
+		}
 	}
-	short_sleep(100);
 
-	// timing
-	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_TIMING, 
-			(uint8_t *) timing, sizeof(ctrl_timing_t)) != BUDDY_ERROR_OK) {
-		return BUDDY_ERROR_GENERAL;
+	return BUDDY_ERROR_CODE_OK; 
+}
+
+int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
+{
+	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
+	uint16_t copy_length;
+	int res;
+	int err_code = BUDDY_ERROR_CODE_OK;
+	int response_count = 0;
+
+	res = 0;
+	while (res == 0) {
+		res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE - 1);
+
+		if (res == 0) {
+			if (response_count >= BUDDY_MAX_IO_ATTEMPTS) {
+				err_code = BUDDY_ERROR_CODE_TIMEOUT;
+				break;
+			}
+
+			response_count++;
+			short_sleep(1);
+			continue;
+		}
+
+		if (res < 0) {
+			critical(("buddy_get_response: could not buddy_read_packet\n"));
+			err_code = BUDDY_ERROR_CODE_PROTOCOL;
+			break;
+		} else if (res >= 0) {
+			if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
+				if ((buffer) && (length > 0) && (res > 0)) {
+					copy_length = (length > (MAX_IN_SIZE - BUDDY_APP_INDIC_OFFSET)) ? (MAX_IN_SIZE - BUDDY_APP_INDIC_OFFSET) : length;
+					memcpy(buffer, &in_buf[BUDDY_APP_INDIC_OFFSET], copy_length);
+					err_code = BUDDY_ERROR_CODE_OK;
+				} else {
+					err_code = BUDDY_ERROR_CODE_INVALID;
+				}
+			} else if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_STATUS) {
+				err_code = in_buf[BUDDY_APP_INDIC_OFFSET];
+			} else {
+				err_code = BUDDY_ERROR_CODE_INVALID;
+			}
+
+			break;
+		}
 	}
-	short_sleep(100);
 
-	// general
-	if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_GENERAL, 
-			(uint8_t *) general, sizeof(ctrl_general_t)) != BUDDY_ERROR_OK) {
-		return BUDDY_ERROR_GENERAL;
-	}
-	short_sleep(100);
-
-	return BUDDY_ERROR_OK; 
+	return err_code;
 }
 
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
@@ -604,7 +649,7 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int res;
 	int i;
-	int err_code = BUDDY_ERROR_OK;
+	int err_code = BUDDY_ERROR_CODE_OK;
 	
 	// shraken 7/30/17: cheap hack -- the firmware info get request
 	// seems to fail on the buddy_read_packet/hid_read as no IN
@@ -613,38 +658,19 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 	// to investigate further but right now we just make BUDDY_MAX_IO_ATTEMPTS
 	// attempts if the hid_read fails.
 	for (i = 0; i < BUDDY_MAX_IO_ATTEMPTS; i++) {
-		//printf("buddy_get_firmware_info() attempt = %d\n", i);
-
 		// request firmware info block
-		if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *)NULL, 0) == BUDDY_ERROR_OK) {
+		if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *)NULL, 0) == BUDDY_ERROR_CODE_OK) {
 			short_sleep(100);
 
-			res = 0;
-			while (res == 0) {
-				res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE - 1);
-
-				if (res < 0) {
-					critical(("buddy_read_adc: could not buddy_read_packet\n"));
-					return -1;
-				}
-				else if (res >= 0) {
-					break;
-				}
-			}
-
-			if (res > 0) {
-				//printf("buddy_get_firmware_info(): copy firmware info\n");
-				memcpy(fw_info, &in_buf[BUDDY_APP_INDIC_OFFSET], sizeof(firmware_info_t));
-
+			if (buddy_get_response(handle, fw_info, sizeof(firmware_info_t)) == BUDDY_ERROR_CODE_OK) {
 				// adjust for endian conversion
 				fw_info->flash_datetime = swap_uint32(fw_info->flash_datetime);
 				fw_info->serial = swap_uint32(fw_info->serial);
-
 				break;
 			}
 		}
 		else {
-			printf("buddy_get_firmware_info(): failed on buddy_write_raw\n");
+			critical(("buddy_get_firmware_info(): failed on buddy_write_raw\n"));
 			err_code = -1;
 		}
 	}
@@ -676,8 +702,7 @@ hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 
 int buddy_trigger(hid_device *handle)
 {
-	return buddy_write_raw(handle, APP_CODE_TRIGGER, 0x00, 
-				(uint8_t *) NULL, 0);
+	return buddy_write_raw(handle, APP_CODE_TRIGGER, 0x00, (uint8_t *) NULL, 0);
 }
 
 int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_disable)
@@ -713,13 +738,13 @@ int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_di
 	if (device_disable) {
 		general_settings.function = GENERAL_CTRL_NONE;
 		if (buddy_write_raw(handle, APP_CODE_CTRL, CTRL_GENERAL, 
-			(uint8_t *) &general_settings, sizeof(ctrl_general_t)) != BUDDY_ERROR_OK) {
-			return BUDDY_ERROR_GENERAL;
+			(uint8_t *) &general_settings, sizeof(ctrl_general_t)) != BUDDY_ERROR_CODE_OK) {
+			return BUDDY_ERROR_CODE_GENERAL;
 		}	
 	}
 
 	hid_close(handle);
 	hid_exit();
 
-	return BUDDY_ERROR_OK;
+	return BUDDY_ERROR_CODE_OK;
 }

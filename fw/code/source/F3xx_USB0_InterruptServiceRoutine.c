@@ -114,7 +114,6 @@ void Usb_ISR (void) interrupt 8        // Top-level USB ISR
 
 void Usb_Reset (void)
 {
-   //printf("Usb_Reset invoked\r\n");
    USB0_STATE = DEV_DEFAULT;           // Set device state to default
 
    POLL_WRITE_BYTE (POWER, 0x01);      // Clear usb inhibit bit to enable USB
@@ -142,7 +141,6 @@ void Usb_Resume(void)
 {
    volatile int xdata k;
 
-   //printf("Usb_Resume invoked\r\n");
    k++;
 
    // Add code for resume
@@ -163,11 +161,9 @@ void Usb_Resume(void)
 
 void Handle_Control (void)
 {
-   unsigned char xdata ControlReg;           // Temporary storage for EP control
+   unsigned char xdata ControlReg;     // Temporary storage for EP control
                                        // register
 
-   //printf("Handle_Control invoked\r\n");
-	
    POLL_WRITE_BYTE (INDEX, 0);         // Set Index to Endpoint Zero
    POLL_READ_BYTE (E0CSR, ControlReg); // Read control register
 
@@ -443,8 +439,6 @@ void Usb_Suspend (void)
 {
    volatile int xdata k;
    k++;
-
-   //printf("Usb_Suspend invoked\r\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -556,8 +550,6 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char addr,
 
 void Force_Stall (void)
 {
-   //printf("Force_Stall invoked\r\n");
-	
    POLL_WRITE_BYTE (INDEX, 0);
    POLL_WRITE_BYTE (E0CSR, rbSDSTL);   // Set the send stall bit
    EP_STATUS[0] = EP_STALL;            // Put the endpoint in stall status

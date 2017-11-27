@@ -8,7 +8,7 @@ import signal
 import csv
 import buddy as bt
 
-BUDDY_TEST_ADC_FREQ = 10000      # 1 kHz
+BUDDY_TEST_ADC_FREQ = 5000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
 BUDDY_TEST_COUNTER_FREQ = 10000     # 10 Hz
@@ -41,7 +41,7 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_OK):
+                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         print 'test_seq_pwm_freq: could not configure Buddy device'
         return -1
 
@@ -65,7 +65,7 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
 
         if (bt.buddy_send_pwm(handle,
                               packet,
-                              streaming) != bt.BUDDY_ERROR_OK):
+                              streaming) != bt.BUDDY_ERROR_CODE_OK):
             print 'test_seq_pwm_freq: could not send PWM packet'
             return -1
 
@@ -102,7 +102,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_OK):
+                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         print 'test_seq_pwm_duty: could not configure Buddy device'
         return -1
 
@@ -126,7 +126,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
 
         if (bt.buddy_send_pwm(handle,
                               packet,
-                              streaming) != bt.BUDDY_ERROR_OK):
+                              streaming) != bt.BUDDY_ERROR_CODE_OK):
             print 'test_seq_pwm_duty: could not send PWM packet'
             return -1
 
@@ -164,7 +164,7 @@ def test_seq_dac(handle, sample_rate, streaming):
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_OK):
+                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         print 'test_seq_dac: could not configure Buddy device'
         return -1
 
@@ -183,7 +183,7 @@ def test_seq_dac(handle, sample_rate, streaming):
 
         if (bt.buddy_send_dac(handle,
                               packet,
-                              streaming) != bt.BUDDY_ERROR_OK):
+                              streaming) != bt.BUDDY_ERROR_CODE_OK):
             print 'test_seq_dac: could not send DAC packet'
             return -1
 
@@ -238,7 +238,7 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_OK):
+                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         print 'test_seq_counter: could not configure Buddy device'
         return -1
 
@@ -249,7 +249,7 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
     for i in range(0, 1000):
         err_code = bt.buddy_read_counter(handle, packet, streaming)
 
-        if err_code == bt.BUDDY_ERROR_OK:
+        if err_code == bt.BUDDY_ERROR_CODE_OK:
             if first_packet:
                 test_time_start = time.time()
                 first_packet = False
@@ -271,7 +271,7 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
                     raise NameError('Could not write into CSV writer object')
                     return False
 
-        elif err_code == bt.BUDDY_ERROR_GENERAL:
+        elif err_code == bt.BUDDY_ERROR_CODE_GENERAL:
             print 'test_seq_counter: could not read counter packet'
             print 'err_code = %d' % err_code
             return -1
@@ -333,7 +333,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_OK):
+                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         print 'test_seq_adc: could not configure Buddy device'
         return -1
 
@@ -341,10 +341,10 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
 
     recv_packets = 0;
     first_packet = True
-    for i in range(0, 100):
+    for i in range(0, 1000):
         err_code = bt.buddy_read_adc(handle, packet, streaming)
 
-        if err_code == bt.BUDDY_ERROR_OK:
+        if err_code == bt.BUDDY_ERROR_CODE_OK:
             if first_packet:
                 test_time_start = time.time()
                 first_packet = False
@@ -372,7 +372,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
                     raise NameError('Could not write into CSV writer object')
                     return False
 
-        elif err_code == bt.BUDDY_ERROR_GENERAL:
+        elif err_code == bt.BUDDY_ERROR_CODE_GENERAL:
             print 'test_seq_adc: could not read ADC packet'
             print 'err_code = %d' % err_code
             return -1
