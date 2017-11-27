@@ -203,24 +203,53 @@ typedef enum _RUNTIME_COUNTER_CONTROL_ACTIVE {
 
 /**
 * \enum BUDDY_DATA_SIZE
-* \brief 
+* \brief the data size being sent in HID frames.  ADC and DAC modes
+*	both use LOW and HIGH but counter/PWM modes support SUPER for
+*	larger frequencies and high tick counts. 
 */
 typedef enum _BUDDY_DATA_SIZE {
 	BUDDY_DATA_SIZE_LOW = 1,		// 8-bit
 	BUDDY_DATA_SIZE_HIGH = 2,		// 16-bit
-	BUDDY_DATA_SIZE_SUPER = 4,	// 32-bit
+	BUDDY_DATA_SIZE_SUPER = 4,		// 32-bit
 } BUDDY_DATA_SIZE;
 
 /**
  * \enum BUDDY_RESPONSE
- * \brief Header response field for USB HID IN packets
- *				 used to indicate if true packet is being sent
- *				 or filler to not stall the USB IN.
+ * \brief Header response field for USB HID IN packets used to indicate
+ * if the previous command was successful or error.  Also used by firmware
+ * to issue emergency response.  
  */
+
+/*
 typedef enum _BUDDY_RESPONSE {
-	BUDDY_RESPONSE_FILLER = 0x00,
-	BUDDY_RESPONSE_VALID = 0x80
+	BUDDY_RESPONSE_VALID = 0x80,
+	BUDDY_RESPONSE_ERROR = 0x40,
 } BUDDY_RESPONSE;
+*/
+
+typedef enum _BUDDY_RESPONSE {
+	BUDDY_RESPONSE_TYPE_DATA   = 0x80,
+	BUDDY_RESPONSE_TYPE_STATUS = 0x40,
+} BUDDY_TYPE_RESPONSE;
+
+#define BUDDY_ERROR_CODE_BASE (0x0)
+
+/**
+ * \enum BUDDY_ERROR_CODE
+ * \brief Returned by driver and firmware routines to indicate the reason
+ * 		  for an error.
+ */
+typedef enum _BUDDY_ERROR_CODE {
+	BUDDY_ERROR_CODE_OK           = (BUDDY_ERROR_CODE_BASE + 1),
+	BUDDY_ERROR_CODE_UNKNOWN      = (BUDDY_ERROR_CODE_BASE),
+	BUDDY_ERROR_CODE_NO_PACKET    = (BUDDY_ERROR_CODE_BASE - 1),
+	BUDDY_ERROR_CODE_GENERAL      = (BUDDY_ERROR_CODE_BASE - 2),
+	BUDDY_ERROR_CODE_INVALID      = (BUDDY_ERROR_CODE_BASE - 3),
+	BUDDY_ERROR_CODE_PROTOCOL     = (BUDDY_ERROR_CODE_BASE - 4),
+	BUDDY_ERROR_CODE_MEMORY       = (BUDDY_ERROR_CODE_BASE - 5),
+	BUDDY_ERROR_CODE_OUT_OF_BOUND = (BUDDY_ERROR_CODE_BASE - 6),
+	BUDDY_ERROR_CODE_TIMEOUT      = (BUDDY_ERROR_CODE_BASE - 7),
+} BUDDY_ERROR_CODE;
 
 /**
  * \enum BUDDY_CHANNELS

@@ -36,7 +36,7 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_OK):
+                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         print 'test_waveform_dac: could not configure Buddy device'
         return -1
 
@@ -67,7 +67,7 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
 
         if (bt.buddy_send_dac(handle,
                               packet,
-                              streaming) != bt.BUDDY_ERROR_OK):
+                              streaming) != bt.BUDDY_ERROR_CODE_OK):
             print 'test_waveform_dac: could not send DAC packet'
             return -1
 

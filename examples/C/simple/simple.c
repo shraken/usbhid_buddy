@@ -110,7 +110,7 @@ int8_t test_seq_pwm_freq(hid_device* handle, firmware_info_t *fw_info,
 	runtime_settings.pwm_mode = RUNTIME_PWM_MODE_FREQUENCY;
 	runtime_settings.pwm_timebase = RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12;
 
-	if (buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_OK) {
+	if (buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_CODE_OK) {
 		printf("test_seq_pwm_freq: could not buddy_init\n");
 		return -1;
 	}
@@ -128,7 +128,7 @@ int8_t test_seq_pwm_freq(hid_device* handle, firmware_info_t *fw_info,
 
 		printf("test_seq_pwm_freq, sending %d packet with value %d (%x)\r\n", test_seq_pwm_count++, k, k);
 
-		if (buddy_send_pwm(handle, &packet, streaming) != BUDDY_ERROR_OK) {
+		if (buddy_send_pwm(handle, &packet, streaming) != BUDDY_ERROR_CODE_OK) {
 			printf("test_seq_pwm_freq: buddy_send_pwm call failed\n");
 			return -1;
 		}
@@ -172,7 +172,7 @@ int8_t test_seq_pwm_duty(hid_device* handle, firmware_info_t *fw_info,
 	runtime_settings.pwm_mode = RUNTIME_PWM_MODE_DUTY_CYCLE;
 	runtime_settings.pwm_timebase = RUNTIME_PWM_TIMEBASE_SYSCLK;
 
-	if (buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_OK) {
+	if (buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_CODE_OK) {
 		printf("test_seq_pwm_duty: could not buddy_init\n");
 		return -1;
 	}
@@ -191,7 +191,7 @@ int8_t test_seq_pwm_duty(hid_device* handle, firmware_info_t *fw_info,
 
 		printf("test_seq_pwm_duty, sending %d packet with value %d (%x)\r\n", test_seq_pwm_count++, k, k);
 
-		if (buddy_send_pwm(handle, &packet, streaming) != BUDDY_ERROR_OK) {
+		if (buddy_send_pwm(handle, &packet, streaming) != BUDDY_ERROR_CODE_OK) {
 			printf("test_seq_pwm_duty: buddy_send_pwm call failed\n");
 			return -1;
 		}
@@ -238,7 +238,7 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 	//runtime_settings.dac_ref = RUNTIME_DAC_REF_INT_1V;
 	//runtime_settings.dac_ref = RUNTIME_DAC_REF_INT_2V;
 
-	if 	(buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_OK) {
+	if 	(buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_CODE_OK) {
 		printf("test_seq_dac: could not buddy_init\n");
 		return -1;
 	}
@@ -256,7 +256,7 @@ int8_t test_seq_dac(hid_device* handle, firmware_info_t *fw_info,
 		//printf("test_seq_dac, sending %d packet with value %d\r\n", test_seq_dac_count++, (k % 255));
 		printf("test_seq_dac, sending %d packet with value %d (%x)\r\n", test_seq_dac_count++, k, k);
 
-		if (buddy_send_dac(handle, &packet, streaming) != BUDDY_ERROR_OK) {
+		if (buddy_send_dac(handle, &packet, streaming) != BUDDY_ERROR_CODE_OK) {
 			printf("test_seq_dac: buddy_send_dac call failed\n");
 			return -1;
 		}
@@ -303,7 +303,7 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 
 	printf("timing_settings.period = %d (0x%x)\n", timing_settings.period, timing_settings.period);
 
-	if 	(buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_OK) {
+	if 	(buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_CODE_OK) {
 		printf("test_seq_dac: could not buddy_init\n");
 		return -1;
 	}
@@ -316,7 +316,7 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 		}
 
 		err_code = buddy_read_adc(handle, &packet, streaming);
-		if (err_code == BUDDY_ERROR_OK) {
+		if (err_code == BUDDY_ERROR_CODE_OK) {
 			printf("test_seq_adc: received packet %d\n", recv_packets);
 
 			for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
@@ -326,9 +326,9 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 			}
 
 			recv_packets++;
-		} else if (err_code == BUDDY_ERROR_GENERAL) {
+		} else if (err_code == BUDDY_ERROR_CODE_GENERAL) {
 			printf("test_seq_adc: buddy_send_adc call failed\n");
-			return BUDDY_ERROR_GENERAL;
+			return BUDDY_ERROR_CODE_GENERAL;
 		}
 	} while (recv_packets < 10000);
 

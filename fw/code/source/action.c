@@ -247,15 +247,17 @@ void execute_out(void)
 	}
 }
 
-void process_ctrl_function(ctrl_general_t *p_general)
+int8_t process_ctrl_function(ctrl_general_t *p_general)
 {
+	int8_t err_code;
 	debug(("process_ctrl_function()\r\n"));
 	
 	// check if requested DAQ function value is in boundary
 	if ((p_general->function < GENERAL_CTRL_NONE) ||
 		  (p_general->function >= GENERAL_CTRL_LENGTH)) {
 		daq_state = GENERAL_CTRL_NONE;
-	  return;
+	  
+		// error: requested function outside bounds
   } else {
 		daq_state = p_general->function;
 	}
@@ -266,8 +268,6 @@ void process_ctrl_function(ctrl_general_t *p_general)
 			ADC0_Disable();
 			pwm_disable();
 		
-			// enable TLV563x SPI DAC by setting power down (PD) register value
-			//TLV563x_DAC_set_power_mode(1);
 			TLV563x_DAC_Reset();
 			break;
 		
@@ -312,8 +312,8 @@ void process_ctrl_function(ctrl_general_t *p_general)
 			counter_enable();
 			break;
 			
-		case GENERAL_CTRL_NONE:
 		default:
+		case GENERAL_CTRL_NONE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
 			disable_all();
 		
@@ -337,9 +337,7 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	
 	m_chan_mask = p_general->channel_mask;
 	m_resolution = p_general->resolution;
-	
-	//printf("m_chan_mask = %bd (%bx)\r\n", m_chan_mask, m_chan_mask);
-	
+
 	if (m_resolution == RESOLUTION_CTRL_SUPER) {
 		m_data_size = BUDDY_DATA_SIZE_SUPER;
 	} else if (m_resolution == RESOLUTION_CTRL_HIGH) {
@@ -352,11 +350,9 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	m_chan_number = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_chan_mask & (1 << i)) {
-			//printf("process_ctrl_chan_res(): channel %bd activated\r\n", i); 
 			m_chan_enable[i] = 1;
 			m_chan_number++;	
 		} else {
-			//printf("process_ctrl_chan_res(): channel %bd not activated\r\n", i);
 			m_chan_enable[i] = 0;
 		}
 	}
@@ -393,7 +389,7 @@ int process_ctrl_chan_res(ctrl_general_t *p_general)
 	return 0;
 }
 
-void process_ctrl_general(uint8_t *p)
+int8_t process_ctrl_general(uint8_t *p)
 {
 	ctrl_general_t xdata *p_general;
 	
@@ -407,9 +403,11 @@ void process_ctrl_general(uint8_t *p)
 	process_ctrl_mode_operation(p_general);
 	process_ctrl_chan_res(p_general);
 	process_ctrl_function(p_general);
+	
+	return BUDDY_ERROR_CODE_OK;
 }
 
-void process_ctrl_runtime(uint8_t *p)
+int8_t process_ctrl_runtime(uint8_t *p)
 {
 	ctrl_runtime_t xdata *p_runtime;
 	uint8_t xdata adc_reg_value = 0;
@@ -442,7 +440,7 @@ void process_ctrl_runtime(uint8_t *p)
 			break;
 						
 		default:
-			return;
+			return BUDDY_ERROR_CODE_INVALID;
 	}
 				
 	// set TLV563X power mode (ON/OFF)
@@ -489,7 +487,7 @@ void process_ctrl_runtime(uint8_t *p)
 			break;
 						
 		default:
-			break;
+			return BUDDY_ERROR_CODE_INVALID;
 	}
 			
 	if (p_runtime->adc_gain == RUNTIME_ADC_GAIN_1X) {
@@ -505,9 +503,11 @@ void process_ctrl_runtime(uint8_t *p)
 	m_pwm_mode = p_runtime->pwm_mode;
 	m_pwm_timebase = p_runtime->pwm_timebase;
 	m_counter_control = p_runtime->counter_control;
+	
+	return BUDDY_ERROR_CODE_OK;
 }
 
-void process_ctrl_timing(uint8_t *p)
+int8_t process_ctrl_timing(uint8_t *p)
 {
 	ctrl_timing_t xdata *p_timing;
 	
@@ -520,47 +520,73 @@ void process_ctrl_timing(uint8_t *p)
 	// to average over
 	Timer0_Set_Period(p_timing->period);
 	adc_int_dec_max = p_timing->averaging;
+	
+	return BUDDY_ERROR_CODE_OK;
 }
 
-int process_ctrl()
+int8_t process_ctrl()
 {
-	uint8_t xdata ctrl_type;
-
+		uint8_t xdata ctrl_type;
+		int8_t err_code;
+	
     ctrl_type = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 
-	debug(("process_ctrl():\r\n"));
+		debug(("process_ctrl():\r\n"));
     debug(("ctrl_type = 0x%02bX\r\n", ctrl_type));
 	
     // check for which CTRL setting to modify
     switch (ctrl_type) 
     {
-        case CTRL_GENERAL:
+      case CTRL_GENERAL:
 			debug(("CTRL_GENERAL\r\n"));
-			process_ctrl_general( (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET]);
+			err_code = process_ctrl_general( (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET]);
 			break;
 				
 		case CTRL_RUNTIME:
 			debug(("CTRL_RUNTIME\r\n"));
-			process_ctrl_runtime( (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET]);
+			err_code = process_ctrl_runtime( (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET]);
 			break;
 				
 		case CTRL_TIMING:
 			debug(("CTRL_TIMING\r\n"));
-			process_ctrl_timing( (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET]);
+			err_code = process_ctrl_timing( (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET]);
 			break;
 
 		default:
-			return -1;
+			err_code = BUDDY_ERROR_CODE_INVALID;
 			break;
     }
     
-    //debug(("daq_state = %02bx\r\n", daq_state));
-    return 0;
+    return err_code;
+}
+
+void respond_data(uint8_t *buffer, uint8_t length)
+{
+		IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_DATA;
+	
+		if ((buffer) && (length > 0)) {
+				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], buffer, length);
+		}
+				
+		P_IN_PACKET_SEND = &IN_PACKET[0];
+		SendPacket(IN_DATA);
+		return;
+}
+
+void respond_status(int8_t error_code)
+{
+		IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_STATUS;
+		IN_PACKET[BUDDY_APP_INDIC_OFFSET] = error_code;
+	
+		P_IN_PACKET_SEND = &IN_PACKET[0];
+		SendPacket(IN_DATA);
+		return;
 }
 
 void process_out()
 {
 	uint8_t xdata app_code;
+	int8_t err_code ;
 	uint8_t i;
 	
 	// USB HID OUT message from host has been posted.  Check the
@@ -573,13 +599,13 @@ void process_out()
 		switch (app_code) {
 			case APP_CODE_CTRL:
 				debug(("APP_CODE_CTRL\r\n"));
-				process_ctrl();
+				err_code = process_ctrl();
+				respond_status(err_code);
 				break;
 						
 			case APP_CODE_DAC:
 				new_dac_packet = 1;
 				if (daq_state == GENERAL_CTRL_DAC_ENABLE) {
-					//process_dac();
 					execute_out();
 				}
 				
@@ -587,7 +613,6 @@ void process_out()
 				break;
 						
 			case APP_CODE_PWM:
-				//debug(("APP_CODE_PWM\r\n"));
 				new_pwm_packet = 1;
 				if (daq_state == GENERAL_CTRL_PWM_ENABLE) {
 					execute_out();
@@ -602,11 +627,16 @@ void process_out()
 							
 			case APP_CODE_INFO:
 				debug(("APP_CODE_INFO\r\n"));
+			
+				/*
 				IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_VALID;
 				memcpy(&IN_PACKET[BUDDY_APP_INDIC_OFFSET], &fw_info, sizeof(firmware_info_t));
 				
 				P_IN_PACKET_SEND = &IN_PACKET[0];
 				SendPacket(IN_DATA);
+				*/
+			
+				respond_data(&fw_info, sizeof(firmware_info_t));
 				break;
 						
 			default:
@@ -690,7 +720,6 @@ void build_counter_packet(void)
 				
 	  encode_count = 0;
 		
-		//printf("set in_packet_ready = true\n");
 		in_packet_ready = true;
 		in_packet_offset = 0;
 	}
@@ -762,7 +791,7 @@ void process_in(void)
 		if (!SendPacketBusy) {
 			if (in_packet_ready) {
 				in_packet_ready = false;
-				*(P_IN_PACKET_SEND + BUDDY_APP_CODE_OFFSET) = BUDDY_RESPONSE_VALID | (in_counter++ % BUDDY_MAX_COUNTER);
+				*(P_IN_PACKET_SEND + BUDDY_APP_CODE_OFFSET) = BUDDY_RESPONSE_TYPE_DATA | (in_counter++ % BUDDY_MAX_COUNTER);
 				
 				//P3 = P3 & ~0x40;
 				SendPacket(IN_DATA);

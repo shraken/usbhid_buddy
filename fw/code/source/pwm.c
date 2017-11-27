@@ -55,14 +55,11 @@ int8_t pwm_duty_cycle_init(void)
 	
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (pwm_chan_enable[i]) {
-			//printf("pwm_duty_cycle_init(): activate channel %bd\r\n", i);
-
 			pwm_cex[i] = 0xFFFF;
 			pwm_set_duty_cycle(i, pwm_cex[i]); 
 		}
 	}
 				
-	//printf("pwm_duty_cycle_init exit\r\n");
 	return PWM_ERROR_CODE_OK;
 }
 
@@ -83,15 +80,12 @@ int8_t pwm_frequency_init(void)
 	
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (pwm_chan_enable[i]) {
-			//printf("pwm_frequency_init(): activate channel %bd\r\n", i);
-
 			// Configure initial PWM frequency for 1 kHz
 			pwm_cex[i] = DEFAULT_FREQUENCY;
 			pwm_set_frequency(i, pwm_cex[i]);
 		}
 	}
 	
-	//printf("pwm_frequency_init exit\r\n");
 	return PWM_ERROR_CODE_OK;
 }
 
@@ -99,13 +93,6 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 {
 	uint8_t i;
 
-	/*
-	printf("pwm_init exit\r\n");
-	printf("mode = %bd\r\n", mode);
-	printf("resolution = %bd\r\n", resolution);
-	printf("chan_mask = %bd\r\n", chan_mask);
-	*/
-	
 	pwm_pin_init();
 
 	pwm_chan_mask = chan_mask;
@@ -127,28 +114,21 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 	} else {
 		return PWM_ERROR_CODE_GENERAL_ERROR;
 	}
-	
-	//printf("pwm_init exit\r\n");
+
 	return PWM_ERROR_CODE_OK;
 }
 
 void pwm_enable(void)
 {
-	//printf("pwm_enable invoked\r\n");
-	
 	// Enable PCA interrupts
   EIE1 |= 0x10;
 	
 	// Start PCA counter
   CR = 1;
-	
-	//printf("pwm_enable exit\r\n");
 }
 
 void pwm_disable(void)
 {
-	//printf("pwm_disable invoked\r\n");
-	
 	// Stop counter; clear all flags
 	PCA0CN = 0x00;
 	
@@ -162,9 +142,6 @@ void pwm_disable(void)
 int8_t pwm_set_timebase(uint8_t value)
 {
 		PCA0MD &= ~(0x0E);
-	
-		//printf("pwm_set_timebase enter\r\n");
-		//printf("value = %bd\r\n", value);
 	
 		switch (value) {
 			case RUNTIME_PWM_TIMEBASE_SYSCLK:
@@ -187,7 +164,6 @@ int8_t pwm_set_timebase(uint8_t value)
 				return PWM_ERROR_CODE_INDEX_ERROR;
 		}
 		
-		//printf("pwm_set_timebase exit\r\n");
 		return PWM_ERROR_CODE_OK;
 }
 
@@ -200,17 +176,12 @@ int8_t pwm_set_frequency(uint8_t channel, uint32_t value)
 	  return PWM_ERROR_CODE_INDEX_ERROR;
 	}
 	
-	//debug(("pwm_set_frequency() entered\r\n"));
-	//debug(("value = %lu\r\n", value));
-	
 	pwm_cex[channel] = value;
 	
 	reg_value = (pwm_timebase / (2 * pwm_cex[channel]));
-	//debug(("reg_value = %bd (%bx)\r\n", reg_value, reg_value));
-	
+
 	switch (channel) {
 		case BUDDY_CHAN_0:
-			//debug(("pwm_set_frequency(): BUDDY_CHAN_0\r\n"));
 			PCA0CPH0 = reg_value;
 			break;
 					
@@ -233,8 +204,7 @@ int8_t pwm_set_frequency(uint8_t channel, uint32_t value)
 		default:
 			break;
 	}
-	
-	//printf("pwm_set_frequency exit\r\n");
+
 	return PWM_ERROR_CODE_OK;
 }
 
@@ -244,9 +214,6 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 		  (channel > BUDDY_CHAN_4)) {
 	  return PWM_ERROR_CODE_INDEX_ERROR;
 	}
-	
-	//printf("pwm_set_duty_cycle() invoked\r\n");
-	//printf("value = %u\r\n", value);
 	
 	pwm_cex[channel] = value;
 	
@@ -299,8 +266,7 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 		default:
 			break;
 	}
-			
-	//printf("pwm_set_duty_cycle exit\r\n");
+
 	return PWM_ERROR_CODE_OK;
 }
 
