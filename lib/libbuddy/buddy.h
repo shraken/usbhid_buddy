@@ -4,9 +4,11 @@
 #include <stdint.h>
 //#include <stdbool.h>
 
+/*
 #if defined(C8051)
 #include <globals.h>
 #endif
+*/
 
 // C8051 System Clock Frequency
 #define SYSCLK     48000000
@@ -219,14 +221,6 @@ typedef enum _BUDDY_DATA_SIZE {
  * if the previous command was successful or error.  Also used by firmware
  * to issue emergency response.  
  */
-
-/*
-typedef enum _BUDDY_RESPONSE {
-	BUDDY_RESPONSE_VALID = 0x80,
-	BUDDY_RESPONSE_ERROR = 0x40,
-} BUDDY_RESPONSE;
-*/
-
 typedef enum _BUDDY_RESPONSE {
 	BUDDY_RESPONSE_TYPE_DATA   = 0x80,
 	BUDDY_RESPONSE_TYPE_STATUS = 0x40,
@@ -251,6 +245,8 @@ typedef enum _BUDDY_ERROR_CODE {
 	BUDDY_ERROR_CODE_TIMEOUT      = (BUDDY_ERROR_CODE_BASE - 7),
 } BUDDY_ERROR_CODE;
 
+#define BUDDY_CHAN_LENGTH 8
+
 /**
  * \enum BUDDY_CHANNELS
  * \brief list of channel number sequentially indexed.
@@ -264,7 +260,6 @@ typedef enum _BUDDY_CHANNELS {
 	BUDDY_CHAN_5,
 	BUDDY_CHAN_6,
 	BUDDY_CHAN_7,
-  BUDDY_CHAN_LENGTH,
 } BUDDY_CHANNELS;
 
 /**

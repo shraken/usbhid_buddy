@@ -2,6 +2,25 @@
 #include <support.h>
 #include <gpio.h>
 #include <globals.h>
+#include <tlv563x.h>
+#include <pwm.h>
+#include <adc.h>
+#include <counter.h>
+
+void disable_all(void)
+{
+	// disable TLV563x SPI DAC
+	tlv563x_dac_set_power_mode(0);
+	
+	// disable PWM
+	pwm_disable();
+	
+	// disable ADC
+	adc_disable();
+	
+	// disable counter
+	counter_disable();
+}
 
 void txrx_leds_off(void)
 {
@@ -11,7 +30,7 @@ void txrx_leds_off(void)
 
 void rx_led_toggle(void)
 {
-	static uint8_t xdata toggle_state = 0;
+	static uint8_t toggle_state = 0;
 
 	if (toggle_state) {
 		gpio_set_pin_value(STATUS_RX_LED_PIN, GPIO_VALUE_LOW);
@@ -24,7 +43,7 @@ void rx_led_toggle(void)
 
 void tx_led_toggle(void)
 {
-	static uint8_t xdata toggle_state = 0;
+	static uint8_t toggle_state = 0;
 
 	if (toggle_state) {
 		gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_LOW);

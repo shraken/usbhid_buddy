@@ -11,47 +11,35 @@
 #include <stdint.h>
 #include <globals.h>
 #include <gpio.h>
-#include <adc.h>
 
-/** @brief Explicitly initializes the GPIO pins required for
-  *         "drive" functionality as open-drain. 
-  *
-  *  @return error_t enum indicating success or error.
- */
-error_t gpio_init()
+int8_t gpio_init()
 {
 	// red and green LEDs used to indicate RX/TX
 	gpio_set_pin_mode(STATUS_TX_LED_PIN, GPIO_MODE_PUSH_PULL);
-    gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_HIGH);
+  gpio_set_pin_value(STATUS_TX_LED_PIN, GPIO_VALUE_HIGH);
     
 	gpio_set_pin_mode(STATUS_RX_LED_PIN, GPIO_MODE_PUSH_PULL);
-    gpio_set_pin_value(STATUS_RX_LED_PIN, GPIO_VALUE_HIGH);
+  gpio_set_pin_value(STATUS_RX_LED_PIN, GPIO_VALUE_HIGH);
 	
 	// heartbeat LED used to indicate if fw is running
 	gpio_set_pin_mode(HEARTBEAT_PIN, GPIO_MODE_PUSH_PULL);
-    gpio_set_pin_value(HEARTBEAT_PIN, GPIO_VALUE_LOW);
+  gpio_set_pin_value(HEARTBEAT_PIN, GPIO_VALUE_LOW);
 	
 	// TLV563x LDAC low
 	gpio_set_pin_mode(TLV563X_LDAC_PIN, GPIO_MODE_PUSH_PULL);
-    gpio_set_pin_value(TLV563X_LDAC_PIN, GPIO_VALUE_LOW);
+  gpio_set_pin_value(TLV563X_LDAC_PIN, GPIO_VALUE_LOW);
 	
 	// test/debug GPIO for measuring execution time
 	gpio_set_pin_mode(TEST_STATUS_PIN, GPIO_MODE_PUSH_PULL);
 	gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
 	
-    return E_SUCCESS;
+  return GPIO_ERROR_CODE_SUCCESS;
 }
 
-/** @brief Sets the pin value to high or low state.
-  *
-  *  @param pin Encoded pin value from gpio_drive_pins.
-  *  @param value High or Low enum enumeration.
-  *  @return error_t enum indicating success or error.
- */
-error_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
+int8_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
 {
-    gpio_major_pin xdata pin_major;
-    gpio_minor_pin xdata pin_minor;
+    gpio_major_pin pin_major;
+    gpio_minor_pin pin_minor;
 
     // use bitmask and shift operationt to extract
     // the major and minor positions
@@ -82,24 +70,18 @@ error_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
         
         // bad input, fail gracefully
         default:
-            return E_INDEX_OUT_BOUND;
+            return GPIO_ERROR_CODE_INDEX_OUT_BOUND;
             break;
     }
     
     // otherwise, success
-    return E_SUCCESS;
+    return GPIO_ERROR_CODE_SUCCESS;
 }
 
-/** @brief Sets the pin mode to open-drain or push-pull.
-  *
-  *  @param pin Encoded pin value from gpio_drive_pins
-  *  @param mode Open Drain or Push Pull enumeration
-  *  @return error_t enum indicating success or error.
- */
-error_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
+int8_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
 {
-    gpio_major_pin xdata pin_major;
-    gpio_minor_pin xdata pin_minor;
+    gpio_major_pin pin_major;
+    gpio_minor_pin pin_minor;
 
     // use bitmask and shift operationt to extract
     // the major and minor positions
@@ -163,14 +145,14 @@ error_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
     }
     
     // otherwise, success
-    return E_SUCCESS;
+    return GPIO_ERROR_CODE_SUCCESS;
 }
 
-int gpio_get_pin_value(gpio_pin pin)
+uint8_t gpio_get_pin_value(gpio_pin pin)
 {
-    uint8_t xdata pin_value;
-    gpio_major_pin xdata pin_major;
-    gpio_minor_pin xdata pin_minor;
+    uint8_t pin_value;
+    gpio_major_pin pin_major;
+    gpio_minor_pin pin_minor;
     
     // use bitmask and shift operationt to extract
     // the major and minor positions

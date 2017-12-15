@@ -1,34 +1,12 @@
 #include <init.h>
+#include <C8051F3xx.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_Register.h>
-#include <C8051F3xx.h>
 #include <gpio.h>
 #include <globals.h>
 
-// ----------------------------------------------------------------------------
-// Global Variables
-// ----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Interrupt Service Routines
-//-----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-// Initialization Routines
-// ----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// System_Init (void)
-//-----------------------------------------------------------------------------
-//
-// Return Value - None
-// Parameters - None
-//
-// This top-level initialization routine calls all support routine.
-//
-// ----------------------------------------------------------------------------
-void System_Init(void)
+void system_init(void)
 {
    PCA0MD &= ~0x40;                    // Disable Watchdog timer
 
@@ -36,22 +14,12 @@ void System_Init(void)
                                        // its maximum frequency
    RSTSRC  = 0x04;                     // Enable missing clock detector
     
-   Sysclk_Init();                      // Initialize oscillator
-   Port_Init();                        // Initialize crossbar and GPIO
-   Usb_Init();                         // Initialize USB0
+   sysclk_init();                      // Initialize oscillator
+   port_init();                        // Initialize crossbar and GPIO
+   usb_init();                         // Initialize USB0
 }
 
-//-----------------------------------------------------------------------------
-// Sysclk_Init
-//-----------------------------------------------------------------------------
-//
-// Return Value - None
-// Parameters - None
-//
-// Initialize system clock to maximum frequency.
-//
-// ----------------------------------------------------------------------------
-void Sysclk_Init(void)
+void sysclk_init(void)
 {
 #ifdef _USB_LOW_SPEED_
 
@@ -80,18 +48,12 @@ void Sysclk_Init(void)
 #endif  /* _USB_LOW_SPEED_ */
 }
 
-// ----------------------------------------------------------------------------
-// Port_Init
-// ----------------------------------------------------------------------------
-// Routine configure the Crossbar and GPIO ports.
-//
-void Port_Init(void)
+void port_init(void)
 {	
     P2MDIN    = 0x00;
 
     P0MDOUT   = 0x10;
 
-		//P1MDOUT   = 0x9D;
 		P1MDOUT   = 0x85;
 	
 		P3MDOUT   = 0x30;
@@ -99,7 +61,6 @@ void Port_Init(void)
 		P4MDOUT   = 0x80;
 	
     P0SKIP    = 0xCF;
-    //P1SKIP    = 0xF0;
 		P1SKIP 	  = 0x00;
 		P2SKIP    = 0xFF;
     P3SKIP    = 0x30;
@@ -109,23 +70,9 @@ void Port_Init(void)
 	
 		// set SPI chip select DAC and external memory to be disabled by default
 		gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
-		gpio_set_pin_value(SPI_MEM_CS_PIN, GPIO_VALUE_HIGH);
 }
 
-//-----------------------------------------------------------------------------
-// USB0_Init
-//-----------------------------------------------------------------------------
-//
-// Return Value - None
-// Parameters - None
-//
-// - Initialize USB0
-// - Enable USB0 interrupts
-// - Enable USB0 transceiver
-// - Enable USB0 with suspend detection
-//
-// ----------------------------------------------------------------------------
-void Usb_Init(void)
+void usb_init(void)
 {
    POLL_WRITE_BYTE(POWER,  0x08);      // Force Asynchronous USB Reset
    POLL_WRITE_BYTE(IN1IE,  0x07);      // Enable Endpoint 0-2 in interrupts
@@ -163,14 +110,8 @@ void Usb_Init(void)
 // ----------------------------------------------------------------------------
 void Delay(void)
 {
-   int xdata x;
+   int x;
+	
    for(x = 0;x < 500;x)
-      x++;
-}
-
-void DelayLong(void)
-{
-   int xdata x;
-   for(x = 0;x < 5000;x)
       x++;
 }

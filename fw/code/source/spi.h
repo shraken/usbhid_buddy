@@ -48,10 +48,22 @@ typedef enum _SPI_DEVICE_TYPE {
  *
  * @return Void.
  */
-void SPI0_Init(void);
-void SPI_Array_Write (void);
-void SPI_Array_Read (void);
-void SPI_Array_ReadWrite (void);
-void SPI_Select(uint8_t chip_select);
+void spi_init(void);
+
+/**
+ * @brief Preforms a SPI read/write transaction of length `bytes_trans`.
+ *
+ * @return Void.
+ */
+void spi_array_readwrite(void);
+
+/**
+ * @brief Configures the DAC CS as the primary SPI chip select.  This is a leftover
+ *			  artificat when multiple SPI devices were supported and isn't explictly necessary
+ *	      and in future should be revised and removed.
+ *
+ * @return Void.
+ */
+void spi_select(void);
 
 #endif /* _SPI_H_ */

@@ -1,30 +1,21 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <c8051f3xx.h>
 #include <timers.h>
 #include <buddy.h>
 #include <globals.h>
-#include <action.h>
+#include <process.h>
 #include <adc.h>
+#include <io.h>
 #include <gpio.h>
 #include <utility.h>
-#include <c8051f3xx.h>
 
-extern void build_counter_packet(void);
-extern void build_adc_packet(void);
+uint8_t timer0_flag = 0;
 
-extern uint8_t xdata daq_state;
+static uint8_t timer0_low_set;
+static uint8_t timer0_high_set;
 
-extern uint8_t data adc_channel_index;
-extern uint8_t xdata adc_channel_count;
-extern uint8_t xdata adc_mux_tbl_n[MAX_ANALOG_INPUTS];
-extern uint8_t xdata adc_mux_tbl_p[MAX_ANALOG_INPUTS];
-
-uint8_t xdata timer0_flag = 0;
-
-uint8_t xdata timer0_low_set;
-uint8_t xdata timer0_high_set;
-
-void Timer0_Init (void)
+void timer_init(void)
 {
 	// set to 0xF05F (4000) ticks at 0.25 usec timer period
 	// for equivalent interrupt of 1000 usec.
@@ -46,17 +37,17 @@ void Timer0_Init (void)
 	TCON |= 0x10;
 }
 
-void Timer0_Set_Period (uint32_t period)
+void timer_set_period(uint32_t period)
 {
-	uint16_t xdata timer_set;
-	
+	uint16_t timer_set;
+
 	// Disable Timer0
 	TCON &= ~(0x10);
 	
 	// Timer0 interrupt disabled
 	ET0 = 0;
 	
-	debug(("Timer0_Set_Period, nsec period = %lu\r\n", period));
+	debug(("timer_set_period, nsec period = %lu\r\n", period));
 	
 	// bound period by lower value of 20.83 nsec (21 nsec)
 	// and upper value of 65535000 nsec.
@@ -140,14 +131,14 @@ void Timer0_Set_Period (uint32_t period)
 // Interrupt Service Routines
 //-----------------------------------------------------------------------------
 
-void Timer0_ISR (void) interrupt 1
+void timer_isr(void) interrupt 1
 {
 	TH0 = timer0_high_set;
 	TL0 = timer0_low_set;
-	
+
 	timer0_flag = 1;
 	
-	if (daq_state == GENERAL_CTRL_ADC_ENABLE) {
+	if (buddy_ctx.daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		//P3 = P3 & ~0x40;
 		//P3 = P3 | 0x40;
 		
@@ -159,7 +150,7 @@ void Timer0_ISR (void) interrupt 1
       AMX0P = adc_mux_tbl_n[adc_channel_index + 1];
 			AMX0N = adc_mux_tbl_p[adc_channel_index + 1];
 		}
-  } else if (daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
+  } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
 		build_counter_packet();
 	}
 }

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <counter.h>
 #include <C8051F3xx.h>
+#include <counter.h>
 
 static uint8_t counter_chan_enable[BUDDY_CHAN_LENGTH] = { 0 };
 static int32_t counter_int0_count = 0;

@@ -1,8 +1,8 @@
-#include <uart.h>
 #include <c8051f3xx.h>
+#include <uart.h>
 #include <globals.h>
 
-void UART0_Init (void)
+void uart_init (void)
 {
    SCON0 = 0x10;                       // SCON0: 8-bit variable bit rate
                                        //        level of STOP bit is ignored

@@ -1,25 +1,25 @@
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
-#include <spi.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include <c8051f3xx.h>
+#include <spi.h>
 #include <gpio.h>
 #include <globals.h>
-
-#include <c8051f3xx.h>
 
 //-----------------------------------------------------------------------------
 // Global Variables
 //-----------------------------------------------------------------------------
-unsigned char xdata SPI_Data_Rx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
-unsigned char xdata SPI_Data_Tx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
+uint8_t SPI_Data_Rx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
+uint8_t SPI_Data_Tx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
 
-unsigned char xdata bytes_trans;
+uint8_t bytes_trans;
 
-void SPI_ISR (void) interrupt 6
+void spi_isr(void) interrupt 6
 {
-	static unsigned char xdata state = 0;
-	static unsigned char xdata array_index = 0;
+	static unsigned char state = 0;
+	static unsigned char array_index = 0;
 	
 	switch (state) {
 		// continue sending
@@ -57,7 +57,7 @@ void SPI_ISR (void) interrupt 6
 	SPIF = 0;
 }
 
-void SPI0_Init(void)
+void spi_init(void)
 {
    // set the number of bytes in transcation to zero
    bytes_trans = 0;
@@ -72,17 +72,15 @@ void SPI0_Init(void)
    ESPI0 = 1;                          // Enable SPI interrupts
 }
 
-void SPI_Array_ReadWrite (void)
+void spi_array_readwrite(void)
 {
-	//P3 = P3 & ~0x40;
+		//P3 = P3 & ~0x40;
 
-	// Wait until the SPI is free, in case
+		// Wait until the SPI is free, in case
     // it's already busy
     while (!NSSMD0);                    
 	
     NSSMD0 = 0;
-
-    //Command = SPI_READ_BUFFER;
 
     //SPI0DAT = Command;
     SPI0DAT = SPI_Data_Tx_Array[0];
@@ -90,35 +88,16 @@ void SPI_Array_ReadWrite (void)
     // Wait for SPI transcation to complete
     while (!NSSMD0);
 	
-			//P3 = P3 | 0x40;
+		//P3 = P3 | 0x40;
 }
 
-void SPI_Select(uint8_t chip_select)
+void spi_select(void)
 {
-	switch (chip_select) {
-		case SPI_DEVICE_TYPE_TLV563x:
-			// Use mode 2 with data valid on leading edge but clock idle high
-			SPI0CFG = 0x50;
+	// Use mode 2 with data valid on leading edge but clock idle high
+	SPI0CFG = 0x50;
 		
-			// disable chip select for memory
-			gpio_set_pin_value(SPI_MEM_CS_PIN, GPIO_VALUE_HIGH);
-		
-			// disable SPI NSS skip
-			P1SKIP &= ~(1 << 3);
-			break;
-		
-		case SPI_DEVICE_TYPE_23LC1024:
-			// Use mode 0 with data valid on leading edge but clock idle high
-			SPI0CFG = 0x40;
-		
-			// disable chip select for tlv563x DAC
-			gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
-		
-			// enable SPI NSS skip
-			P1SKIP |= (1 << 3);
-			break;
-		
-		default:
-			break;
-	}
+	// disable SPI NSS skip
+	P1SKIP &= ~(1 << 3);
+	
+	return;
 }

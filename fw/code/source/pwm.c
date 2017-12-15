@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <pwm.h>
 #include <C8051F3xx.h>
+#include <pwm.h>
 
 static uint32_t pwm_timebase = SYSCLK;
 static uint32_t pwm_cex[NUMBER_PCA_CHANNELS];
@@ -66,8 +66,7 @@ int8_t pwm_duty_cycle_init(void)
 int8_t pwm_frequency_init(void)
 {
 	uint8_t i;
-	uint8_t value;
-	
+
 	// Stop counter; clear all flags
 	PCA0CN = 0x00;
 
@@ -272,8 +271,6 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 
 void PCA0_ISR (void) interrupt 11
 {
-	uint8_t i;
-
 	if (pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
 		if (CCF0) {
 			CCF0 = 0;

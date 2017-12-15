@@ -9,23 +9,17 @@
 #include <spi.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <c8051f3xx.h>
 #include <buddy.h>
 #include <tlv563x.h>
-#include <c8051f3xx.h>
 #include <utility.h>
 
 // shraken TODO: make this configurable as build directive
-uint8_t xdata tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
+static uint8_t tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
 
-extern code firmware_info_t fw_info;
-
-extern unsigned char xdata SPI_Data_Rx_Array[];
-extern unsigned char xdata SPI_Data_Tx_Array[];
-extern unsigned char xdata bytes_trans;
-
-void TLV563x_write(uint8_t reg_channel, uint16_t reg_value)
+void tlv563x_write(uint8_t reg_channel, uint16_t reg_value)
 {
-	SPI_Select(SPI_DEVICE_TYPE_TLV563x);
+	spi_select();
 	
 	SPI_Data_Tx_Array[0] = (reg_channel << 4);
 	SPI_Data_Tx_Array[0] |= ((reg_value & 0x0F00) >> 8);
@@ -33,12 +27,12 @@ void TLV563x_write(uint8_t reg_channel, uint16_t reg_value)
 	
 	//debug(("TLV5630_write_block: writing %02bx:%02bx\r\n", SPI_Data_Array[0], SPI_Data_Array[1]));
 	bytes_trans = 2;
-	SPI_Array_ReadWrite();
+	spi_array_readwrite();
 
 	return;
 }
 
-void TLV563x_DAC_Init(void)
+void tlv563x_dac_init(void)
 {
 	// set DAC bit resolution
 	switch (fw_info.type_dac) {
@@ -57,34 +51,34 @@ void TLV563x_DAC_Init(void)
 	}
 	
     // CTRL0
-	TLV563x_write(REG_CTRL0, 0x00);
+	tlv563x_write(TLV563X_REG_CTRL0, 0x00);
     // Timer0_wait(1);
     
     // CTRL1
-	TLV563x_write(REG_CTRL1, 0x00);
+	tlv563x_write(TLV563X_REG_CTRL1, 0x00);
     // Timer0_wait(1);
 	
-	TLV563x_DAC_Reset();
+	tlv563x_dac_reset();
 	
 	return;
 }
 
-void TLV563x_DAC_Reset(void)
+void tlv563x_dac_reset(void)
 {
-	int xdata i;
+	int i;
 	
 	// set all DAC channels to zero outputs
-	for (i = REG_DAC_A; i <= REG_DAC_H; i++) {
-		TLV563x_write(i, 0);  
+	for (i = TLV563X_REG_DAC_A; i <= TLV563X_REG_DAC_H; i++) {
+		tlv563x_write(i, 0);  
   }
 }
 
-void TLV563x_DAC_set_power_mode(uint8_t power_state)
+void tlv563x_dac_set_power_mode(uint8_t power_state)
 {
 	// CTRL0
 	if (power_state) {
-		TLV563x_write(REG_CTRL0, 0x00);
+		tlv563x_write(TLV563X_REG_CTRL0, 0x00);
 	} else {
-		TLV563x_write(REG_CTRL0, 0x10);
+		tlv563x_write(TLV563X_REG_CTRL0, 0x10);
 	}
 }

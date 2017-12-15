@@ -371,11 +371,6 @@
           <GroupName>Main</GroupName>
           <Files>
             <File>
-              <FileName>action.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\source\action.c</FilePath>
-            </File>
-            <File>
               <FileName>adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\adc.c</FilePath>
@@ -444,6 +439,16 @@
               <FileName>counter.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\counter.c</FilePath>
+            </File>
+            <File>
+              <FileName>io.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\io.c</FilePath>
+            </File>
+            <File>
+              <FileName>process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\process.c</FilePath>
             </File>
           </Files>
         </Group>

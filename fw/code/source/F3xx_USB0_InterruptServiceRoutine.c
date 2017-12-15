@@ -569,8 +569,7 @@ void Force_Stall (void)
 //-----------------------------------------------------------------------------
 
 void SendPacket (unsigned char ReportID)
-{	 
-	bit EAState;
+{
 	unsigned char xdata ControlReg;
 
 	EIE1 &= ~0x02;

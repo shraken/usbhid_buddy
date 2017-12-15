@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <string.h>
+#include <c8051f3xx.h>
 #include <main.h>
 #include <gpio.h>
 #include <init.h>
@@ -5,18 +8,17 @@
 #include <spi.h>
 #include <adc.h>
 #include <timers.h>
-#include <action.h>
+#include <process.h>
 #include <tlv563x.h>
 #include <utility.h>
 #include <pwm.h>
-#include <stdio.h>
-#include <string.h>
-#include <c8051f3xx.h>
 #include <globals.h>
 
 //-----------------------------------------------------------------------------
 // Definitions
 //-----------------------------------------------------------------------------
+
+extern buddy_ctx_t buddy_ctx;
 
 code firmware_info_t fw_info = {
 	BUDDY_FW_INFO_SERIAL,
@@ -69,28 +71,43 @@ void print_device_info(void)
 	printf("\r\n");
 }
 
+void contexts_init(void)
+{
+	buddy_ctx.daq_state         = GENERAL_CTRL_NONE;
+	buddy_ctx.m_ctrl_mode       = MODE_CTRL_IMMEDIATE;
+	buddy_ctx.m_adc_mode          = RUNTIME_ADC_MODE_SINGLE_ENDED;
+	buddy_ctx.m_pwm_mode        = RUNTIME_PWM_MODE_FREQUENCY;
+	buddy_ctx.m_pwm_timebase    = RUNTIME_PWM_TIMEBASE_SYSCLK;
+	buddy_ctx.m_counter_control = RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH;
+	buddy_ctx.m_chan_mask       = 0;
+	buddy_ctx.m_resolution      = RESOLUTION_CTRL_HIGH;
+	buddy_ctx.m_data_size       = BUDDY_DATA_SIZE_HIGH;
+	buddy_ctx.m_chan_number     = 0;
+}
+
 //-----------------------------------------------------------------------------
 // Main Routine
 //-----------------------------------------------------------------------------
 void main(void)
 {
-    System_Init();
-		
+    system_init();
+		contexts_init();
+	
 		gpio_init();
 	
-    Usb_Init();
-    SPI0_Init();
+    usb_init();
+    spi_init();
     
-    ADC0_Init();
-    UART0_Init();
+    adc_init();
+    uart_init();
 
-		print_device_info();
-		Timer0_Init();
+		timer_init();
 
-    TLV563x_DAC_Init();
-		TLV563x_DAC_set_power_mode(0);
+    tlv563x_dac_init();
+		tlv563x_dac_set_power_mode(0);
 	
-    debug(("TLV563x_DAC_Init passed\r\n"));
+		print_device_info();
+    debug(("tlv563x_dac_init passed\r\n"));
 	
 		PCA0MD = 0x00;                      // Disable watchdog timer
 		EA = 1;                             // Globally enable interrupts

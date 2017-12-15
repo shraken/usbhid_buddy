@@ -1,30 +1,22 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <adc.h>
-#include <F3xx_USB0_InterruptServiceRoutine.h>
-#include <F3xx_USB0_ReportHandler.h>
 #include <c8051f3xx.h>
+#include <adc.h>
 #include <utility.h>
 #include <globals.h>
 #include <gpio.h>
-#include <action.h>
+#include <process.h>
+#include <io.h>
 
-extern uint8_t xdata daq_state;
-
-extern uint8_t xdata m_adc_control;
-extern uint8_t xdata m_adc_ref;
-extern uint8_t xdata m_adc_cfg;
-			
-uint8_t data adc_complete = 0;
 uint8_t data adc_channel_index = 0;
-uint8_t xdata adc_channel_count = 0;
-uint8_t xdata adc_int_dec = 1;
-uint8_t xdata adc_int_dec_max = 1;
+uint8_t adc_channel_count = 0;
+uint8_t adc_int_dec = 1;
+uint8_t adc_int_dec_max = 1;
 int16_t data adc_results[MAX_ANALOG_INPUTS];            
 
-uint8_t xdata adc_mux_tbl_n[MAX_ANALOG_INPUTS] = { 0 };
-uint8_t xdata adc_mux_tbl_p[MAX_ANALOG_INPUTS] = { 0 };
+uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS] = { 0 };
+uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS] = { 0 };
 
 uint16_t adc_timer_count;
 
@@ -39,19 +31,22 @@ uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 	ADC_P2_7,	// ADC7_IN
 };
 
-void ADC0_Enable(void)
+int8_t adc_enable(void)
 {
-	// Enable ADC0
 	AD0EN = 1;
+
+	return 0;
 }
 
-void ADC0_Disable(void)
+int8_t adc_disable(void)
 {
 	// Disable ADC0
 	AD0EN = 0;
+	
+	return 0;
 }
 
-void ADC0_Init(void)
+int8_t adc_init(void)
 {	
 	AD0EN = 0;
 		
@@ -63,18 +58,22 @@ void ADC0_Init(void)
 	AMX0N = ADC_GND;
 	
 	EIE1 |= 0x08;
+
+	return 0;
 }
 
-void ADC0_Set_Reference(uint8_t value)
+int8_t adc_set_reference(uint8_t value)
 {
-	debug(("ADC0_Set_Reference(): value = %bd (%bx)\r\n", value, value));
+	debug(("adc_set_reference(): value = %bd (%bx)\r\n", value, value));
 	REF0CN = value;
+	
+	return 0;
 }
 
-void ADC0_ISR (void) interrupt 10
+void adc_isr (void) interrupt 10
 {
-	static int32_t xdata adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };
-	int xdata i;
+	static int32_t adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };
+	int i;
 
 	//P3 = P3 & ~0x40;
 
@@ -94,7 +93,6 @@ void ADC0_ISR (void) interrupt 10
 				adc_accumulator[i] = 0;
 			}
 
-			adc_complete = 1;
 			build_adc_packet();
 		}
 				
