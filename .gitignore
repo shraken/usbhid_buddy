@@ -1,5 +1,6 @@
 *.bak
 fw/build/*
+fw/flash.jlink
 *.uvgui.*
 
 # Compiled source #
