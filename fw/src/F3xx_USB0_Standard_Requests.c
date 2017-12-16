@@ -362,7 +362,7 @@ void Get_Descriptor (void)             // This routine sets the data pointer
    {                                   // was requested, and set data ptr and
       case DSC_DEVICE:                 // size accordingly
          //gpio_set_pin_value(LED_PIN, GPIO_VALUE_LOW);
-         gpio_toggle_pin(LED_PIN);
+         //gpio_toggle_pin(LED_PIN);
 
          DATAPTR = (unsigned char*) &DEVICEDESC;
          DATASIZE = DEVICEDESC.bLength;

@@ -12,6 +12,7 @@
 
 // C8051 System Clock Frequency
 #define SYSCLK     48000000
+//#define SYSCLK 12000000
 
 #define MAX_REPORT_SIZE 63
 #define MAX_OUT_SIZE MAX_REPORT_SIZE
@@ -34,10 +35,12 @@
 #define BUDDY_BIT_SIZE 8
 #define BUDDY_MAX_COUNTER 0x7F
 
+/*
 //typedef int bool;
 #define bool int
 #define false 0
 #define true 1
+*/
 
 /**
  * \enum APP_CODE 

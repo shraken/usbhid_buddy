@@ -1,10 +1,18 @@
-/** @file timers.h
- *  @brief Function prototypes for the timer routines.
+/**
+ * @file timers.h
+ * @author Nicholas Shrake <shraken@gmail.com>
  *
+ * @date 2017-09-26
+ * @brief Timer configuration routines.  The timer is used
+ *				 as main time keeper for stream operations.  With
+ *				 DAC/PWM modes a sample from the frame is output and
+ *				 with ADC mode a sample is pulled and copied to the
+ *				 buffer.  
+ *			
  */
  
-#ifndef _C8051F380_TIMERS_H
-#define _C8051F380_TIMERS_H
+#ifndef  _TIMERS_H_
+#define  _TIMERS_H_
 
 #include <stdint.h>
 #include <compiler_defs.h>
