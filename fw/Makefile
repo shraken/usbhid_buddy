@@ -4,17 +4,13 @@ SOURCE_DIR = src
 BUILD_DIR = build
 EXECUTABLE = buddy
 
-#SOURCES = src/main.c
-#OBJECTS = $(SOURCES:.c=$(BUILD_DIR).rel)
-#OBJECTS = $(patsubst %.c, %.rel, $(SOURCES))
-
 SOURCES = $(wildcard $(SOURCE_DIR)/*.c)
 OBJECTS = $(patsubst $(SOURCE_DIR)/%.c,$(BUILD_DIR)/%.rel,$(SOURCES))
 
-CFLAGS = --model-large -c
+CFLAGS = --model-large --std-sdcc99 -c
 CFLAGS += $(INCLUDE_DIRS)
 
-LDFLAGS = --model-large
+LDFLAGS = --model-large --std-sdcc99
 LDFLAGS += $(INCLUDE_DIRS)
 
 all: directories $(BUILD_DIR)/$(EXECUTABLE)

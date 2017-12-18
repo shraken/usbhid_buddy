@@ -152,8 +152,8 @@ typedef /*code*/ struct {
 }
 hid_configuration_descriptor;
 
-#define HID_REPORT_DESCRIPTOR_SIZE 0x0032
-#define HID_REPORT_DESCRIPTOR_SIZE_LE 0x3200
+#define HID_REPORT_DESCRIPTOR_SIZE 0x0026
+#define HID_REPORT_DESCRIPTOR_SIZE_LE 0x2600
 
 
 

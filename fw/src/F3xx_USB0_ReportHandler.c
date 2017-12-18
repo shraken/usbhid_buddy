@@ -51,6 +51,9 @@
 void IN_Report(void);
 void OUT_Report(void);
 
+void IN_DATA_ROUTINE(void);
+void OUT_DATA_ROUTINE(void);
+
 // ----------------------------------------------------------------------------
 // Local Definitions
 // ----------------------------------------------------------------------------
@@ -66,6 +69,14 @@ void OUT_Report(void);
 // Global Constant Declaration
 // ----------------------------------------------------------------------------
 
+extern unsigned char flag_usb_out;
+
+unsigned char OUT_PACKET[64];
+unsigned char IN_PACKET[64 * 2];
+
+unsigned char *P_IN_PACKET_SEND = &IN_PACKET[0];
+unsigned char *P_IN_PACKET_RECORD = &IN_PACKET[0];
+unsigned char in_packet_record_cycle = 0;
 
 // ****************************************************************************
 // Link all Report Handler functions to corresponding Report IDs
@@ -74,7 +85,7 @@ void OUT_Report(void);
 __code const VectorTableEntry IN_VECTORTABLE[IN_VECTORTABLESize] =
 {
    // FORMAT: Report ID, Report Handler
-   { 0, IN_Report }
+   { IN_DATA, IN_DATA_ROUTINE }
 };
 
 // ****************************************************************************
@@ -83,7 +94,7 @@ __code const VectorTableEntry IN_VECTORTABLE[IN_VECTORTABLESize] =
 __code const VectorTableEntry OUT_VECTORTABLE[OUT_VECTORTABLESize] =
 {
    // FORMAT: Report ID, Report Handler
-   { 0, OUT_Report }
+   { OUT_DATA, OUT_DATA_ROUTINE }
 };
 
 
@@ -121,26 +132,27 @@ BufferStructure IN_BUFFER, OUT_BUFFER;
 // ****************************************************************************
 
 
-void IN_Report(void){
-
-   // save left mouse button stat to bit 0 of first data byte
-   IN_PACKET[0] = MOUSE_BUTTON;
-
-   // determine whether X-Axis or Y-Axis is active, then
-   // set MOUSE_VECTOR to active axis
-   if(MOUSE_AXIS == X_Axis) IN_PACKET[1] = MOUSE_VECTOR;
-   else IN_PACKET[1] = 0;
-
-   if(MOUSE_AXIS == Y_Axis) IN_PACKET[2] = MOUSE_VECTOR;
-   else IN_PACKET[2] = 0;
-
-   // point IN_BUFFER pointer to data packet and set
-   // IN_BUFFER length to transmit correct report size
+// ----------------------------------------------------------------------------
+// IN_DATA_ROUTINE()
+// ----------------------------------------------------------------------------
+// Set the USB IN (Device -> Host) buffer pointer to IN_PACKET where ADC
+// samples will be copied into
+void IN_DATA_ROUTINE(void){
+   IN_PACKET[0] = IN_DATA;
+	
    IN_BUFFER.Ptr = IN_PACKET;
-   IN_BUFFER.Length = 3;
-
+   IN_BUFFER.Length = IN_DATA_SIZE + 1;
 }
 
+// ----------------------------------------------------------------------------
+// OUT_DATA_ROUTINE()
+// ----------------------------------------------------------------------------
+// Set a flag to indicate that USB OUT (Host -> Device) packet has been received
+// and that DAC message should be sent
+void OUT_DATA_ROUTINE(void)
+{
+   flag_usb_out = 1;
+}
 
 // ****************************************************************************
 // For Output Reports:
@@ -150,10 +162,6 @@ void IN_Report(void){
 // the OUT_BUFFER.Ptr and into other user-defined memory.
 //
 // ****************************************************************************
-
-void OUT_Report(void)
-{
-}
 
 // ----------------------------------------------------------------------------
 // Global Functions
@@ -173,6 +181,8 @@ void OUT_Report(void)
 
 void Setup_OUT_BUFFER(void)
 {
+    OUT_BUFFER.Ptr = (unsigned char *) OUT_PACKET;
+    OUT_BUFFER.Length = OUT_DATA_SIZE;
 }
 
 // ----------------------------------------------------------------------------

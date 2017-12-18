@@ -64,6 +64,7 @@ unsigned char EP_STATUS[3] = {EP_IDLE, EP_HALT, EP_HALT};
                                        // Holds the status for each endpoint
 
 
+bit SendPacketBusy = 0;
 
 //-----------------------------------------------------------------------------
 // Local Function Definitions
@@ -86,6 +87,10 @@ void Fifo_Write_InterruptServiceRoutine (unsigned char, unsigned int,
                                        // Used for multiple byte
                                        // writes of Endpoint fifos
 
+typedef unsigned char BYTE;
+
+extern unsigned char *P_IN_PACKET_SEND;
+extern unsigned char *P_IN_PACKET_RECORD;
 
 //-----------------------------------------------------------------------------
 // Usb_ISR
@@ -417,6 +422,7 @@ void Handle_Control (void)
 void Handle_In1 ()
 {
       EP_STATUS[1] = EP_IDLE;
+      SendPacketBusy = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -458,10 +464,18 @@ void Handle_Out1 ()
       // the host will still format OUT packets with a prefix byte
       // of '0x00'.
 
+      /*
       ReportHandler_OUT (OUT_BUFFER.Ptr[0]);
 
       POLL_WRITE_BYTE (EOUTCSR1, 0);   // Clear Out Packet ready bit
+      */
    }
+}
+
+void Enable_Out1(void)
+{
+	POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 2 registers
+	POLL_WRITE_BYTE (EOUTCSR1, 0);      // Clear Out Packet ready bit
 }
 
 //-----------------------------------------------------------------------------
@@ -604,6 +618,7 @@ void Force_Stall (void)
 // transmitted.
 //-----------------------------------------------------------------------------
 
+/*
 void SendPacket (unsigned char ReportID)
 {
    bit EAState;
@@ -649,4 +664,57 @@ void SendPacket (unsigned char ReportID)
    }                                   // indicating fresh data on FIFO 1
 
    EA = EAState;
+}
+*/
+
+void SendPacket (unsigned char ReportID)
+{
+    unsigned char ControlReg;
+
+    EIE1 &= ~0x02;
+    SendPacketBusy = 1;
+
+    POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
+
+    // Read contol register for EP 1
+    POLL_READ_BYTE (EINCSR1, ControlReg);
+
+    if (EP_STATUS[1] == EP_HALT)        // If endpoint is currently halted,
+                                       // send a stall
+   {
+      POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
+   }
+   else if(EP_STATUS[1] == EP_IDLE)
+   {
+      // the state will be updated inside the ISR handler
+      EP_STATUS[1] = EP_TX;
+
+      if (ControlReg & rbInSTSTL)      // Clear sent stall if last
+                                       // packet returned a stall
+      {
+         POLL_WRITE_BYTE (EINCSR1, rbInCLRDT);
+      }
+
+      if (ControlReg & rbInUNDRUN)     // Clear underrun bit if it was set
+      {
+         POLL_WRITE_BYTE (EINCSR1, 0x00);
+      }
+			
+        *(P_IN_PACKET_SEND + 0x00) = IN_DATA;
+
+        /*
+		FIFO_WRITE_FUNC(FIFO_EP1, 
+		                IN_DATA_SIZE + 1,
+				        P_IN_PACKET_SEND);
+		*/
+
+        Fifo_Write_Foreground (FIFO_EP1, 
+                               (IN_DATA_SIZE + 1),
+                               (unsigned char *) P_IN_PACKET_SEND);
+
+	    POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
+                                       // Set In Packet ready bit,
+    }                                   // indicating fresh data on FIFO 1
+
+    EIE1 |= 0x02;
 }

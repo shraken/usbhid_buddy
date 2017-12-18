@@ -30,11 +30,14 @@
 //    -07 DEC 2005
 //
 
-#ifndef  _UUSB_REPORTHANDLER_H_
+#ifndef  _USB_REPORTHANDLER_H_
 #define  _USB_REPORTHANDLER_H_
 
-#define X_Axis 0
-#define Y_Axis 1
+#define OUT_DATA 0x01
+#define IN_DATA 0x02
+
+#define OUT_DATA_SIZE 63
+#define IN_DATA_SIZE 63
 
 typedef struct {
    unsigned char ReportID;
@@ -51,12 +54,14 @@ extern void ReportHandler_IN_Foreground(unsigned char);
 extern void ReportHandler_OUT(unsigned char);
 extern void Setup_OUT_BUFFER(void);
 
-extern BufferStructure IN_BUFFER, OUT_BUFFER;
+extern BufferStructure IN_BUFFER;
+extern BufferStructure OUT_BUFFER;
 
-extern signed char MOUSE_VECTOR;
-extern unsigned char MOUSE_AXIS;
-extern unsigned char MOUSE_BUTTON;
-
-extern unsigned char IN_PACKET[4];
+void IN_DATA_ROUTINE(void);
+void OUT_DATA_ROUTINE(void);
+void Setup_OUT_BUFFER(void);
+void ReportHandler_IN_ISR(unsigned char R_ID);
+void ReportHandler_IN_Foreground(unsigned char R_ID);
+void ReportHandler_OUT(unsigned char R_ID);
 
 #endif

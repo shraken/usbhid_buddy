@@ -12,7 +12,6 @@
 
 // C8051 System Clock Frequency
 #define SYSCLK     48000000
-//#define SYSCLK 12000000
 
 #define MAX_REPORT_SIZE 63
 #define MAX_OUT_SIZE MAX_REPORT_SIZE

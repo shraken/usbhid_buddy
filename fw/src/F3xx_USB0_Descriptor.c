@@ -36,6 +36,7 @@
 #include "F3xx_USB0_Register.h"
 #include "F3xx_USB0_InterruptServiceRoutine.h"
 #include "F3xx_USB0_Descriptor.h"
+#include "F3xx_USB0_ReportHandler.h"
 
 //-----------------------------------------------------------------------------
 // Descriptor Declarations
@@ -51,7 +52,7 @@ __code const device_descriptor DEVICEDESC =
    0x00,                               // bDeviceProtocol
    EP0_PACKET_SIZE,                    // bMaxPacketSize0
    {0x10C4},                           // idVendor
-   {0x81B9},                           // idProduct
+   {0x82CD},                           // idProduct
    {0x0000},                           // bcdDevice
    0x01,                               // iManufacturer
    0x02,                               // iProduct
@@ -70,7 +71,7 @@ __code const hid_configuration_descriptor HIDCONFIGDESC =
 { // configuration_descriptor hid_configuration_descriptor
    0x09,                               // Length
    0x02,                               // Type
-   {0x0022},                           // Totallength (= 9+9+9+7)
+   {0x0029},                           // Totallength (= 9+9+9+7)
    0x01,                               // NumInterfaces
    0x01,                               // bConfigurationValue
    0x00,                               // iConfiguration
@@ -83,10 +84,10 @@ __code const hid_configuration_descriptor HIDCONFIGDESC =
    0x04,                               // bDescriptorType
    0x00,                               // bInterfaceNumber
    0x00,                               // bAlternateSetting
-   0x01,                               // bNumEndpoints
+   0x02,                               // bNumEndpoints
    0x03,                               // bInterfaceClass (3 = HID)
-   0x01,                               // bInterfaceSubClass
-   0x02,                               // bInterfaceProcotol
+   0x00,                               // bInterfaceSubClass
+   0x00,                               // bInterfaceProcotol
    0x00                                // iInterface
 },
 
@@ -95,9 +96,9 @@ __code const hid_configuration_descriptor HIDCONFIGDESC =
    0x21,                               // bDescriptorType
    {0x0101},                           // bcdHID
    0x00,                               // bCountryCode
-   0x01,                               // bNumDescriptors
+   0x02,                               // bNumDescriptors
    0x22,                               // bDescriptorType
-   HID_REPORT_DESCRIPTOR_SIZE       // wItemLength (tot. len. of report
+   HID_REPORT_DESCRIPTOR_SIZE          // wItemLength (tot. len. of report
                                        // descriptor)
 },
 
@@ -125,32 +126,27 @@ __code const hid_configuration_descriptor HIDCONFIGDESC =
 
 __code const hid_report_descriptor HIDREPORTDESC =
 {
-    0x05, 0x01,                        // Usage Page (Generic Desktop)
-    0x09, 0x02,                        // Usage (Mouse)
-    0xA1, 0x01,                        // Collection (Application)
-    0x09, 0x01,                        //   Usage (Pointer)
-    0xA1, 0x00,                        //   Collection (Physical)
-    0x05, 0x09,                        //     Usage Page (Buttons)
-    0x19, 0x01,                        //     Usage Minimum (01)
-    0x29, 0x01,                        //     Usage Maximum (01)
-    0x15, 0x00,                        //     Logical Minimum (0)
-    0x25, 0x01,                        //     Logical Maximum (1)
-    0x95, 0x01,                        //     Report Count (1)
-    0x75, 0x01,                        //     Report Size (1)
-    0x81, 0x02,                        //     Input (Data, Variable, Absolute)
-    0x95, 0x01,                        //     Report Count (1)
-    0x75, 0x07,                        //     Report Size (7)
-    0x81, 0x01,                        //     Input (Constant) for padding
-    0x05, 0x01,                        //     Usage Page (Generic Desktop)
-    0x09, 0x30,                        //     Usage (X)
-    0x09, 0x31,                        //     Usage (Y)
-    0x15, 0x81,                        //     Logical Minimum (-127)
-    0x25, 0x7F,                        //     Logical Maximum (127)
-    0x75, 0x08,                        //     Report Size (8)
-    0x95, 0x02,                        //     Report Count (2)
-    0x81, 0x06,                        //     Input (Data, Variable, Relative)
-    0xC0,                              //   End Collection (Physical)
-    0xC0                               // End Collection (Application)
+    0x06, 0x00, 0xff,              // USAGE_PAGE (Vendor Defined Page 1)
+    0x09, 0x01,                    // USAGE (Vendor Usage 1)
+    0xa1, 0x01,                    // COLLECTION (Application)
+
+    0x85, OUT_DATA,                // Report ID
+    0x95, OUT_DATA_SIZE,           //   REPORT_COUNT ()
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x09, 0x01,                    //   USAGE (Vendor Usage 1)
+    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
+    
+    0x85, IN_DATA,                 // Report ID
+    0x95, IN_DATA_SIZE,            //   REPORT_COUNT ()
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x09, 0x01,                    //   USAGE (Vendor Usage 1)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+    
+    0xC0                           //   end Application Collection
 };
 
 #define STR0LEN 4
@@ -160,65 +156,29 @@ __code unsigned char String0Desc [STR0LEN] =
    STR0LEN, 0x03, 0x09, 0x04
 }; //end of String0Desc
 
-#define STR1LEN sizeof ("SILICON LABORATORIES") * 2
+#define STR1LEN sizeof ("WIGGLE") * 2
 
 __code unsigned char String1Desc [STR1LEN] =
 {
    STR1LEN, 0x03,
-   'S', 0,
+   'W', 0,
    'I', 0,
+   'G', 0,
+   'G', 0,
    'L', 0,
-   'I', 0,
-   'C', 0,
-   'O', 0,
-   'N', 0,
-   ' ', 0,
-   'L', 0,
-   'A', 0,
-   'B', 0,
-   'O', 0,
-   'R', 0,
-   'A', 0,
-   'T', 0,
-   'O', 0,
-   'R', 0,
-   'I', 0,
-   'E', 0,
-   'S', 0
+   'E', 0
 }; //end of String1Desc
 
-#define STR2LEN sizeof ("C8051F320 Development Board") * 2
+#define STR2LEN sizeof ("BUDDY") * 2
 
 __code unsigned char String2Desc [STR2LEN] =
 {
    STR2LEN, 0x03,
-   'C', 0,
-   '8', 0,
-   '0', 0,
-   '5', 0,
-   '1', 0,
-   'F', 0,
-   '3', 0,
-   'x', 0,
-   'x', 0,
-   ' ', 0,
-   'D', 0,
-   'e', 0,
-   'v', 0,
-   'e', 0,
-   'l', 0,
-   'o', 0,
-   'p', 0,
-   'm', 0,
-   'e', 0,
-   'n', 0,
-   't', 0,
-   ' ', 0,
    'B', 0,
-   'o', 0,
-   'a', 0,
-   'r', 0,
-   'd', 0
+   'U', 0,
+   'D', 0,
+   'D', 0,
+   'Y', 0
 }; //end of String2Desc
 
 unsigned char* const STRINGDESCTABLE [] =

@@ -8,13 +8,17 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <main.h>
+#include <utility.h>
 #include <common.h>
 #include <timers.h>
-#include <millis.h>
 #include <uart.h>
+#include <spi.h>
 #include <init.h>
+#include <adc.h>
 #include <gpio.h>
 #include <process.h>
+#include <tlv563x.h>
 
 #include "c8051f3xx.h"
 #include "F3xx_USB0_InterruptServiceRoutine.h"
@@ -26,11 +30,6 @@
 //-----------------------------------------------------------------------------
 // Global Variables
 //-----------------------------------------------------------------------------
-signed char MOUSE_VECTOR;
-unsigned char MOUSE_AXIS;
-unsigned char MOUSE_BUTTON;
-
-unsigned char IN_PACKET[4];
 
 //-----------------------------------------------------------------------------
 // Function PROTOTYPES
@@ -59,10 +58,13 @@ void putchar (char c)  {
     SBUF0 = c;
 }
 
-//extern buddy_ctx_t buddy_ctx;
+extern uint8_t SPI_Data_Rx_Array[];
+extern uint8_t SPI_Data_Tx_Array[];
+extern uint8_t bytes_trans;
 
-/*
-code firmware_info_t fw_info = {
+extern buddy_ctx_t buddy_ctx;
+
+__code firmware_info_t fw_info = {
 	BUDDY_FW_INFO_SERIAL,
 	BUDDY_FW_INFO_DATETIME,
 	BUDDY_FW_FWREV_INFO_MAJOR,
@@ -84,7 +86,7 @@ void print_device_info(void)
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");
     printf("|____/ \__,_|\__,_|\__,_|\__, |  \r\n");
     printf("                         |___/   \r\n");
-	printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
+	printf("   version %d.%d.%d \r\n", fw_info.fw_rev_major,
 		fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
 	printf("   serial id: %lu (%08lx)\r\n", 
 		fw_info.serial, fw_info.serial);
@@ -112,14 +114,12 @@ void print_device_info(void)
 	
 	printf("\r\n");
 }
-*/
 
-/*
 void contexts_init(void)
 {
 	buddy_ctx.daq_state         = GENERAL_CTRL_NONE;
 	buddy_ctx.m_ctrl_mode       = MODE_CTRL_IMMEDIATE;
-	buddy_ctx.m_adc_mode          = RUNTIME_ADC_MODE_SINGLE_ENDED;
+	buddy_ctx.m_adc_mode        = RUNTIME_ADC_MODE_SINGLE_ENDED;
 	buddy_ctx.m_pwm_mode        = RUNTIME_PWM_MODE_FREQUENCY;
 	buddy_ctx.m_pwm_timebase    = RUNTIME_PWM_TIMEBASE_SYSCLK;
 	buddy_ctx.m_counter_control = RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH;
@@ -128,32 +128,29 @@ void contexts_init(void)
 	buddy_ctx.m_data_size       = BUDDY_DATA_SIZE_HIGH;
 	buddy_ctx.m_chan_number     = 0;
 }
-*/
 
 void main(void) 
 {
     system_init();
-    // contexts_init();
+    contexts_init();
 
     gpio_init();
     uart_init();
-    //timer_init();
+    timer_init();
 
-    /*
     spi_init();
     adc_init();
 
-    tlv563x_dac_init();
-	tlv563x_dac_set_power_mode(0);
-	
 	print_device_info();
     debug(("tlv563x_dac_init passed\r\n"));
-    */
 
-	PCA0MD = 0x00;                      // Disable watchdog timer
+	//PCA0MD = 0x00;                      // Disable watchdog timer
 	EA = 1;                             // Globally enable interrupts
 
-    printf("hello world 2\r\n");
+    tlv563x_dac_init();
+	tlv563x_dac_set_power_mode(0);
+
     while (1) {
+        //process();
     }
 }
