@@ -71,7 +71,7 @@ __code const hid_configuration_descriptor HIDCONFIGDESC =
 { // configuration_descriptor hid_configuration_descriptor
    0x09,                               // Length
    0x02,                               // Type
-   {0x0029},                           // Totallength (= 9+9+9+7)
+   {0x0029},                           // Totallength (= 9+9+9+7+7)
    0x01,                               // NumInterfaces
    0x01,                               // bConfigurationValue
    0x00,                               // iConfiguration
@@ -118,7 +118,7 @@ __code const hid_configuration_descriptor HIDCONFIGDESC =
    0x05,                               // bDescriptorType
    0x01,                               // bEndpointAddress
    0x03,                               // bmAttributes
-   {EP2_PACKET_SIZE},                  // MaxPacketSize (LITTLE ENDIAN)
+   {EP1_PACKET_SIZE},                  // MaxPacketSize (LITTLE ENDIAN)
    1                                   // bInterval
 }
 
@@ -181,9 +181,9 @@ __code unsigned char String2Desc [STR2LEN] =
    'Y', 0
 }; //end of String2Desc
 
-unsigned char* const STRINGDESCTABLE [] =
+unsigned char* STRINGDESCTABLE [] =
 {
-   String0Desc,
-   String1Desc,
-   String2Desc
+   (unsigned char *) &String0Desc,
+   (unsigned char *) &String1Desc,
+   (unsigned char *) &String2Desc
 };

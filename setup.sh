@@ -6,6 +6,9 @@ sudo apt-get install -y autoconf > /dev/null 2>&1
 sudo apt-get install -y automake > /dev/null 2>&1
 sudo apt-get install -y picocom > /dev/null 2>&1
 sudo apt-get install -y linux-image-extra-$(uname -r) > /dev/null 2>&1
+sudo apt-get install -y swig > /dev/null 2>&1
+sudo apt-get install -y python-dev > /dev/null 2>&1
+sudo apt-get install -y sudo apt-get install libudev-dev libusb-1.0-0-dev libfox-1.6-dev > /dev/null 2>&1
 
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test > /dev/null 2>&1
 sudo apt-get update > /dev/null 2>&1

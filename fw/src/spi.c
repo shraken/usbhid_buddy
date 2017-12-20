@@ -18,7 +18,7 @@ uint8_t bytes_trans;
 
 void spi_init()
 {
-   SPI0CFG   = 0x40;
+   SPI0CFG   = 0x50;
    SPI0CN    = 0x0D;
    
    // The equation for SPI0CKR is (SYSCLK/(2*F_SCK_MAX))-1
@@ -35,6 +35,8 @@ void spi_array_readwrite(void)
         while (!SPIF);
         SPIF     = 0;
     }
+
+    NSSMD0   = 1;
 }
 
 void spi_select(void)

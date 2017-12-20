@@ -64,7 +64,7 @@ unsigned char EP_STATUS[3] = {EP_IDLE, EP_HALT, EP_HALT};
                                        // Holds the status for each endpoint
 
 
-bit SendPacketBusy = 0;
+__bit SendPacketBusy = 0;
 
 //-----------------------------------------------------------------------------
 // Local Function Definitions
@@ -438,7 +438,7 @@ void Handle_Out1 ()
    unsigned char Count = 0;
    unsigned char ControlReg;
 
-   POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 2 registers
+   POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
    POLL_READ_BYTE (EOUTCSR1, ControlReg);
 
    if (EP_STATUS[1] == EP_HALT)        // If endpoint is halted, send a stall
@@ -458,6 +458,8 @@ void Handle_Out1 ()
       Setup_OUT_BUFFER ();             // configure buffer to save
                                        // received data
       Fifo_Read(FIFO_EP1, OUT_BUFFER.Length, OUT_BUFFER.Ptr);
+
+      ReportHandler_OUT (OUT_BUFFER.Ptr[0]);
 
       // process data according to received Report ID.
       // In systems with Report Descriptors that do not define report IDs,

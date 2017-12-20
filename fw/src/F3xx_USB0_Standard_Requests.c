@@ -75,7 +75,7 @@ extern unsigned char USB0_STATE;       // Determines current usb device state
 // This minimizes the impact on the existing source code.
 #define ConfigDesc      (HIDCONFIGDESC.hid_configuration_descriptor)
 #define InterfaceDesc   (HIDCONFIGDESC.hid_interface_descriptor)
-#define HidDesc      (HIDCONFIGDESC.hid_descriptor)
+#define HidDesc         (HIDCONFIGDESC.hid_descriptor)
 #define Endpoint1Desc   (HIDCONFIGDESC.hid_endpoint_in_descriptor)
 #define Endpoint2Desc   (HIDCONFIGDESC.hid_endpoint_out_descriptor)
 
@@ -373,12 +373,13 @@ void Get_Descriptor (void)             // This routine sets the data pointer
                                        // Compiler Specific - The next statement
                                        // reverses the bytes in the configuration
                                        // descriptor for the compiler
-         DATASIZE = ConfigDesc.wTotalLength.c[MSB] +
-                    256*ConfigDesc.wTotalLength.c[LSB];
+         DATASIZE = ConfigDesc.wTotalLength.c[LSB] +
+                    256*ConfigDesc.wTotalLength.c[MSB];
          break;
 
      case DSC_STRING:
-       //  NOTE: if strings are added to this project, the hard-coded
+         //printf("Get_Descriptor(): DSC_STRING\r\n");
+         //  NOTE: if strings are added to this project, the hard-coded
          // value of 2 will need to be increased
          if (SETUP.wValue.c[LSB] > 2)   // If asking for string that's N/A
          {
@@ -387,8 +388,23 @@ void Get_Descriptor (void)             // This routine sets the data pointer
          }
          else
          {
+            /*
+            printf("SETUP.wValue.i = %04x\r\n", SETUP.wValue.i);
+            printf("SETUP.wValue.c[0] = %d\r\n", SETUP.wValue.c[0]);
+            printf("SETUP.wValue.c[1] = %d\r\n", SETUP.wValue.c[1]);
+
+            printf("SETUP.wValue.c[LSB] = %d\r\n", SETUP.wValue.c[LSB]);
+            */
+
             DATAPTR = STRINGDESCTABLE[SETUP.wValue.c[LSB]];
                                      // Can have a maximum of 255 strings
+            
+            /*
+            printf("STRINGDESCTABLE = %p\r\n", &STRINGDESCTABLE);
+            printf("STRINGDESCTABLE[0] = %x\r\n", *(STRINGDESCTABLE[0]));
+
+            printf("DATASIZE = %d\r\n", *DATAPTR);
+            */
             DATASIZE = *DATAPTR;
          }
          break;

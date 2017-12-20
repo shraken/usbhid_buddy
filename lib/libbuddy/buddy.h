@@ -2,7 +2,7 @@
 #define  _BUDDY_H_
 
 #include <stdint.h>
-//#include <stdbool.h>
+#include <stdbool.h>
 
 /*
 #if defined(C8051)
@@ -13,7 +13,7 @@
 // C8051 System Clock Frequency
 #define SYSCLK     48000000
 
-#define MAX_REPORT_SIZE 63
+#define MAX_REPORT_SIZE 64
 #define MAX_OUT_SIZE MAX_REPORT_SIZE
 #define MAX_IN_SIZE MAX_REPORT_SIZE
 

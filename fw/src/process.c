@@ -419,6 +419,8 @@ void process_in(void)
 
 void process()
 {
+    //printf("process invoked\r\n");
+
 	// Host -> Device message
 	// USB OUT
 	process_out();

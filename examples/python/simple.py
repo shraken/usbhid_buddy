@@ -433,6 +433,8 @@ if __name__ == '__main__':
                         help='enable streaming for higher throughput')
     parser.add_argument('-l,--latch', action='store_true', dest='hold_mode',
                         help='hold the last mode and value on exit')
+    parser.add_argument('-i,--info', action='store_true', dest='info_mode',
+                        help='request device info and exit')
     parser.add_argument('-f,--file', nargs=1, dest="output_file",
                         help="CSV log file to be created", required=False)
     args = parser.parse_args()
@@ -475,6 +477,9 @@ if __name__ == '__main__':
 
     display_usb_info(hid_info)
     display_fw_info(fw_info)
+
+    if args.info_mode:
+        sys.exit()
 
     time_start = time.time()
 

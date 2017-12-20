@@ -23,6 +23,19 @@
 #include "c8051f3xx.h"
 #include "F3xx_USB0_InterruptServiceRoutine.h"
 
+extern unsigned char String0Desc [4];
+extern unsigned char* const STRINGDESCTABLE [];
+
+int x = 10;
+int y = 20;
+int z = 30;
+
+unsigned int *blah[] = {
+    &x,
+    &y,
+    &z
+};
+
 //-----------------------------------------------------------------------------
 // Global CONSTANTS
 //-----------------------------------------------------------------------------
@@ -131,6 +144,8 @@ void contexts_init(void)
 
 void main(void) 
 {
+    int i;
+
     system_init();
     contexts_init();
 
@@ -144,6 +159,34 @@ void main(void)
 	print_device_info();
     debug(("tlv563x_dac_init passed\r\n"));
 
+    /*
+    printf("x = %d\r\n", x);
+    printf("y = %d\r\n", y);
+    printf("z = %d\r\n", z);
+
+    printf("addr_x = %p\r\n", &x);
+    printf("addr_y = %p\r\n", &y);
+    printf("addr_z = %p\r\n", &z);
+
+    printf("addr_blah[0] = %p\r\n", blah[0]);
+
+    printf("blah[0] = %d\r\n", *(blah[0]));
+    printf("blah[1] = %d\r\n", *(blah[1]));
+    printf("blah[2] = %d\r\n", *(blah[2]));
+    */
+
+    /*
+    printf("String0Desc = %p\r\n", String0Desc);
+    printf("String0Desc[0] = %02x\r\n", String0Desc[0]);
+    printf("String0Desc[0] = %d\r\n", String0Desc[0]);
+    */
+
+    /*
+    while (1) {
+
+    }
+    */
+
 	//PCA0MD = 0x00;                      // Disable watchdog timer
 	EA = 1;                             // Globally enable interrupts
 
@@ -151,6 +194,6 @@ void main(void)
 	tlv563x_dac_set_power_mode(0);
 
     while (1) {
-        //process();
+        process();
     }
 }
