@@ -30,7 +30,7 @@ clean:
 	rm -rf flash.jlink
 	rm -rf $(BUILD_DIR)
 
-JLINK_OPTS = -device EFM8UB20F64G -if c2 -speed 1000
+JLINK_OPTS = -device EFM8UB20F64G -if c2 -speed 200
 # flashing windows vs. posix
 ifeq ($(OS),Windows_NT)
 JLINK = JLink $(JLINK_OPTS)

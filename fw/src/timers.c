@@ -15,6 +15,8 @@ uint8_t timer0_flag = 0;
 static uint8_t timer0_low_set;
 static uint8_t timer0_high_set;
 
+volatile uint32_t _millisCounter = 0;
+
 void timer_init(void)
 {
 	// set to 0xF05F (4000) ticks at 0.25 usec timer period
@@ -23,6 +25,9 @@ void timer_init(void)
 	TH0 = DEFAULT_TIMER0_HIGH_PERIOD;
 	TL0 = DEFAULT_TIMER0_LOW_PERIOD;
 	
+    timer0_low_set = DEFAULT_TIMER0_LOW_PERIOD;
+    timer0_high_set = DEFAULT_TIMER0_HIGH_PERIOD;
+
 	// Mode1: 16-bit counter/timer
 	TMOD |= 0x01;
 	
@@ -137,7 +142,8 @@ void timer_isr (void) __interrupt (INTERRUPT_TIMER0)
 	TL0 = timer0_low_set;
 
 	timer0_flag = 1;
-	
+	//printf("timer_isr invoked\r\n");
+    
 	if (buddy_ctx.daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		//P3 = P3 & ~0x40;
 		//P3 = P3 | 0x40;
@@ -152,5 +158,5 @@ void timer_isr (void) __interrupt (INTERRUPT_TIMER0)
 		}
   } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
 		build_counter_packet();
-	}
+  }
 }

@@ -166,10 +166,10 @@ int8_t process_ctrl_chan_res(ctrl_general_t *p_general)
 int8_t process_ctrl_general(ctrl_general_t *p_general)
 {	
 	debug(("process_ctrl_general():\r\n"));
-	debug(("p_general->function = %bd (0x%bx)\r\n", p_general->function, p_general->function));
-	debug(("p_general->mode = %bd (0x%bx)\r\n", p_general->mode, p_general->mode));
-	debug(("p_general->channel_mask = %bd (0x%bx)\r\n", p_general->channel_mask, p_general->channel_mask));
-	debug(("p_general->resolution = %bd (0x%bx)\r\n", p_general->resolution, p_general->resolution));
+	debug(("p_general->function = %d (0x%x)\r\n", p_general->function, p_general->function));
+	debug(("p_general->mode = %d (0x%x)\r\n", p_general->mode, p_general->mode));
+	debug(("p_general->channel_mask = %d (0x%x)\r\n", p_general->channel_mask, p_general->channel_mask));
+	debug(("p_general->resolution = %d (0x%x)\r\n", p_general->resolution, p_general->resolution));
 	
 	buddy_ctx.m_ctrl_mode = p_general->mode;
 	
@@ -185,12 +185,12 @@ int8_t process_ctrl_runtime(ctrl_runtime_t *p_runtime)
 	uint8_t dac_reg_value = 0;
 	
 	debug(("process_ctrl_runtime():\r\n"));
-	debug(("p_runtime->dac_power = %bd (0x%bx)\r\n", p_runtime->dac_power, p_runtime->dac_power));
-	debug(("p_runtime->dac_ref = %bd (0x%bx)\r\n", p_runtime->dac_ref, p_runtime->dac_ref));
-	debug(("p_runtime->adc_ref = %bd (0x%bx)\r\n", p_runtime->adc_ref, p_runtime->adc_ref));
-	debug(("p_runtime->adc_gain = %bd (0x%bx)\r\n", p_runtime->adc_gain, p_runtime->adc_gain));
-	debug(("p_runtime->pwm_mode = %bd (0x%bx)\r\n", p_runtime->pwm_mode, p_runtime->pwm_mode));
-	debug(("p_runtime->pwm_timebase = %bd (0x%bx)\r\n", p_runtime->pwm_timebase, p_runtime->pwm_timebase));
+	debug(("p_runtime->dac_power = %d (0x%x)\r\n", p_runtime->dac_power, p_runtime->dac_power));
+	debug(("p_runtime->dac_ref = %d (0x%x)\r\n", p_runtime->dac_ref, p_runtime->dac_ref));
+	debug(("p_runtime->adc_ref = %d (0x%x)\r\n", p_runtime->adc_ref, p_runtime->adc_ref));
+	debug(("p_runtime->adc_gain = %d (0x%x)\r\n", p_runtime->adc_gain, p_runtime->adc_gain));
+	debug(("p_runtime->pwm_mode = %d (0x%x)\r\n", p_runtime->pwm_mode, p_runtime->pwm_mode));
+	debug(("p_runtime->pwm_timebase = %d (0x%x)\r\n", p_runtime->pwm_timebase, p_runtime->pwm_timebase));
 	
 	// set TLV563X DAC reference voltage (external, or 1/2 Volt internal)
 	switch (p_runtime->dac_ref) {
@@ -222,7 +222,7 @@ int8_t process_ctrl_runtime(ctrl_runtime_t *p_runtime)
 		dac_reg_value &= ~(TLV563X_PWR_MODE_ON << TLV563X_CTRL0_POWER);
 	}
 			
-	debug(("tlv563x_write(): reg_value = %bd (%bx)\r\n", dac_reg_value, dac_reg_value));
+	debug(("tlv563x_write(): reg_value = %d (%x)\r\n", dac_reg_value, dac_reg_value));
 		
 	// write settings to CTRL0 register (pg. 12)
 	tlv563x_write(TLV563X_REG_CTRL0, dac_reg_value);
@@ -279,9 +279,11 @@ int8_t process_ctrl_runtime(ctrl_runtime_t *p_runtime)
 
 int8_t process_ctrl_timing(ctrl_timing_t *p_timing)
 {
+    //p_timing->period = 1000000;
+
 	debug(("process_ct\rl_timing():\r\n"));
 	debug(("p_timing->period = %lu (%lx)\r\n", p_timing->period, p_timing->period));
-	debug(("p_timing->averaging = %bd\r\n", p_timing->averaging));
+	debug(("p_timing->averaging = %d\r\n", p_timing->averaging));
 	
 	// set timer interrupt frequency and number of ADC frames
 	// to average over
@@ -299,7 +301,7 @@ int8_t process_ctrl()
     ctrl_type = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 
 		debug(("process_ctrl():\r\n"));
-    debug(("ctrl_type = 0x%02bX\r\n", ctrl_type));
+    debug(("ctrl_type = 0x%02X\r\n", ctrl_type));
 	
     // check for which CTRL setting to modify
     switch (ctrl_type) 

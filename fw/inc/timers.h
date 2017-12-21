@@ -11,7 +11,7 @@
 
 // Timer 0
 #define TIMER0_LOW_PERIOD 21					// 21 nsec
-#define TIMER0_HIGH_PERIOD 65535000		// 65.53 sec
+#define TIMER0_HIGH_PERIOD 65535000		        // 65.53 sec
 
 #define DEFAULT_TIMER0_HIGH_PERIOD 0xF0
 #define DEFAULT_TIMER0_LOW_PERIOD 0x5F
@@ -39,5 +39,6 @@ void timer_init (void);
  */
 void timer_set_period(uint32_t period);
 
+void timer_isr (void) __interrupt (INTERRUPT_TIMER0);
 
 #endif

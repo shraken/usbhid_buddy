@@ -5,12 +5,15 @@ import os
 from distutils.core import setup, Extension
 
 if platform.system() == 'Windows':
+    print 'windows building'
     hidapi_src_path = '../../../hidapi/windows/hid.c'
     lib_list = ['setupapi']
 elif platform.system() == 'Linux':
+    print 'linux building'
     hidapi_src_path = '../../../hidapi/linux/hid.c'
     lib_list = ['udev']
 elif platform.system() == 'Darwin':
+    print 'macos building'
     hidapi_src_path = '../../../hidapi/mac/hid.c'
     lib_list = None
 

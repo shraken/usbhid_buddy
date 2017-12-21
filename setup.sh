@@ -8,7 +8,7 @@ sudo apt-get install -y picocom > /dev/null 2>&1
 sudo apt-get install -y linux-image-extra-$(uname -r) > /dev/null 2>&1
 sudo apt-get install -y swig > /dev/null 2>&1
 sudo apt-get install -y python-dev > /dev/null 2>&1
-sudo apt-get install -y sudo apt-get install libudev-dev libusb-1.0-0-dev libfox-1.6-dev > /dev/null 2>&1
+sudo apt-get install -y libudev-dev libusb-1.0-0-dev libfox-1.6-dev > /dev/null 2>&1
 
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test > /dev/null 2>&1
 sudo apt-get update > /dev/null 2>&1
@@ -36,5 +36,15 @@ if [ -f /vagrant/JLink_Linux_*.deb ]; then
 fi
 
 sudo modprobe cdc_acm
+
+sudo echo "SUBSYSTEM==\"usb\", ATTR{idVendor}==\"10C4\", ATTR{idProduct}==\"82CD\", MODE=\"0666\"" > /etc/udev/rules.d/45-buddy.rules
+sudo service udev restart > /dev/null 2>&1
+
+wget https://www.python.org/ftp/python/2.7.14/Python-2.7.14.tgz > /dev/null 2>&1
+tar xfvz Python-2.7.14.tgz > /dev/null 2>&1
+cd Python-2.7.14 > /dev/null 2>&1
+./configure > /dev/null 2>&1
+make > /dev/null 2>&1
+sudo make install > /dev/null 2>&1
 
 echo "All Finished!"

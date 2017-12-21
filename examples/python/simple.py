@@ -158,6 +158,9 @@ def test_seq_dac(handle, sample_rate, streaming):
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
+    print 'timing_settings.period = '
+    print timing_settings.period
+
     runtime_settings.dac_power = bt.RUNTIME_DAC_POWER_ON
     runtime_settings.dac_ref = bt.RUNTIME_DAC_REF_EXT
 

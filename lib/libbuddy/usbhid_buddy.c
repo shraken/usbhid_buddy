@@ -186,7 +186,9 @@ hid_device* hidapi_init(buddy_hid_info_t *hid_info)
 	if (!handle) {
 		critical(("hidapi_init(): unable to open device\n"));
 		return NULL;
-	}
+    }
+    
+    printf("hidpai_init(): handle = %p\r\n", handle);
 
 	// allocate hidinfo_t strings for USB device information
 	hid_info->str_mfr = (char *) malloc(MAX_CHAR_LENGTH);
@@ -251,7 +253,7 @@ int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *ra
 		memcpy(&out_buf[BUDDY_APP_VALUE_OFFSET], raw, copy_length);
 	}
 	
-	if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == -1) {
+	if (buddy_write_packet(handle, &out_buf[0], MAX_OUT_SIZE) == BUDDY_ERROR_CODE_GENERAL) {
 		return BUDDY_ERROR_CODE_GENERAL;
 	}
 
@@ -265,8 +267,8 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
-		critical(("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
-			hid_error(handle), handle));
+		critical(("buddy_write_packet: hid_write call failed, error = %d (%ls) handle = %p\n", 
+			res, hid_error(handle), handle));
 		return BUDDY_ERROR_CODE_GENERAL;
 	}
 
@@ -293,9 +295,8 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 		out_hold_buf[BUDDY_APP_CODE_OFFSET] = type;
 		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
 
-		//printf("buddy_send_pwm() with encode_count = %d\n", encode_count);
-		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
-			critical(("buddy_send_pwm: buddy_write_packet call failed\n"));
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == BUDDY_ERROR_CODE_GENERAL) {
+			critical(("buddy_send_generic: buddy_write_packet call failed\n"));
 			return BUDDY_ERROR_CODE_GENERAL;
 		}
 
@@ -306,7 +307,7 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 	} else if (err_code == CODEC_STATUS_CONTINUE) {
 		return BUDDY_ERROR_CODE_OK;
 	} else {
-		printf("buddy_send_pwm: err_code = BUDDY_ERROR_CODE_GENERAL\n");
+		printf("buddy_send_generic: err_code = BUDDY_ERROR_CODE_GENERAL\n");
 		return BUDDY_ERROR_CODE_GENERAL;
 	}
 }
@@ -477,7 +478,7 @@ int buddy_flush(hid_device *handle)
 		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
 		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
 
-		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == BUDDY_ERROR_CODE_GENERAL) {
 			critical(("buddy_flush: buddy_write_packet call failed\n"));
 			return BUDDY_ERROR_CODE_GENERAL;
 		}
@@ -575,8 +576,9 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	if (general->function == GENERAL_CTRL_COUNTER_ENABLE) {
 		timing->period = swap_uint32(timing->period);
 	} else {
-		timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
-	}
+		//timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
+        timing->period = timing->period / buddy_count_channels(general->channel_mask);
+    }
 
 	for (i = 0; i < NUMBER_CFG_REG_ENTRIES; i++) {
 		if (buddy_write_raw(handle, APP_CODE_CTRL, 
@@ -668,8 +670,7 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 				fw_info->serial = swap_uint32(fw_info->serial);
 				break;
 			}
-		}
-		else {
+		} else {
 			critical(("buddy_get_firmware_info(): failed on buddy_write_raw\n"));
 			err_code = -1;
 		}
@@ -690,6 +691,8 @@ hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 		printf("Could not open USB HID connection the Buddy device\n");
 		return NULL;
 	}
+
+    printf("handle = %p\r\n", handle);
 
 	/*
 	sprintf(buffer, "handle = %p\r\n", handle);
