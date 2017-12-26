@@ -64,7 +64,7 @@ unsigned char EP_STATUS[3] = {EP_IDLE, EP_HALT, EP_HALT};
                                        // Holds the status for each endpoint
 
 
-__bit SendPacketBusy = 0;
+uint8_t SendPacketBusy = 0;
 
 //-----------------------------------------------------------------------------
 // Local Function Definitions
@@ -421,6 +421,8 @@ void Handle_Control (void)
 //-----------------------------------------------------------------------------
 void Handle_In1 ()
 {
+    //printf("Handle_In1 invoked\r\n");
+
       EP_STATUS[1] = EP_IDLE;
       SendPacketBusy = 0;
 }
@@ -607,71 +609,11 @@ void Force_Stall (void)
    EP_STATUS[0] = EP_STALL;            // Put the endpoint in stall status
 }
 
-
-//-----------------------------------------------------------------------------
-// SendPacket
-//-----------------------------------------------------------------------------
-//
-// Return Value - None
-// Parameters - Report ID that's used to call the appropriate IN handler
-//
-// This function can be called by other routines to force an IN packet
-// transmit.  It takes as an input the Report ID of the packet to be
-// transmitted.
-//-----------------------------------------------------------------------------
-
-/*
-void SendPacket (unsigned char ReportID)
-{
-   bit EAState;
-   unsigned char ControlReg;
-
-   EAState = EA;
-   EA = 0;
-
-   POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
-
-   // Read contol register for EP 1
-    POLL_READ_BYTE (EINCSR1, ControlReg);
-
-   if (EP_STATUS[1] == EP_HALT)        // If endpoint is currently halted,
-                                       // send a stall
-   {
-      POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
-   }
-
-   else if(EP_STATUS[1] == EP_IDLE)
-   {
-      // the state will be updated inside the ISR handler
-      EP_STATUS[1] = EP_TX;
-
-      if (ControlReg & rbInSTSTL)      // Clear sent stall if last
-                                       // packet returned a stall
-      {
-         POLL_WRITE_BYTE (EINCSR1, rbInCLRDT);
-      }
-
-      if (ControlReg & rbInUNDRUN)     // Clear underrun bit if it was set
-      {
-         POLL_WRITE_BYTE (EINCSR1, 0x00);
-      }
-
-      ReportHandler_IN_Foreground (ReportID);
-
-      // Put new data on Fifo
-      Fifo_Write_Foreground (FIFO_EP1, IN_BUFFER.Length,
-                    (unsigned char *)IN_BUFFER.Ptr);
-      POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
-                                       // Set In Packet ready bit,
-   }                                   // indicating fresh data on FIFO 1
-
-   EA = EAState;
-}
-*/
-
 void SendPacket (unsigned char ReportID)
 {
     unsigned char ControlReg;
+
+    printf("SendPacket invoked\r\n");
 
     EIE1 &= ~0x02;
     SendPacketBusy = 1;
@@ -684,10 +626,13 @@ void SendPacket (unsigned char ReportID)
     if (EP_STATUS[1] == EP_HALT)        // If endpoint is currently halted,
                                        // send a stall
    {
+      printf("SendPacket, endpoint halted\n");
       POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
    }
    else if(EP_STATUS[1] == EP_IDLE)
    {
+      printf("SendPacket, endpoint idle\n");
+
       // the state will be updated inside the ISR handler
       EP_STATUS[1] = EP_TX;
 
@@ -703,6 +648,8 @@ void SendPacket (unsigned char ReportID)
       }
 			
         *(P_IN_PACKET_SEND + 0x00) = IN_DATA;
+        //*(P_IN_PACKET_SEND + 0x00) = ReportID;
+        printf("Sending report ID.. %d\n", *(P_IN_PACKET_SEND + 0x00));
 
         /*
 		FIFO_WRITE_FUNC(FIFO_EP1, 
@@ -716,7 +663,11 @@ void SendPacket (unsigned char ReportID)
 
 	    POLL_WRITE_BYTE (EINCSR1, rbInINPRDY);
                                        // Set In Packet ready bit,
+    } else {
+        printf("SendPacket, EP_STATUS[1] = %d\n", EP_STATUS[1]);
     }                                   // indicating fresh data on FIFO 1
+    
+    printf("SendPacket() exit\n");
 
     EIE1 |= 0x02;
 }

@@ -21,14 +21,14 @@ uint8_t flag_usb_out = 0;
 uint8_t new_dac_packet = 0;
 uint8_t new_pwm_packet = 0;
 
-uint8_t __data in_packet_ready = false;
+uint8_t in_packet_ready = false;
 
 buddy_ctx_t buddy_ctx;
 
 int8_t process_ctrl_function(ctrl_general_t *p_general)
 {
 	int8_t err_code;
-	debug(("process_ctrl_function()\r\n"));
+	debug(("process_ctrl_function() enter\r\n"));
 	
 	// check if requested DAQ function value is in boundary
 	if ((p_general->function < GENERAL_CTRL_NONE) ||
@@ -100,6 +100,8 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 			break;
 	}
 	
+    debug(("process_ctrl_function() exit\r\n"));
+
 	return 0;
 }
 
@@ -295,12 +297,12 @@ int8_t process_ctrl_timing(ctrl_timing_t *p_timing)
 
 int8_t process_ctrl()
 {
-		uint8_t ctrl_type;
-		int8_t err_code;
+	uint8_t ctrl_type;
+	int8_t err_code;
 	
     ctrl_type = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
 
-		debug(("process_ctrl():\r\n"));
+	debug(("process_ctrl():\r\n"));
     debug(("ctrl_type = 0x%02X\r\n", ctrl_type));
 	
     // check for which CTRL setting to modify
@@ -322,10 +324,12 @@ int8_t process_ctrl()
 			break;
 
 		default:
+            printf("process_ctrl(): default condition reached.\r\n");
 			err_code = BUDDY_ERROR_CODE_INVALID;
 			break;
     }
     
+    printf("process_ctrl(): err_code = %d\r\n", err_code);
     return err_code;
 }
 
@@ -365,11 +369,7 @@ void process_out()
 				
 				rx_led_toggle();
 				break;
-				
-			case APP_CODE_TRIGGER:
-				debug(("APP_CODE_TRIGGER\r\n"));
-				break;
-							
+					
 			case APP_CODE_INFO:
 				debug(("APP_CODE_INFO\r\n"));
 				respond_data( (uint8_t *) &fw_info, sizeof(firmware_info_t));
@@ -403,16 +403,33 @@ void process_out()
 void process_in(void)
 {
 	static uint8_t in_counter = 0;
-	
+	static int process_in_count = 1;
+
+    /*
+    if ((process_in_count % 1000000) == 0) {
+        printf("buddy_ctx.daq_state = %d\n", buddy_ctx.daq_state);
+        process_in_count = 1;
+    } else {
+        process_in_count++;
+    }
+    */
+
 	if ((buddy_ctx.daq_state == GENERAL_CTRL_ADC_ENABLE) ||
      	(buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE)) {
 		if (!SendPacketBusy) {
+            //printf("process_in(): !SendPacketBusy\r\n");
+
 			if (in_packet_ready) {
+                printf("in_packet_ready = true\r\n");
 				in_packet_ready = false;
+                printf("save off result A\r\n");
 				*(P_IN_PACKET_SEND + BUDDY_APP_CODE_OFFSET) = BUDDY_RESPONSE_TYPE_DATA | (in_counter++ % BUDDY_MAX_COUNTER);
-				
+                printf("save off result B\r\n");
+
 				//P3 = P3 & ~0x40;
 				SendPacket(IN_DATA);
+                printf("SendPacket A\r\n");
+
 				//P3 = P3 | 0x40;
 			}
 		}

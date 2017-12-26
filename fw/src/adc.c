@@ -9,18 +9,18 @@
 #include <process.h>
 #include <io.h>
 
-uint8_t __data adc_channel_index = 0;
+uint8_t adc_channel_index = 0;
 uint8_t adc_channel_count = 0;
 uint8_t adc_int_dec = 1;
 uint8_t adc_int_dec_max = 1;
-int16_t __data adc_results[MAX_ANALOG_INPUTS];            
+int16_t adc_results[MAX_ANALOG_INPUTS];            
 
 uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS] = { 0 };
 uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS] = { 0 };
 
 uint16_t adc_timer_count;
 
-uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
+uint8_t adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 	ADC_P2_0,	// ADC0_IN
 	ADC_P2_1,	// ADC1_IN
 	ADC_P2_2,	// ADC2_IN
@@ -33,13 +33,19 @@ uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 
 int8_t adc_enable(void)
 {
+    debug(("adc_enable() invoked\r\n"));
+
 	AD0EN = 1;
+
+    debug(("adc_enable() exit\r\n"));
 
 	return 0;
 }
 
 int8_t adc_disable(void)
 {
+    debug(("adc_disable() invoked\r\n"));
+
 	// Disable ADC0
 	AD0EN = 0;
 	
@@ -48,6 +54,8 @@ int8_t adc_disable(void)
 
 int8_t adc_init(void)
 {	
+    debug(("adc_init() invoked\r\n"));
+
 	AD0EN = 0;
 		
 	ADC0CN = DEFAULT_ADC0CN;
@@ -59,12 +67,14 @@ int8_t adc_init(void)
 	
 	EIE1 |= 0x08;
 
+    debug(("adc_init() exiting\r\n"));
+
 	return 0;
 }
 
 int8_t adc_set_reference(uint8_t value)
 {
-	debug(("adc_set_reference(): value = %bd (%bx)\r\n", value, value));
+	debug(("adc_set_reference(): value = %d (%x)\r\n", value, value));
 	REF0CN = value;
 	
 	return 0;
@@ -77,6 +87,7 @@ void adc_isr (void) __interrupt (INTERRUPT_ADC0_EOC)
 
 	//P3 = P3 & ~0x40;
 
+    //printf("adc_isr invoked\r\n");
 	// clear ADC interrupt
 	AD0INT = 0;
 

@@ -18,7 +18,7 @@
 
 extern buddy_ctx_t buddy_ctx;
 
-extern uint8_t __data adc_channel_index;
+extern uint8_t adc_channel_index;
 extern uint8_t adc_channel_count;
 extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
 extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];

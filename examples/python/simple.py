@@ -8,7 +8,7 @@ import signal
 import csv
 import buddy as bt
 
-BUDDY_TEST_ADC_FREQ = 5000      # 1 kHz
+BUDDY_TEST_ADC_FREQ = 1000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
 BUDDY_TEST_COUNTER_FREQ = 10000     # 10 Hz
@@ -299,7 +299,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_2_MASK
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
@@ -344,8 +344,11 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
 
     recv_packets = 0;
     first_packet = True
-    for i in range(0, 1000):
+    for i in range(0, 50):
+        print 'calling buddy_read_adc'
         err_code = bt.buddy_read_adc(handle, packet, streaming)
+
+        print 'buddy_read_adc returned = %d' % err_code
 
         if err_code == bt.BUDDY_ERROR_CODE_OK:
             if first_packet:
@@ -414,7 +417,7 @@ def display_fw_info(fw_info):
 
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
-    bt.buddy_cleanup(hid_handle, hid_info)
+    bt.buddy_cleanup(hid_handle, hid_info, False)
     sys.exit(0)
 
 if __name__ == '__main__':

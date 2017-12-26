@@ -24,15 +24,15 @@ extern unsigned char *P_IN_PACKET_SEND;
 
 extern buddy_ctx_t buddy_ctx;
 
-extern int16_t __data adc_results[MAX_ANALOG_INPUTS];
+extern int16_t adc_results[MAX_ANALOG_INPUTS];
 
-extern uint8_t __data in_packet_ready;
+extern uint8_t in_packet_ready;
 
 extern uint8_t new_dac_packet;
 extern uint8_t new_pwm_packet;
 extern uint8_t flag_usb_out;
 
-extern __code firmware_info_t fw_info;
+extern firmware_info_t fw_info;
 
 extern unsigned char *P_IN_PACKET_RECORD;
 extern unsigned char in_packet_record_cycle;

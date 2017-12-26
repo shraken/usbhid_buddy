@@ -1,7 +1,7 @@
 #include <io.h>
 
-static uint8_t __data in_packet_offset = 0;
-static uint8_t __data codec_byte_offset = 0;
+static uint8_t in_packet_offset = 0;
+static uint8_t codec_byte_offset = 0;
 
 void io_init(void)
 {
@@ -33,11 +33,13 @@ void respond_status(int8_t error_code)
 
 void build_adc_packet(void)
 {
-	static uint8_t __data encode_count = 0;
-	uint8_t __data i;
-	uint8_t __data current_channel = 0;
-	uint16_t __data value;
+	static uint8_t encode_count = 0;
+	uint8_t i;
+	uint8_t current_channel = 0;
+	uint16_t value;
 	
+    //printf("build_adc_packet invoked\r\n");
+
 	P3 = P3 & ~0x40;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 	  if (buddy_ctx.m_chan_enable[i]) {
@@ -88,8 +90,8 @@ void build_adc_packet(void)
 
 void build_counter_packet(void)
 {
-	static uint8_t __data encode_count = 0;
-	uint8_t __data current_channel = 0;
+	static uint8_t encode_count = 0;
+	uint8_t current_channel = 0;
 
 	int32_t counter_chan0;
 	int32_t counter_chan1;

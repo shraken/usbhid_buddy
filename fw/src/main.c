@@ -77,7 +77,7 @@ extern uint8_t bytes_trans;
 
 extern buddy_ctx_t buddy_ctx;
 
-__code firmware_info_t fw_info = {
+firmware_info_t fw_info = {
 	BUDDY_FW_INFO_SERIAL,
 	BUDDY_FW_INFO_DATETIME,
 	BUDDY_FW_FWREV_INFO_MAJOR,

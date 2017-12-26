@@ -12,6 +12,7 @@
 #define  _ADC_H
 
 #include <stdint.h>
+#include <c8051f3xx.h>
 #include <buddy.h>
 
 #define ADC_BIT_SIZE 10
@@ -90,5 +91,7 @@ int8_t adc_disable(void);
  *  @return 0 on sucess, -1 on error.
  */
 int8_t adc_set_reference(uint8_t value);
+
+void adc_isr (void) __interrupt (INTERRUPT_ADC0_EOC);
 
 #endif
