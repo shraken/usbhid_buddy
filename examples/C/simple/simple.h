@@ -2,7 +2,7 @@
 #include <usbhid_buddy.h>
 #include "hidapi.h"
 
-#define BUDDY_TEST_ADC_FREQ 7000		// 1 kHz
+#define BUDDY_TEST_ADC_FREQ 1000		// 1 kHz
 #define BUDDY_TEST_DAC_FREQ 2500		// 1 kHz
 #define BUDDY_TEST_PWM_FREQ 1000		// 1 kHz
 

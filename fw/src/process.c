@@ -347,9 +347,11 @@ void process_out()
 			
 		switch (app_code) {
 			case APP_CODE_CTRL:
-				debug(("APP_CODE_CTRL\r\n"));
+				debug(("APP_CODE_CTRL enter\r\n"));
 				err_code = process_ctrl();
+                debug(("APP_CODE_CTRL exit 1\r\n"));
 				respond_status(err_code);
+                debug(("APP_CODE_CTRL exit 2\r\n"));
 				break;
 						
 			case APP_CODE_DAC:
@@ -420,15 +422,15 @@ void process_in(void)
             //printf("process_in(): !SendPacketBusy\r\n");
 
 			if (in_packet_ready) {
-                printf("in_packet_ready = true\r\n");
+                //printf("in_packet_ready = true\r\n");
 				in_packet_ready = false;
-                printf("save off result A\r\n");
+                //printf("save off result A\r\n");
 				*(P_IN_PACKET_SEND + BUDDY_APP_CODE_OFFSET) = BUDDY_RESPONSE_TYPE_DATA | (in_counter++ % BUDDY_MAX_COUNTER);
-                printf("save off result B\r\n");
+                //printf("save off result B\r\n");
 
 				//P3 = P3 & ~0x40;
 				SendPacket(IN_DATA);
-                printf("SendPacket A\r\n");
+                //printf("SendPacket A\r\n");
 
 				//P3 = P3 | 0x40;
 			}

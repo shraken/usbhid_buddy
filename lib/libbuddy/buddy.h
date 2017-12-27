@@ -34,13 +34,6 @@
 #define BUDDY_BIT_SIZE 8
 #define BUDDY_MAX_COUNTER 0x7F
 
-/*
-//typedef int bool;
-#define bool int
-#define false 0
-#define true 1
-*/
-
 /**
  * \enum APP_CODE 
  * \brief action code specified by either the

@@ -344,11 +344,8 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
 
     recv_packets = 0;
     first_packet = True
-    for i in range(0, 50):
-        print 'calling buddy_read_adc'
+    for i in range(0, 500):
         err_code = bt.buddy_read_adc(handle, packet, streaming)
-
-        print 'buddy_read_adc returned = %d' % err_code
 
         if err_code == bt.BUDDY_ERROR_CODE_OK:
             if first_packet:
@@ -364,11 +361,13 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
                     if (general_settings.channel_mask & (1 << j)):
                         value = bt.int32_t_ptr_getitem(packet.channels, j)
                         entry.append('%d' % value)
+                        print 'ADC chan = %d with value = %d' % (j, value)
             elif runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_DIFFERENTIAL:
                 for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_3 + 1):
                     if (general_settings.channel_mask & (1 << j)):
                         value = bt.int32_t_ptr_getitem(packet.channels, j)
                         entry.append('%d' % value)
+                        print 'ADC chan = %d with value = %d' % (j, value)
             recv_packets += 1
 
             if log_file:

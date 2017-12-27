@@ -55,6 +55,12 @@ typedef struct _buddy_cfg_reg_t {
 	uint8_t record_len;	
 } buddy_cfg_reg_t;
 
+typedef enum _BUDDY_RESPONSE_DRV_TYPE {
+    BUDDY_RESPONSE_DRV_TYPE_INTERNAL = 0,
+    BUDDY_RESPONSE_DRV_TYPE_STATUS,
+    BUDDY_RESPONSE_DRV_TYPE_DATA
+} BUDDY_RESPONSE_DRV_TYPE;
+
 #define NUMBER_CFG_REG_ENTRIES 3
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
@@ -191,11 +197,8 @@ BUDDY_EXPORT int buddy_flush(hid_device *handle);
 */
 int buddy_count_channels(uint8_t chan_mask);
 
-/** @brief trigger a start of conversion for either DAC or ADC
-*   @param handle pointer
-*/
-BUDDY_EXPORT int buddy_trigger(hid_device *handle);
+int buddy_empty(hid_device *handle);
 
-int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length);
+int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length);
 
 #endif

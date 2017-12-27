@@ -292,7 +292,7 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
 	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
 	//general_settings.channel_mask = BUDDY_CHAN_6_MASK | BUDDY_CHAN_0_MASK | BUDDY_CHAN_7_MASK;
-	general_settings.channel_mask = BUDDY_CHAN_1_MASK;
+	general_settings.channel_mask = BUDDY_CHAN_2_MASK;
 	general_settings.resolution = RESOLUTION_CTRL_HIGH;
 	//general_settings.resolution = RESOLUTION_CTRL_LOW;
 
@@ -330,7 +330,7 @@ int8_t test_seq_adc(hid_device* handle, firmware_info_t *fw_info,
 			printf("test_seq_adc: buddy_send_adc call failed\n");
 			return BUDDY_ERROR_CODE_GENERAL;
 		}
-	} while (recv_packets < 10000);
+	} while (recv_packets < 500);
 
 	return 0;
 }
@@ -403,6 +403,13 @@ int main(int argc, char *argv[])
 
 	display_usb_info(&hid_info);
 	display_fw_info(&fw_info);
+
+    // check if revision is acceptable
+    if ((fw_info.fw_rev_major != 0) || (fw_info.fw_rev_minor != 4)) {
+        printf("main: firmware major/minor version is not valid, exiting.\n");
+        buddy_cleanup(hid_handle, &hid_info, false);
+        return -1;
+    }
 
 	ftime(&time_start);
 	if (mode == DAQ_MODE) {

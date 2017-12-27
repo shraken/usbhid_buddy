@@ -283,6 +283,24 @@ int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 	return res;
 }
 
+int buddy_empty(hid_device *handle)
+{
+    uint8_t temp_buffer[MAX_IN_SIZE];
+    int res;
+
+    while (1) {
+        res = buddy_read_packet(handle, temp_buffer, MAX_IN_SIZE);
+
+        if (res == -1) {
+            return BUDDY_ERROR_CODE_PROTOCOL; 
+        } else if (res == 0) {
+            break;
+        }
+    }
+
+    return BUDDY_ERROR_CODE_OK;
+}
+
 int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool streaming, uint8_t type)
 {
 	int err_code;
@@ -509,6 +527,7 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	char buffer[128];
 	int i;
 	int j;
+    uint8_t resp_type;
 	int8_t err_code;
 	buddy_cfg_reg_t cfg_regs[NUMBER_CFG_REG_ENTRIES] = {
 		{
@@ -581,29 +600,50 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
     }
 
 	for (i = 0; i < NUMBER_CFG_REG_ENTRIES; i++) {
-		if (buddy_write_raw(handle, APP_CODE_CTRL, 
-							cfg_regs[i].type_indic, 
-							cfg_regs[i].record_cfg, 
-							cfg_regs[i].record_len) == BUDDY_ERROR_CODE_OK) {
-							
-			if ((err_code = buddy_get_response(handle, NULL, 0)) == BUDDY_ERROR_CODE_OK) {
-				short_sleep(100);
-			} else {
-				short_sleep(100);
-			}
-		}
+        for (j = 0; j < BUDDY_MAX_IO_ATTEMPTS; j++) {
+		    // request firmware info block
+		    if (buddy_write_raw(handle, APP_CODE_CTRL, 
+						        	    cfg_regs[i].type_indic, 
+							            cfg_regs[i].record_cfg, 
+							            cfg_regs[i].record_len) == BUDDY_ERROR_CODE_OK) {
+			    short_sleep(100);
+
+                err_code = buddy_get_response(handle, &resp_type, NULL, 0);
+
+                if ((resp_type != BUDDY_ERROR_CODE_OK) || (err_code != BUDDY_RESPONSE_DRV_TYPE_STATUS)) {
+                    printf("buddy_configure(): malformed status packet detected\n");
+                    printf("resp_type = %d\n", resp_type);
+                    printf("err_code = %d\n", err_code);
+                    short_sleep(100);
+                    continue;
+                } else {
+                    printf("buddy_configure(): buddy_get_response detected\n");
+                    break;
+                }
+		    } else {
+			    critical(("buddy_get_firmware_info(): failed on buddy_write_raw\n"));
+			    return BUDDY_ERROR_CODE_PROTOCOL;
+		    }
+	    }
 	}
 
 	return BUDDY_ERROR_CODE_OK; 
 }
 
-int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
+int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	uint16_t copy_length;
 	int res;
-	int err_code = BUDDY_ERROR_CODE_OK;
+    int j;
 	int response_count = 0;
+
+    debug(("buddy_get_response() enter\n"));
+
+    if (!res_type) {
+        *res_type = BUDDY_ERROR_CODE_MEMORY;
+        return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
+    }
 
 	res = 0;
 	while (res == 0) {
@@ -611,48 +651,70 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
 
 		if (res == 0) {
 			if (response_count >= BUDDY_MAX_IO_ATTEMPTS) {
-				err_code = BUDDY_ERROR_CODE_TIMEOUT;
-				break;
+                debug(("buddy_get_response(): BUDDY_MAX_IO_ATTEMPTS reached\n"));
+
+                *res_type = BUDDY_ERROR_CODE_TIMEOUT;
+                return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 			}
 
 			response_count++;
-			short_sleep(1);
+			short_sleep(100);
 			continue;
 		}
 
 		if (res < 0) {
-			critical(("buddy_get_response: could not buddy_read_packet\n"));
-			err_code = BUDDY_ERROR_CODE_PROTOCOL;
-			break;
+			//critical(("buddy_get_response: could not buddy_read_packet\n"));
+			debug(("buddy_get_response(): could not buddy_read_packet\n"));
+            *res_type = BUDDY_ERROR_CODE_PROTOCOL;
+			return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 		} else if (res >= 0) {
 			if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
-				if ((buffer) && (length > 0) && (res > 0)) {
+                debug(("buddy_get_response(): data type detected\n"));
+
+				if (res > 0) {
 					copy_length = (length > (MAX_IN_SIZE - BUDDY_APP_INDIC_OFFSET)) ? (MAX_IN_SIZE - BUDDY_APP_INDIC_OFFSET) : length;
-					memcpy(buffer, &in_buf[BUDDY_APP_INDIC_OFFSET], copy_length);
-					err_code = BUDDY_ERROR_CODE_OK;
+                    debug(("buddy_get_response(): data check pass, copy_length = %d\n", copy_length));
+                    memcpy(buffer, &in_buf[BUDDY_APP_INDIC_OFFSET], copy_length);
+					*res_type = BUDDY_ERROR_CODE_OK;
+                    return BUDDY_RESPONSE_DRV_TYPE_DATA;
 				} else {
-					err_code = BUDDY_ERROR_CODE_INVALID;
+                    debug(("buddy_get_response(): data check did not pass.\n"));
+					*res_type = BUDDY_ERROR_CODE_INVALID;
+                    return BUDDY_RESPONSE_DRV_TYPE_DATA;
 				}
 			} else if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_STATUS) {
-				err_code = in_buf[BUDDY_APP_INDIC_OFFSET];
+				debug(("buddy_get_response(): status packet detected\n"));
+                *res_type = in_buf[BUDDY_APP_INDIC_OFFSET];
+                return BUDDY_RESPONSE_DRV_TYPE_STATUS;
 			} else {
-				err_code = BUDDY_ERROR_CODE_INVALID;
+                debug(("buddy_get_response(): invalid error detected\n"));
+				*res_type = BUDDY_ERROR_CODE_INVALID;
+                return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 			}
 
 			break;
 		}
 	}
 
-	return err_code;
+    debug(("buddy_get_response() exit\n"));
+    *res_type = BUDDY_ERROR_CODE_OK;
+	return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 }
 
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
-	int res;
+	uint8_t resp_type;
+    int res;
 	int i;
-	int err_code = BUDDY_ERROR_CODE_OK;
+	int err_code;
 	
+    printf("buddy_get_firmware_info() entered\n");
+
+    if (!fw_info) {
+        return BUDDY_ERROR_CODE_MEMORY;
+    }
+
 	// shraken 7/30/17: cheap hack -- the firmware info get request
 	// seems to fail on the buddy_read_packet/hid_read as no IN
 	// request gets picked up.  The host does get the packet but
@@ -664,19 +726,25 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 		if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *)NULL, 0) == BUDDY_ERROR_CODE_OK) {
 			short_sleep(100);
 
-			if (buddy_get_response(handle, fw_info, sizeof(firmware_info_t)) == BUDDY_ERROR_CODE_OK) {
-				// adjust for endian conversion
+            err_code = buddy_get_response(handle, &resp_type, fw_info, sizeof(firmware_info_t));
+
+            if ((resp_type == BUDDY_ERROR_CODE_OK) && (err_code == BUDDY_RESPONSE_DRV_TYPE_DATA)) {  
+                // adjust for endian conversion
 				fw_info->flash_datetime = swap_uint32(fw_info->flash_datetime);
 				fw_info->serial = swap_uint32(fw_info->serial);
-				break;
-			}
+				
+                return BUDDY_ERROR_CODE_OK;
+            } else {
+                debug(("buddy_get_firmware_info: buddy_get_response call error\n"));
+            }
 		} else {
 			critical(("buddy_get_firmware_info(): failed on buddy_write_raw\n"));
-			err_code = -1;
+			return BUDDY_ERROR_CODE_PROTOCOL;
 		}
 	}
 
-	return err_code;
+    printf("buddy_get_firmware_info() exit\n");
+	return BUDDY_ERROR_CODE_INVALID;
 }
 
 hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
@@ -693,6 +761,7 @@ hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 	}
 
     printf("handle = %p\r\n", handle);
+    buddy_empty(handle);
 
 	/*
 	sprintf(buffer, "handle = %p\r\n", handle);
@@ -703,14 +772,11 @@ hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 	return handle;
 }
 
-int buddy_trigger(hid_device *handle)
-{
-	return buddy_write_raw(handle, APP_CODE_TRIGGER, 0x00, (uint8_t *) NULL, 0);
-}
-
 int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_disable)
 {
 	ctrl_general_t general_settings = { 0 };
+
+    debug(("buddy_cleanup entered\n"));
 
 	//debugf("buddy_cleanup entered\n");
 
@@ -748,6 +814,8 @@ int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_di
 
 	hid_close(handle);
 	hid_exit();
+
+    debug(("buddy_cleanup exit\n"));
 
 	return BUDDY_ERROR_CODE_OK;
 }
