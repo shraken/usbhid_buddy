@@ -16,16 +16,16 @@ void pwm_pin_init(void)
 	P2MDOUT   = 0xFF;
 	
 	// crossbar skip over fixed P0, P1, and P2
-  P0SKIP    = 0xCF;
-  P1SKIP    = 0xF0;
-  P2SKIP    = 0x00;  
+    P0SKIP    = 0xCF;
+    P1SKIP    = 0xF0;
+    P2SKIP    = 0x00;  
 	
 	// disable high impedance on P2.0 - P2.7
 	P2MDIN    = 0xFF;
 	
 	// enable PCA CEX0 - CEX4
-  XBR0      = 0x03;
-  XBR1      = 0x45;
+    XBR0      = 0x03;
+    XBR1      = 0x45;
 }
 
 int8_t pwm_duty_cycle_init(void)
@@ -36,7 +36,8 @@ int8_t pwm_duty_cycle_init(void)
 	PCA0CN = 0x00;
 	
 	// Use SYSCLK as time base
-	PCA0MD = 0x08;      
+	PCA0MD &= ~(0x0E);
+    PCA0MD |= 0x08;      
 	
 	if (pwm_resolution == RESOLUTION_CTRL_LOW) {
 		// 0100 1011
@@ -71,7 +72,7 @@ int8_t pwm_frequency_init(void)
 	PCA0CN = 0x00;
 
 	// Use SYSCLK/12 as time base
-	PCA0MD = 0x00;
+    PCA0MD &= ~(0x0E);
 	
 	// 0100 0110
 	// Module 0 = Frequency Output mode
@@ -92,12 +93,19 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 {
 	uint8_t i;
 
+    debug(("pwm_init(): mode = %d\r\n", mode));
+    debug(("pwm_init(): resolution = %d\r\n", resolution));
+    debug(("pwm_init(): chan_mask = %02x\r\n", chan_mask));
+
+    // reconfigure pins allowing for 5 PWM outputs
 	pwm_pin_init();
 
+    // save off state context
 	pwm_chan_mask = chan_mask;
 	pwm_mode = mode;
 	pwm_resolution = resolution;
 	
+    // build PMW channel enable easy index array
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (chan_mask & (1 << i)) {
 		  pwm_chan_enable[i] = 1;
@@ -106,10 +114,11 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 		}
 	}
 	
+    // mode specifies if frequency or duty cycle requested
 	if (mode == RUNTIME_PWM_MODE_FREQUENCY) {
 		pwm_frequency_init();
 	} else if (mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
-	  pwm_duty_cycle_init();
+	    pwm_duty_cycle_init();
 	} else {
 		return PWM_ERROR_CODE_GENERAL_ERROR;
 	}
@@ -119,11 +128,41 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 
 void pwm_enable(void)
 {
+    int i;
+    
+    printf("pwm_enable enter\n");
+
+    PCA0CPL0 = 0xFF;
+    PCA0CPH0 = 0xFF;
+
 	// Enable PCA interrupts
-  EIE1 |= 0x10;
+    EIE1 |= 0x10;
 	
+    printf("pwm_enable mid\n");
+
+    // dump some contents for debug
+    printf("PCA0CN = %02x\n", PCA0CN);
+    printf("pwm_chan_enable = ");
+
+    for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+		if (pwm_chan_enable[i]) {
+			printf("%d,", i);
+		}
+	}
+    printf("\n");
+
+    printf("pwm_chan_enable = ");
+
+    for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+        printf("%u,", (uint16_t) pwm_cex[i]);
+    }
+
+    printf("\n\n");
+    
 	// Start PCA counter
-  CR = 1;
+    //CR = 1;
+
+    printf("pwm_enable exit\n");
 }
 
 void pwm_disable(void)
@@ -132,7 +171,7 @@ void pwm_disable(void)
 	PCA0CN = 0x00;
 	
 	// Enable PCA interrupts
-  EIE1 &= ~(0x10);
+    EIE1 &= ~(0x10);
 	
 	P2MDOUT   = 0x00;
 	XBR1     &= ~(0x05);
@@ -214,6 +253,8 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 	  return PWM_ERROR_CODE_INDEX_ERROR;
 	}
 	
+    printf("pwm_set_duty_cycle(): channel = %d, value = %d\n", channel, value);
+
 	pwm_cex[channel] = value;
 	
 	switch (channel) {
@@ -269,8 +310,9 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 	return PWM_ERROR_CODE_OK;
 }
 
-void PCA0_ISR (void) interrupt 11
+void pca0_isr (void) __interrupt (INTERRUPT_PCA0)
 {
+    printf("pca0_isr hit\n");
 	if (pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
 		if (CCF0) {
 			CCF0 = 0;

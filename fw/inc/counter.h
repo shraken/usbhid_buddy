@@ -77,4 +77,7 @@ int32_t counter_get_chan0(void);
  */
 int32_t counter_get_chan1(void);
 
+void int0_isr (void) __interrupt (INTERRUPT_INT0);
+void int1_isr (void) __interrupt (INTERRUPT_INT1);
+
 #endif

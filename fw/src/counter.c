@@ -87,12 +87,12 @@ void counter_disable(void)
 	EX1 = 0;
 }
 
-void INT0_ISR (void) interrupt 0
+void int0_isr (void) __interrupt (INTERRUPT_INT0)
 {
    counter_int0_count++;
 }
 
-void INT1_ISR (void) interrupt 2
+void int1_isr (void) __interrupt (INTERRUPT_INT1)
 {
    counter_int1_count++;
 }

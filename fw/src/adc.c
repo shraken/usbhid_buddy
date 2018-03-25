@@ -44,7 +44,7 @@ int8_t adc_enable(void)
 
 int8_t adc_disable(void)
 {
-    debug(("adc_disable() invoked\r\n"));
+    debug(("\r\nadc_disable() invoked\r\n"));
 
 	// Disable ADC0
 	AD0EN = 0;

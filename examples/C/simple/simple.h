@@ -5,6 +5,7 @@
 #define BUDDY_TEST_ADC_FREQ 1000		// 1 kHz
 #define BUDDY_TEST_DAC_FREQ 2500		// 1 kHz
 #define BUDDY_TEST_PWM_FREQ 1000		// 1 kHz
+#define BUDDY_TEST_COUNTER_FREQ 1000    // 1 kHz
 
 /** @brief test routine for sending DAC packets to the buddy
  *		instrument.  The channels, resolution, transfer type,

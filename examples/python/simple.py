@@ -11,7 +11,7 @@ import buddy as bt
 BUDDY_TEST_ADC_FREQ = 1000      # 1 kHz
 BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
-BUDDY_TEST_COUNTER_FREQ = 10000     # 10 Hz
+BUDDY_TEST_COUNTER_FREQ = 1000     # 10 Hz
 hid_handle = None
 hid_info = None
 
@@ -111,7 +111,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     packet = bt.general_packet_t()
     test_seq_pwm_count = 0
 
-    #for k in range(0, 65535, 10):
+    #for k in range(1, 65535, 10):
     #for k in range(128, 129):
     #for k in range(63,64):
     #for k in range(191, 192):
@@ -344,7 +344,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
 
     recv_packets = 0;
     first_packet = True
-    for i in range(0, 500):
+    for i in range(0, 1000):
         err_code = bt.buddy_read_adc(handle, packet, streaming)
 
         if err_code == bt.BUDDY_ERROR_CODE_OK:
@@ -361,13 +361,13 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
                     if (general_settings.channel_mask & (1 << j)):
                         value = bt.int32_t_ptr_getitem(packet.channels, j)
                         entry.append('%d' % value)
-                        print 'ADC chan = %d with value = %d' % (j, value)
+                        #print 'ADC chan = %d with value = %d' % (j, value)
             elif runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_DIFFERENTIAL:
                 for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_3 + 1):
                     if (general_settings.channel_mask & (1 << j)):
                         value = bt.int32_t_ptr_getitem(packet.channels, j)
                         entry.append('%d' % value)
-                        print 'ADC chan = %d with value = %d' % (j, value)
+                        #print 'ADC chan = %d with value = %d' % (j, value)
             recv_packets += 1
 
             if log_file:
@@ -523,6 +523,7 @@ if __name__ == '__main__':
     time_end = time.time()
     time_diff = time_end - time_start
     print 'Test took (%f) seconds  to run' % time_diff
+    print 'hold_mode = %d' % args.hold_mode
 
     if args.hold_mode:
         bt.buddy_cleanup(hid_handle, hid_info, False)

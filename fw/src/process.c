@@ -63,18 +63,24 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 			debug(("CTRL_GENERAL = GENERAL_CTRL_PWM_ENABLE\r\n"));
 			disable_all();
 		
+            debug(("buddy_ctx.m_pwm_mode = %d\n", buddy_ctx.m_pwm_mode));
+            debug(("buddy_ctx.m_resolution = %d\n", buddy_ctx.m_resolution));
+            debug(("buddy_ctx.m_chan_mask = %d\n", buddy_ctx.m_chan_mask));
+            debug(("buddy_ctx.m_pwm_timebase = %d\n", buddy_ctx.m_pwm_timebase));
+
+
 			if (pwm_init(buddy_ctx.m_pwm_mode, buddy_ctx.m_resolution, buddy_ctx.m_chan_mask) != PWM_ERROR_CODE_OK) {
 				debug(("process_ctrl_function(): pwm_init failed\r\n"));
 				return -1;
 			}
-		
+	
 			if (pwm_set_timebase(buddy_ctx.m_pwm_timebase) != PWM_ERROR_CODE_OK) {
 				debug(("process_ctrl_function(): pwm_set_timebase failed\r\n"));
 				return -1;
 			}
 			
 			pwm_enable();
-			break;
+            break;
 		
 		case GENERAL_CTRL_COUNTER_ENABLE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_COUNTER_ENABLE\r\n"));

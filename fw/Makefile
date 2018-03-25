@@ -9,7 +9,6 @@ OBJECTS = $(patsubst $(SOURCE_DIR)/%.c,$(BUILD_DIR)/%.rel,$(SOURCES))
 
 CFLAGS = --model-large --std-sdcc99 -c
 CFLAGS += $(INCLUDE_DIRS)
-CFLAGS += -DNERROR_RESPONSE
 
 LDFLAGS = --model-large --std-sdcc99
 LDFLAGS += $(INCLUDE_DIRS)

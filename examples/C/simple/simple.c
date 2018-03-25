@@ -85,6 +85,66 @@ void display_fw_info(firmware_info_t *fw_info)
 	}
 }
 
+int8_t test_seq_counter(hid_device* handle, firmware_info_t *fw_info,
+	float sample_rate, bool streaming)
+{
+    static int test_seq_dac_count = 0;
+	general_packet_t packet;
+	ctrl_general_t general_settings = { 0 };
+	ctrl_timing_t timing_settings = { 0 };
+	ctrl_runtime_t runtime_settings = { 0 };
+	int i;
+	int err_code;
+	int recv_packets;
+
+	active = true;
+	general_settings.function = GENERAL_CTRL_COUNTER_ENABLE;
+	general_settings.mode = (streaming ? MODE_CTRL_STREAM : MODE_CTRL_IMMEDIATE);
+	//general_settings.channel_mask = BUDDY_CHAN_ALL_MASK;
+	//general_settings.channel_mask = BUDDY_CHAN_6_MASK | BUDDY_CHAN_0_MASK | BUDDY_CHAN_7_MASK;
+	general_settings.channel_mask = BUDDY_CHAN_2_MASK;
+	general_settings.resolution = RESOLUTION_CTRL_SUPER;
+	//general_settings.resolution = RESOLUTION_CTRL_LOW;
+
+	timing_settings.period = (uint32_t) FREQUENCY_TO_NSEC(sample_rate);
+	timing_settings.averaging = 1;
+
+    runtime_settings.counter_control = RUNTIME_COUNTER_CONTROL_ACTIVE_LOW;
+
+	printf("timing_settings.period = %d (0x%x)\n", timing_settings.period, timing_settings.period);
+
+	if 	(buddy_configure(handle, &general_settings, &runtime_settings, &timing_settings) != BUDDY_ERROR_CODE_OK) {
+		printf("test_seq_dac: could not buddy_init\n");
+		return -1;
+	}
+	short_sleep(100);
+
+	recv_packets = 0;
+	do {
+		if (!active) {
+			return 0;
+		}
+
+		err_code = buddy_read_counter(handle, &packet, streaming);
+		if (err_code == BUDDY_ERROR_CODE_OK) {
+			printf("test_seq_adc: received packet %d\n", recv_packets);
+
+			for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+				if (general_settings.channel_mask & (1 << i)) {
+					printf("packet.channels[%d] = %d\r\n", i, packet.channels[i]);
+				}
+			}
+
+			recv_packets++;
+		} else if (err_code == BUDDY_ERROR_CODE_GENERAL) {
+			printf("test_seq_adc: buddy_read_counter call failed\n");
+			return BUDDY_ERROR_CODE_GENERAL;
+		}
+	} while (recv_packets < 500);
+
+    return 0;
+}
+
 int8_t test_seq_pwm_freq(hid_device* handle, firmware_info_t *fw_info,
 	float sample_rate, bool streaming)
 {
@@ -347,7 +407,7 @@ int main(int argc, char *argv[])
 	int time_diff;
 	bool stream_mode = false;
 	bool hold_mode = false;
-	enum { DAQ_MODE, ADC_MODE, PWM_DUTY_MODE, PWM_FREQ_MODE } mode = DAQ_MODE;
+	enum { DAQ_MODE, ADC_MODE, PWM_DUTY_MODE, PWM_FREQ_MODE, COUNTER_MODE } mode = DAQ_MODE;
 
 	#ifdef WIN32
 	UNREFERENCED_PARAMETER(argc);
@@ -374,7 +434,8 @@ int main(int argc, char *argv[])
 			case 'd': mode = DAQ_MODE; break;
 			case 'a': mode = ADC_MODE; break;
 			case 'p': mode = PWM_DUTY_MODE; break;
-			case 't': mode = PWM_FREQ_MODE; break;
+            case 't': mode = PWM_FREQ_MODE; break;
+            case 'c': mode = COUNTER_MODE;
 			case 's': stream_mode = true; break;
 			case 'l': hold_mode = true; break;
 			case 'h': 
@@ -384,7 +445,8 @@ int main(int argc, char *argv[])
 				fprintf(stdout, "optional arguments:\n");
 				fprintf(stdout, " -h,        show this help message and exit\n");
 				fprintf(stdout, " -d,        enable DAC(data to analog) mode\n");
-				fprintf(stdout, " -a,        enable ADC(analog to digital) mode\n");
+                fprintf(stdout, " -a,        enable ADC(analog to digital) mode\n");
+                fprintf(stdout, " -c,        enable tick counter interrupt mode\n");
 				fprintf(stdout, " -p,        enable PWM(pulse width modulation) duty cycle mode\n");
 				fprintf(stdout, " -t,        enable PWM(pulse width modulation) frequency mode\n");
 				fprintf(stdout, " -s,        enable streaming for higher throughput\n");
@@ -424,7 +486,10 @@ int main(int argc, char *argv[])
 	} else if (mode == PWM_FREQ_MODE) {
 		printf("main: testing with mode = PWM_FREQ_MODE\n");
 		err_code = test_seq_pwm_freq(hid_handle, &fw_info, BUDDY_TEST_PWM_FREQ, stream_mode);
-	}
+	} else if (mode == COUNTER_MODE) {
+        printf("main: testing with mode = COUNTER_MODE\n");
+        err_code = test_seq_counter(hid_handle, &fw_info, BUDDY_TEST_COUNTER_FREQ, stream_mode);
+    }
 
 	ftime(&time_end);
 	time_diff = (int)(1000.0 * (time_end.time - time_start.time) + (time_end.millitm - time_start.millitm));

@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <buddy.h>
 #include <utility.h>
+#include <c8051f3xx.h>
 
 #define NUMBER_PCA_CHANNELS 5
 #define DEFAULT_FREQUENCY 50000
@@ -85,5 +86,7 @@ int8_t pwm_set_frequency(uint8_t channel, uint32_t value);
  *  @return PWM_ERROR_CODE_OK on sucess, PWM_ERROR_CODE_GENERAL_ERROR on error.
  */
 int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value);
+
+void pca0_isr (void) __interrupt (INTERRUPT_PCA0);
 
 #endif

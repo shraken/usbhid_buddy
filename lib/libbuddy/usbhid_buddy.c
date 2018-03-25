@@ -592,10 +592,7 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	// so that all channels are sampling at the requested rate.  If counter mode then set
 	// period to user requested value.
 
-	if (general->function == GENERAL_CTRL_COUNTER_ENABLE) {
-		timing->period = swap_uint32(timing->period);
-	} else {
-		//timing->period = swap_uint32(timing->period / buddy_count_channels(general->channel_mask));
+	if (!(general->function == GENERAL_CTRL_COUNTER_ENABLE)) {
         timing->period = timing->period / buddy_count_channels(general->channel_mask);
     }
 
@@ -621,7 +618,7 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
                     break;
                 }
 		    } else {
-			    critical(("buddy_get_firmware_info(): failed on buddy_write_raw\n"));
+			    critical(("buddy_configure(): failed on buddy_write_raw\n"));
 			    return BUDDY_ERROR_CODE_PROTOCOL;
 		    }
 	    }
@@ -641,6 +638,7 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer
     debug(("buddy_get_response() enter\n"));
 
     if (!res_type) {
+        printf("buddy_get_response(): res_type pointer invalid.\n");
         *res_type = BUDDY_ERROR_CODE_MEMORY;
         return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
     }
@@ -653,6 +651,7 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer
 			if (response_count >= BUDDY_MAX_IO_ATTEMPTS) {
                 debug(("buddy_get_response(): BUDDY_MAX_IO_ATTEMPTS reached\n"));
 
+                printf("buddy_get_response(): timeout in config item request.\n");
                 *res_type = BUDDY_ERROR_CODE_TIMEOUT;
                 return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 			}
@@ -726,7 +725,7 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 		if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *)NULL, 0) == BUDDY_ERROR_CODE_OK) {
 			short_sleep(100);
 
-            err_code = buddy_get_response(handle, &resp_type, fw_info, sizeof(firmware_info_t));
+            err_code = buddy_get_response(handle, &resp_type, (uint8_t *) fw_info, sizeof(firmware_info_t));
 
             if ((resp_type == BUDDY_ERROR_CODE_OK) && (err_code == BUDDY_RESPONSE_DRV_TYPE_DATA)) {  
                 // adjust for endian conversion

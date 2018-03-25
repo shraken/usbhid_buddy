@@ -15,8 +15,8 @@ Vagrant.configure("2") do |config|
   # add the gboot bootloader device
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["usbfilter", "add", "0", "-target", :id, "-name", "jlink", "--vendorid", "1366"]
-    #vb.customize ["usbfilter", "add", "0", "-target", :id, "-name", "ftdi", "--vendorid", "0403"]
-    #vb.customize ["usbfilter", "add", "0", "-target", :id, "-name", "buddy", "--vendorid", "10c4", "--productid", "82cd"]
+    vb.customize ["usbfilter", "add", "0", "-target", :id, "-name", "ftdi", "--vendorid", "0403"]
+    vb.customize ["usbfilter", "add", "0", "-target", :id, "-name", "buddy", "--vendorid", "10c4", "--productid", "82cd"]
   end
 
   config.vm.provision "shell", path: "setup.sh"
