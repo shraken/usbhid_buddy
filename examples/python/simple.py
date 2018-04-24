@@ -154,7 +154,7 @@ def test_seq_dac(handle, sample_rate, streaming):
     #general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
     general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
-    general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
+    general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
@@ -173,7 +173,8 @@ def test_seq_dac(handle, sample_rate, streaming):
     packet = bt.general_packet_t()
     test_seq_dac_count = 0
 
-    for k in range(0, 4095 + 1):
+    #for k in range(0, 4095 + 1):
+    for k in range(128, 128 + 1):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.int32_t_ptr_setitem(packet.channels, i, k)
 
@@ -296,7 +297,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 

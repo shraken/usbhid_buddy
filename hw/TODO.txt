@@ -4,7 +4,7 @@ v0.5:
  * fix footprint for ESD USB protection diode
  * fix footprint for bicolor red/green LED DN1
  * fix fotprint for TPS 5V converter
- * add fidiucials
+ x * add fidiucials (look into reason)
  * revert back to SOT23-5 footprint for tristate buffer SN74AHC1G125
  * establish if polyfuse is appropriate given max current of LDO 3.3V reg
  * add testpad for GPIO that can be used for timing

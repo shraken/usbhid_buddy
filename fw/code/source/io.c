@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <io.h>
 
 static uint8_t data in_packet_offset = 0;
@@ -195,6 +196,9 @@ void execute_out_stream(void)
 					}
 				}
 
+				printf("channel %bd => %u\r\n", i, value);
+				value = 128;
+				
 				tlv563x_write(i, (uint16_t) value);
 			} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
 				if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
@@ -275,6 +279,8 @@ void execute_out(void)
 								break;
 						}	
 					}
+					
+					//printf("channel %bd => %u\r\n", i, value);
 					
 					tlv563x_write(i, (uint16_t) value);
 				} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {

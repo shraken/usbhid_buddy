@@ -1,0 +1,3 @@
+erase
+loadbin build/buddy.hex,0
+exit
