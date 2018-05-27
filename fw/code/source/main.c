@@ -101,7 +101,7 @@ void main(void)
     adc_init();
     uart_init();
 
-		timer_init();
+		timer0_init();
 
     tlv563x_dac_init();
 		tlv563x_dac_set_power_mode(0);

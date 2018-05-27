@@ -30,4 +30,8 @@ typedef struct _adc_ctx {
 #define HEARTBEAT_PIN GPIO_P4_7
 #define TLV563X_LDAC_PIN GPIO_P1_7
 
+#define SMB_FREQUENCY          100000	// Target SCL clock rate
+                                        // This example supports between 10kHz
+                                        // and 100kHz      
+
 #endif

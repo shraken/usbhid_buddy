@@ -33,12 +33,29 @@ extern uint8_t adc_channel_count;
 extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
 extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
 
+extern bit SMB_BUSY;
+
 /** @brief Configures Timer0 with default count values with a 16-bit mode.  The timer
  *				 is by default set to use a SYSCLK/12 reference, timer0 interrupt is enabled,
  *				 and the timer is enabled.
  *  @return Void.
  */
-void timer_init (void);
+void timer0_init (void);
+
+/** @brief Configure timer1 as smbus/i2c clock source.  Timer1 configured as
+ *		   8-bit auto-reload, SYSCLK or SYSCLK/4 as clock source.  Timer1 overflow
+ *		   rate configured 3 * SMB_FREQUENCY.  The SCL clock is (1/3) the timer1
+ *		   overflow rate (SMB_FREQUENCY).
+ *  @return Void.
+ */
+void timer1_init(void);
+
+/** @brief Configure timer3 as a low timeout detection feature.  Timer 3 configured
+ *		   as a 16-bit auto-reload mode, SYSCLK/12 as clock source.  The reload
+ *         register is set to 25 msec and is reloaded on interrupt to 25 msec.
+ *  @return Void.
+ */
+void timer3_init(void);
 
 /** @brief Sets the requested period (in nsec) for Timer 0.  A calculation is performed to
  *				 determine if the timer0 clock base needs to be modified from the default SYSCLK/12
@@ -47,6 +64,6 @@ void timer_init (void);
  *  @param period the time period (in nsec) that the timer elapses at.
  *  @return Void.
  */
-void timer_set_period(uint32_t period);
+void timer0_set_period(uint32_t period);
 
 #endif

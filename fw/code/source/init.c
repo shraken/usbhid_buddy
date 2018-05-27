@@ -54,18 +54,18 @@ void port_init(void)
 
     P0MDOUT   = 0x10;
 
-		P1MDOUT   = 0x85;
+	P1MDOUT   = 0x85;
 	
-		P3MDOUT   = 0x30;
+	P3MDOUT   = 0x30;
 	
-		P4MDOUT   = 0x80;
+	P4MDOUT   = 0x80;
 	
     P0SKIP    = 0xCF;
-		P1SKIP 	  = 0x00;
-		P2SKIP    = 0xFF;
+	P1SKIP 	  = 0x00;
+	P2SKIP    = 0xFF;
     P3SKIP    = 0x30;
 	
-    XBR0      = 0x03;
+    XBR0      = 0x07;
     XBR1      = 0x40;
 	
 		// set SPI chip select DAC and external memory to be disabled by default

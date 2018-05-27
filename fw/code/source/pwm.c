@@ -12,18 +12,18 @@ static uint8_t pwm_resolution = RESOLUTION_CTRL_HIGH;
 
 void pwm_pin_init(void)
 {
-	// enable push-pull on P2.0 - P2.7
-	P2MDOUT   = 0xFF;
+  // enable push-pull on P2.0 - P2.7
+  P2MDOUT   = 0xFF;
 	
-	// crossbar skip over fixed P0, P1, and P2
+  // crossbar skip over fixed P0, P1, and P2
   P0SKIP    = 0xCF;
   P1SKIP    = 0xF0;
   P2SKIP    = 0x00;  
 	
-	// disable high impedance on P2.0 - P2.7
-	P2MDIN    = 0xFF;
+  // disable high impedance on P2.0 - P2.7
+  P2MDIN    = 0xFF;
 	
-	// enable PCA CEX0 - CEX4
+  // enable PCA CEX0 - CEX4
   XBR0      = 0x03;
   XBR1      = 0x45;
 }

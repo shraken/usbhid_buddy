@@ -285,7 +285,7 @@ int8_t process_ctrl_timing(ctrl_timing_t *p_timing)
 	
 	// set timer interrupt frequency and number of ADC frames
 	// to average over
-	timer_set_period(p_timing->period);
+	timer0_set_period(p_timing->period);
 	adc_int_dec_max = p_timing->averaging;
 	
 	return BUDDY_ERROR_CODE_OK;
