@@ -91,9 +91,9 @@ void contexts_init(void)
 void main(void)
 {
     system_init();
-		contexts_init();
+	contexts_init();
 	
-		gpio_init();
+	gpio_init();
 	
     usb_init();
     spi_init();
@@ -101,19 +101,23 @@ void main(void)
     adc_init();
     uart_init();
 
-		timer0_init();
+	timer0_init();
 
-    tlv563x_dac_init();
-		tlv563x_dac_set_power_mode(0);
+    // @todo use a GPIO to detect insertion of expander board.  (default-pull down)
+    // and only respond on pull up to initialize tca9555 and i2c eventually
+    tca9555_init();
+    
+    tlv563x_init();
+	tlv563x_dac_set_power_mode(0);
 	
-		print_device_info();
-    debug(("tlv563x_dac_init passed\r\n"));
+	print_device_info();
+    debug(("tlv563x_init passed\r\n"));
 	
-		PCA0MD = 0x00;                      // Disable watchdog timer
-		EA = 1;                             // Globally enable interrupts
+	PCA0MD = 0x00;                      // Disable watchdog timer
+	EA = 1;                             // Globally enable interrupts
 		
-		while (1) {
-			process();
-		}
+	while (1) {
+        process();
+	}
 }
 

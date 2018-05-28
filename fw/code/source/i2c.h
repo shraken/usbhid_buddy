@@ -18,6 +18,7 @@ typedef enum _I2C_ERROR_CODE {
 	I2C_ERROR_CODE_OK = 0,
 	I2C_ERROR_CODE_GENERAL_ERROR = -1,
 	I2C_ERROR_CODE_BAD_MEMORY = -2,
+    I2C_ERROR_CODE_INIT_DONE = -3,
 } I2C_ERROR_CODE;
 
 #define I2C_MAX_BUFFER_SIZE 16			// Maximum read/write buffer size for Master

@@ -68,8 +68,8 @@ void port_init(void)
     XBR0      = 0x07;
     XBR1      = 0x40;
 	
-		// set SPI chip select DAC and external memory to be disabled by default
-		gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
+	// set SPI chip select DAC and external memory to be disabled by default
+	gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
 }
 
 void usb_init(void)

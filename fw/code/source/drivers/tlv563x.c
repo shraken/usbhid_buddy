@@ -32,7 +32,7 @@ void tlv563x_write(uint8_t reg_channel, uint16_t reg_value)
 	return;
 }
 
-void tlv563x_dac_init(void)
+void tlv563x_init(void)
 {
 	// set DAC bit resolution
 	switch (fw_info.type_dac) {

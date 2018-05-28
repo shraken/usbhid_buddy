@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <i2c.h>
 #include <globals.h>
@@ -18,6 +19,8 @@ uint8_t I2C_Data_Tx_Array[I2C_MAX_BUFFER_SIZE] = { 0 };
 
 bit SMB_BUSY;
 bit SMB_RW;
+
+static bool i2c_initialized = false;
 
 int8_t i2c_write(uint8_t *buffer, uint16_t len) {
 	uint8_t bytes_to_copy;
@@ -53,14 +56,18 @@ int8_t i2c_read(uint8_t *buffer, uint16_t len) {
 	
 	STA = 1;
 	while (SMB_BUSY);
-	// @todo copy i2c rx buffer to buffer
 	
+    // @todo copy i2c rx buffer to buffer
+	memcpy(buffer, I2C_Data_Rx_Array, I2C_Rx_Array_Count);
 	return I2C_ERROR_CODE_OK;
 }
 
 int8_t i2c_init(void) {
-	SMB0CF = 0x5D;
-	
+    if (!i2c_initialized) {
+        i2c_initialized = true;
+        SMB0CF = 0x5D;
+    }
+    
 	return I2C_ERROR_CODE_OK;
 }
 

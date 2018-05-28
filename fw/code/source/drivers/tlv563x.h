@@ -120,7 +120,7 @@ void tlv563x_write(uint8_t reg_channel, uint16_t reg_value);
  *
  * @return Void.
  */
-void tlv563x_dac_init(void);
+void tlv563x_init(void);
 
 /**
  * @brief Sets the current global power state to turn ON/OFF the DAC device.  If
