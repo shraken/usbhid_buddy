@@ -19,12 +19,12 @@
 #include <adc.h>
 #include <buddy.h>
 
-// Timer 0
-#define TIMER0_LOW_PERIOD 21					// 21 nsec
-#define TIMER0_HIGH_PERIOD 65535000		// 65.53 sec
+// Timer 2
+#define TIMER2_LOW_PERIOD 21		    // in nsec, 21 nsec
+#define TIMER2_HIGH_PERIOD 16383750		// in nsec, 16.38375 msec
 
-#define DEFAULT_TIMER0_HIGH_PERIOD 0xF0
-#define DEFAULT_TIMER0_LOW_PERIOD 0x5F
+#define DEFAULT_TIMER2_HIGH_PERIOD 0xF0
+#define DEFAULT_TIMER2_LOW_PERIOD 0x5F
 
 extern buddy_ctx_t buddy_ctx;
 
@@ -38,15 +38,15 @@ extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
  *				 and the timer is enabled.
  *  @return Void.
  */
-void timer_init (void);
+void timer2_init (void);
 
-/** @brief Sets the requested period (in nsec) for Timer 0.  A calculation is performed to
+/** @brief Sets the requested period (in nsec) for Timer 2.  A calculation is performed to
  *				 determine if the timer0 clock base needs to be modified from the default SYSCLK/12
  *				 reference and is modified if need be.  The timer is used for stream mode for triggering
  *				 a conversion on the request DAQ function.
  *  @param period the time period (in nsec) that the timer elapses at.
  *  @return Void.
  */
-void timer_set_period(uint32_t period);
+void timer2_set_period(uint32_t period);
 
 #endif

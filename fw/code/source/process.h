@@ -16,7 +16,7 @@
 #include <adc.h>
 
 extern bit SendPacketBusy;
-extern uint8_t timer0_flag;
+extern uint8_t timer2_flag;
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata *P_IN_PACKET_SEND;
 

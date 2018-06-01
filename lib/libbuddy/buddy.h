@@ -27,8 +27,15 @@
 #define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type
 #define BUDDY_APP_VALUE_OFFSET 3   // CTRL (Control) Value
 
-#define DEFAULT_ADC0CN 0x01
+// ADC0 start-of-conversion source is overflow of Timer 2
+#define DEFAULT_ADC0CN 0x02
+
+// 1x gain, VDD used as voltage reference, temperature sensor ON,
+// internal bias generator on, on-chip reference buffer on.
 #define DEFAULT_REF0CN 0x8F
+
+// ADC0 SAR conversion clock period bits
+// Data is right justified
 #define DEFAULT_ADC0CF (((SYSCLK/8000000)-1)<<3)
 
 #define BUDDY_BIT_SIZE 8

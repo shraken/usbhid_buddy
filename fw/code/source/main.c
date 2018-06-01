@@ -85,6 +85,12 @@ void contexts_init(void)
 	buddy_ctx.m_chan_number     = 0;
 }
 
+// timer0 - i2c clock source
+// timer1 - uart0
+// timer2 - stream mode interrupt
+// timer3 - i2c timeout detection
+// timer4 - 
+
 //-----------------------------------------------------------------------------
 // Main Routine
 //-----------------------------------------------------------------------------
@@ -101,8 +107,11 @@ void main(void)
     adc_init();
     uart_init();
 
-		timer_init();
+		timer2_init();
 
+    // 10msec
+    timer2_set_period(10000000);
+    
     tlv563x_dac_init();
 		tlv563x_dac_set_power_mode(0);
 	

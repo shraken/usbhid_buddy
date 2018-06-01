@@ -285,7 +285,7 @@ int8_t process_ctrl_timing(ctrl_timing_t *p_timing)
 	
 	// set timer interrupt frequency and number of ADC frames
 	// to average over
-	timer_set_period(p_timing->period);
+	timer2_set_period(p_timing->period);
 	adc_int_dec_max = p_timing->averaging;
 	
 	return BUDDY_ERROR_CODE_OK;
@@ -388,8 +388,8 @@ void process_out()
 		
 	// if stream mode is active, then unload the DAC frame from
 	// the data queue and execute the DAC update routine
-	if ((buddy_ctx.m_ctrl_mode == MODE_CTRL_STREAM) && (timer0_flag)) {
-		timer0_flag = 0;
+	if ((buddy_ctx.m_ctrl_mode == MODE_CTRL_STREAM) && (timer2_flag)) {
+		timer2_flag = 0;
 		
 		if (((buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) ||
 			  ((buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet))) {

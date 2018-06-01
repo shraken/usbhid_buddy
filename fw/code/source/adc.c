@@ -65,7 +65,7 @@ int8_t adc_init(void)
 int8_t adc_set_reference(uint8_t value)
 {
 	debug(("adc_set_reference(): value = %bd (%bx)\r\n", value, value));
-	REF0CN = value;
+	REF0CN |= value;
 	
 	return 0;
 }
