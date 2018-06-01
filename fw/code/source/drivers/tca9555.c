@@ -14,7 +14,7 @@ int8_t tca9555_init(void)
 {
     int i;
     
-	if (i2c_init() != I2C_ERROR_CODE_OK) {
+	if (i2c_init(TCA95555_I2C_ADDRESS) != I2C_ERROR_CODE_OK) {
         return TCA9555_ERROR_CODE_GENERAL_ERROR;
     }
     

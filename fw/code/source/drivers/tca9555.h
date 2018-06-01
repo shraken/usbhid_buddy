@@ -95,6 +95,8 @@ typedef enum _TCA9555_POL_INV_STATE {
     TCA9555_POL_INV_STATE_ENABLE,
 } TCA9555_POL_INV_STATE;
 
+#define TCA95555_I2C_ADDRESS 0x20
+
 /**
  * @brief Initialize the TCA9555 I2C device.
  * @return Return code specified by TCA9555_ERROR_CODE enum.

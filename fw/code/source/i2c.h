@@ -21,10 +21,21 @@ typedef enum _I2C_ERROR_CODE {
     I2C_ERROR_CODE_INIT_DONE = -3,
 } I2C_ERROR_CODE;
 
+#define  WRITE          0x00           // SMBus WRITE command
+#define  READ           0x01           // SMBus READ command
+
+#define  SMB_MTSTA      0xE0           // (MT) start transmitted
+#define  SMB_MTDB       0xC0           // (MT) data byte transmitted
+#define  SMB_MRDB       0x80           // (MR) data byte received
+
 #define I2C_MAX_BUFFER_SIZE 16			// Maximum read/write buffer size for Master
+
+#define I2C_SDA_PIN_NUM 0
+#define I2C_SCL_PIN_NUM 1
 
 int8_t i2c_write(uint8_t *buffer, uint16_t len);
 int8_t i2c_read(uint8_t *buffer, uint16_t len);
-int8_t i2c_init(void);
+int8_t i2c_init(uint8_t i2c_addr);
+void i2c_wait(void);
 
 #endif /* _I2C_H_ */

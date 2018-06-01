@@ -21,7 +21,7 @@
 
 // Timer 0
 #define TIMER0_LOW_PERIOD 21					// 21 nsec
-#define TIMER0_HIGH_PERIOD 65535000		// 65.53 sec
+#define TIMER0_HIGH_PERIOD 65535000		        // 65.53 sec
 
 #define DEFAULT_TIMER0_HIGH_PERIOD 0xF0
 #define DEFAULT_TIMER0_LOW_PERIOD 0x5F
@@ -49,6 +49,12 @@ void timer0_init (void);
  *  @return Void.
  */
 void timer1_init(void);
+
+/** @brief Configure timer2 as a stream mode interrupt for DAQ operation.  This timer is used as
+ *          a reference sampling clock for initiating ADC conversions or DAC SPI channel writes.
+ *  @return Void.
+ */
+void timer2_init(void);
 
 /** @brief Configure timer3 as a low timeout detection feature.  Timer 3 configured
  *		   as a 16-bit auto-reload mode, SYSCLK/12 as clock source.  The reload

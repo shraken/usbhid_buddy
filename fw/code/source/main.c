@@ -12,6 +12,8 @@
 #include <tlv563x.h>
 #include <utility.h>
 #include <pwm.h>
+#include <i2c.h>
+#include <tca9555.h>
 #include <globals.h>
 
 //-----------------------------------------------------------------------------
@@ -85,6 +87,20 @@ void contexts_init(void)
 	buddy_ctx.m_chan_number     = 0;
 }
 
+// old alloc
+// timer0 - daq stream interrupt
+// timer1 - uart0 / i2c clock source
+// timer2 - 
+// timer3 - i2c low timeout detector 
+// timer4 -
+// timer5 - 
+
+// new alloc
+// timer0 - i2c clock source
+// timer1 - uart0
+// timer2 - daq stream
+// timer3 - i2c low timeout detector
+
 //-----------------------------------------------------------------------------
 // Main Routine
 //-----------------------------------------------------------------------------
@@ -92,20 +108,24 @@ void main(void)
 {
     system_init();
 	contexts_init();
-	
+
 	gpio_init();
-	
+    //i2c_wait();
+    
     usb_init();
     spi_init();
     
     adc_init();
     uart_init();
 
-	timer0_init();
+	//timer0_init();
+    //timer1_init();
+    timer2_init();
+    //timer3_init();
 
     // @todo use a GPIO to detect insertion of expander board.  (default-pull down)
     // and only respond on pull up to initialize tca9555 and i2c eventually
-    tca9555_init();
+    //tca9555_init();
     
     tlv563x_init();
 	tlv563x_dac_set_power_mode(0);
