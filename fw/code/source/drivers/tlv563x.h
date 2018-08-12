@@ -15,6 +15,9 @@
 
 #define TLV563X_CHANNEL_COUNT 8        // TLV563x Number of Channels
 
+#define DEFAULT_TLV563X_CTRL0_REG 0
+#define DEFAULT_TLV563X_CTRL1_REG 0
+
 extern code firmware_info_t fw_info;
 
 extern uint8_t SPI_Data_Rx_Array[];
@@ -123,12 +126,22 @@ void tlv563x_write(uint8_t reg_channel, uint16_t reg_value);
 void tlv563x_dac_init(void);
 
 /**
- * @brief Sets the current global power state to turn ON/OFF the DAC device.  If
- *			power_state is TRUE then normal mode, if FALSE then power off device.
- *
- * @param power_state 1 to power on device, 0 to disable power
+ * @brief Set the TLV563x device in a power mode OFF state.
  * @return Void.
  */
-void tlv563x_dac_set_power_mode(uint8_t power_state);
+void tlv563x_disable(void);
+
+/**
+ * @brief Set the TLV563x device in a power mode ON state.
+ * @return Void.
+ */
+void tlv563x_enable(void);
+
+/**
+ * @brief Helper function for single reg write interface.
+ * @param reg register 
+ * @return Void.
+ */
+void tlv563x_reg_write(uint8_t reg, uint8_t value);
 
 #endif /* _TLV563X_H_ */

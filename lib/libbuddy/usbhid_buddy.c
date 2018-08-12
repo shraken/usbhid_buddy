@@ -375,7 +375,7 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
-			printf("buddy_send_pwm(): packet->channels[%d] = %d\n", i, packet->channels[i]);
+			//printf("buddy_send_pwm(): packet->channels[%d] = %d\n", i, packet->channels[i]);
 
 			switch (driver_ctx.general.resolution) {
 				case RESOLUTION_CTRL_SUPER:
@@ -509,21 +509,16 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	int i;
 	int j;
 	int8_t err_code;
+
 	buddy_cfg_reg_t cfg_regs[NUMBER_CFG_REG_ENTRIES] = {
 		{
-		  	.type_indic = CTRL_RUNTIME,
-		  	.record_cfg = runtime,
-		  	.record_len = sizeof(ctrl_runtime_t),
+		  	CTRL_RUNTIME, runtime, sizeof(ctrl_runtime_t),
 		},
 		{
-			.type_indic = CTRL_TIMING,
-			.record_cfg = timing,
-			.record_len = sizeof(ctrl_timing_t),
+			CTRL_TIMING, timing, sizeof(ctrl_timing_t),
 		},
 		{
-			.type_indic = CTRL_GENERAL,
-			.record_cfg = general,
-			.record_len = sizeof(ctrl_general_t),
+			CTRL_GENERAL, general, sizeof(ctrl_general_t),
 		}
 	};
 
@@ -642,6 +637,11 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
 	}
 
 	return err_code;
+}
+
+int buddy_reset_device(hid_device *handle)
+{
+	return buddy_write_raw(handle, APP_CODE_RESET, 0x00, (uint8_t *) NULL, 0);
 }
 
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)

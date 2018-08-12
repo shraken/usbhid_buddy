@@ -45,6 +45,7 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 			debug(("CTRL_GENERAL = GENERAL_CTRL_DAC_ENABLE\r\n"));
 			adc_disable();
 			pwm_disable();
+			tlv563x_enable();
 		
 			tlv563x_dac_reset();
 			break;
@@ -63,13 +64,13 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 			debug(("CTRL_GENERAL = GENERAL_CTRL_PWM_ENABLE\r\n"));
 			disable_all();
 		
-			if (pwm_init(buddy_ctx.m_pwm_mode, buddy_ctx.m_resolution, buddy_ctx.m_chan_mask) != PWM_ERROR_CODE_OK) {
-				debug(("process_ctrl_function(): pwm_init failed\r\n"));
-				return -1;
-			}
-		
 			if (pwm_set_timebase(buddy_ctx.m_pwm_timebase) != PWM_ERROR_CODE_OK) {
 				debug(("process_ctrl_function(): pwm_set_timebase failed\r\n"));
+				return -1;
+			}
+						
+			if (pwm_init(buddy_ctx.m_pwm_mode, buddy_ctx.m_resolution, buddy_ctx.m_chan_mask) != PWM_ERROR_CODE_OK) {
+				debug(("process_ctrl_function(): pwm_init failed\r\n"));
 				return -1;
 			}
 			
@@ -373,6 +374,20 @@ void process_out()
 				respond_data( (uint8_t *) &fw_info, sizeof(firmware_info_t));
 				break;
 						
+			case APP_CODE_RESET:
+				debug(("APP_CODE_RESET\r\n"));
+			
+				PCA0MD  &= ~0x40;
+				PCA0L    = 0x00;
+				PCA0H    = 0x00;
+				PCA0CPL4 = 0xFF;
+				PCA0MD  |= 0x40;
+				EA = 1;
+			
+				// force WDT to expire and reset to occur
+				while (1) { };
+				break;
+			
 			default:
 				break;
 		}

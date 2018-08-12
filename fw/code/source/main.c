@@ -36,7 +36,7 @@ code firmware_info_t fw_info = {
 void print_device_info(void)
 {
     printf("                                 \r\n");
-		printf(" ____            _     _         \r\n");
+	printf(" ____            _     _         \r\n");
     printf("| __ ) _   _  __| | __| |_   _   \r\n");
     printf("|  _ \| | | |/ _` |/ _` | | | |  \r\n");
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");
@@ -97,9 +97,9 @@ void contexts_init(void)
 void main(void)
 {
     system_init();
-		contexts_init();
+	contexts_init();
 	
-		gpio_init();
+	gpio_init();
 	
     usb_init();
     spi_init();
@@ -107,22 +107,22 @@ void main(void)
     adc_init();
     uart_init();
 
-		timer2_init();
+	timer2_init();
 
     // 10msec
     timer2_set_period(10000000);
     
     tlv563x_dac_init();
-		tlv563x_dac_set_power_mode(0);
+	tlv563x_disable();
 	
-		print_device_info();
+	print_device_info();
     debug(("tlv563x_dac_init passed\r\n"));
 	
-		PCA0MD = 0x00;                      // Disable watchdog timer
-		EA = 1;                             // Globally enable interrupts
+	PCA0MD = 0x00;                      // Disable watchdog timer
+	EA = 1;                             // Globally enable interrupts
 		
-		while (1) {
-			process();
-		}
+	while (1) {
+		process();
+	}
 }
 

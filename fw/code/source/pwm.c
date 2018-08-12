@@ -42,13 +42,20 @@ int8_t pwm_duty_cycle_init(void)
 		// 0100 1011
 		// Module 0 = 8-bit PWM mode and 
 		// enable Module 0 Match and Interrupt Flags
-		//PCA0CPM0 = 0x4B;
 		PCA0CPM0 = 0x42;
+		PCA0CPM1 = 0x42;
+		PCA0CPM2 = 0x42;
+		PCA0CPM3 = 0x42;
+		PCA0CPM4 = 0x42;
 	} else if (pwm_resolution == RESOLUTION_CTRL_HIGH) {
 		// 1100 1011
 		// Module 0 = 16-bit PWM mode and 
 		// enable Module 0 Match and Interrupt Flags
 		PCA0CPM0 = 0xCB;
+		PCA0CPM1 = 0xCB;
+		PCA0CPM2 = 0xCB;
+		PCA0CPM3 = 0xCB;
+		PCA0CPM4 = 0xCB;
 	} else {
 		return PWM_ERROR_CODE_INDEX_ERROR;
 	}
@@ -75,7 +82,11 @@ int8_t pwm_frequency_init(void)
 	
 	// 0100 0110
 	// Module 0 = Frequency Output mode
-  PCA0CPM0 = 0x46;
+	PCA0CPM0 = 0x46;
+	PCA0CPM1 = 0x46;
+	PCA0CPM2 = 0x46;
+	PCA0CPM3 = 0x46;
+	PCA0CPM4 = 0x46;
 	
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (pwm_chan_enable[i]) {
@@ -140,6 +151,8 @@ void pwm_disable(void)
 
 int8_t pwm_set_timebase(uint8_t value)
 {
+	//debug(("pwm_set_timebase: value = %bd\r\n", value));
+	
 		PCA0MD &= ~(0x0E);
 	
 		switch (value) {
@@ -168,7 +181,7 @@ int8_t pwm_set_timebase(uint8_t value)
 
 int8_t pwm_set_frequency(uint8_t channel, uint32_t value)
 {
-	uint8_t reg_value;
+	uint16_t reg_value;
 	
 	if ((channel < BUDDY_CHAN_0) ||
 		  (channel > BUDDY_CHAN_4)) {
@@ -178,7 +191,14 @@ int8_t pwm_set_frequency(uint8_t channel, uint32_t value)
 	pwm_cex[channel] = value;
 	
 	reg_value = (pwm_timebase / (2 * pwm_cex[channel]));
-
+	
+	/*
+	debug(("value = %lu\r\n", value));
+	debug(("pwm_timebase = %lu\r\n", pwm_timebase));
+	debug(("pwm_cex[%bd] = %lu\r\n", channel, pwm_cex[channel]));
+	debug(("pwm_set_frequency: pwm_cex[%bd] = %u\r\n", channel, reg_value));
+	*/
+	
 	switch (channel) {
 		case BUDDY_CHAN_0:
 			PCA0CPH0 = reg_value;
@@ -213,6 +233,9 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 		  (channel > BUDDY_CHAN_4)) {
 	  return PWM_ERROR_CODE_INDEX_ERROR;
 	}
+		  
+	printf("pwm_duty_cycle: channel = %bd\r\n", channel);
+	printf("pwm_duty_cycle: value = %u\r\n", value);
 	
 	pwm_cex[channel] = value;
 	

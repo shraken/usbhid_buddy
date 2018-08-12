@@ -198,4 +198,6 @@ BUDDY_EXPORT int buddy_trigger(hid_device *handle);
 
 int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length);
 
+int buddy_reset_device(hid_device *handle);
+
 #endif

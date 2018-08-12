@@ -17,6 +17,9 @@
 // shraken TODO: make this configurable as build directive
 static uint8_t tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
 
+static uint8_t tlv563x_ctrl0_reg = DEFAULT_TLV563X_CTRL0_REG;
+static uint8_t tlv563x_ctrl1_reg = DEFAULT_TLV563X_CTRL1_REG;
+
 void tlv563x_write(uint8_t reg_channel, uint16_t reg_value)
 {
 	spi_select();
@@ -50,17 +53,34 @@ void tlv563x_dac_init(void)
 			break;
 	}
 	
+	// set reference select to external
+	tlv563x_ctrl0_reg |= (1 << TLV563X_CTRL0_REFERENCE_0);
+	
     // CTRL0
-	tlv563x_write(TLV563X_REG_CTRL0, 0x00);
-    // Timer0_wait(1);
+	tlv563x_reg_write(TLV563X_REG_CTRL0, tlv563x_ctrl0_reg);
+	// Timer0_wait(1);
     
     // CTRL1
-	tlv563x_write(TLV563X_REG_CTRL1, 0x00);
+	tlv563x_reg_write(TLV563X_REG_CTRL1, tlv563x_ctrl1_reg);
     // Timer0_wait(1);
 	
 	tlv563x_dac_reset();
 	
 	return;
+}
+
+void tlv563x_disable(void) {
+	tlv563x_ctrl0_reg |= (1 << TLV563X_CTRL0_POWER);
+	tlv563x_reg_write(TLV563X_REG_CTRL0, tlv563x_ctrl0_reg);
+}
+
+void tlv563x_enable(void) {
+	tlv563x_ctrl0_reg &= ~(1 << TLV563X_CTRL0_POWER);
+	tlv563x_reg_write(TLV563X_REG_CTRL0, tlv563x_ctrl0_reg);
+}
+
+void tlv563x_reg_write(uint8_t reg, uint8_t value) {
+	tlv563x_write(reg, value);
 }
 
 void tlv563x_dac_reset(void)
@@ -71,14 +91,4 @@ void tlv563x_dac_reset(void)
 	for (i = TLV563X_REG_DAC_A; i <= TLV563X_REG_DAC_H; i++) {
 		tlv563x_write(i, 0);  
   }
-}
-
-void tlv563x_dac_set_power_mode(uint8_t power_state)
-{
-	// CTRL0
-	if (power_state) {
-		tlv563x_write(TLV563X_REG_CTRL0, 0x00);
-	} else {
-		tlv563x_write(TLV563X_REG_CTRL0, 0x10);
-	}
 }

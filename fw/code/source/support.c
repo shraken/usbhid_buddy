@@ -10,7 +10,7 @@
 void disable_all(void)
 {
 	// disable TLV563x SPI DAC
-	tlv563x_dac_set_power_mode(0);
+	tlv563x_disable();
 	
 	// disable PWM
 	pwm_disable();

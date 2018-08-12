@@ -10,8 +10,8 @@ import numpy as np
 from scipy import signal as scisig
 
 BUDDY_TEST_DAC_FREQ = 1000     # 1000 Hz
-WAVEFORM_TIME = 20             # 20 seconds
-WAVEFORM_FREQUENCY = 100         # 1 Hz
+WAVEFORM_TIME = 5             # 20 seconds
+WAVEFORM_FREQUENCY = 5         # 1 Hz
 
 hid_handle = None
 hid_info = None
@@ -25,7 +25,7 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
@@ -46,7 +46,7 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     test_seq_dac_count = 0
     
     #y_mag = 255
-    y_mag = 4095
+    y_mag = 2700
     t = np.linspace(0, WAVEFORM_TIME, sample_rate * WAVEFORM_TIME, endpoint=False)
 
     if wave_type == 'square':    
@@ -59,8 +59,8 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
         return -1
 
     for k in y:
-        for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7):
-            bt.uint32_t_ptr_setitem(packet.channels, i, int(k))
+        for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
+            bt.int32_t_ptr_setitem(packet.channels, i, int(k))
 
         print 'test_waveform_dac: sending %d packet with value %d' % (test_seq_dac_count, k)
         test_seq_dac_count += 1
@@ -153,4 +153,4 @@ if __name__ == '__main__':
     time_diff = time_end - time_start
     print 'Test took (%f) seconds  to run' % time_diff
 
-    bt.buddy_cleanup(hid_handle, hid_info)
+    bt.buddy_cleanup(hid_handle, hid_info, False)

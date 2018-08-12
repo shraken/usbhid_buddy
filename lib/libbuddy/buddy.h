@@ -59,6 +59,7 @@ typedef enum _APP_CODE {
 	APP_CODE_ADC,
 	APP_CODE_TRIGGER,
 	APP_CODE_INFO,
+	APP_CODE_RESET,
 } APP_CODE;
 
 /**

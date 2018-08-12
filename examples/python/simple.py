@@ -9,7 +9,7 @@ import csv
 import buddy as bt
 
 BUDDY_TEST_ADC_FREQ = 1000      # 1 kHz
-BUDDY_TEST_DAC_FREQ = 1000       # 5 Hz
+BUDDY_TEST_DAC_FREQ = 50       # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
 BUDDY_TEST_COUNTER_FREQ = 10000     # 10 Hz
 hid_handle = None
@@ -51,11 +51,11 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
     test_seq_pwm_count = 0
 
     #for k in range(50000, (50000 + 1)):
-    #for k in range(25000, (25000 + 1)):
-    #for k in range(25000, (25000 + 1)):
-    #for k in range(1000, 50000):
+    #for k in range(6000, (6000 + 1)):
+    for k in range(60000, (60000 + 1)):
+    #for k in range(2, (500 + 1)):
     #for k in range(100000, (100000 + 1)):
-    for k in range(45000, (45000 +1)):
+    #for k in range(45000, (45000 +1)):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.int32_t_ptr_setitem(packet.channels, i, k)
 
@@ -66,7 +66,7 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
         if (bt.buddy_send_pwm(handle,
                               packet,
                               streaming) != bt.BUDDY_ERROR_CODE_OK):
-            print 'test_seq_pwm_freq: could not send PWM packet'
+            print 'ERROR: test_seq_pwm_freq: could not send PWM packet'
             return -1
 
         if not streaming:
@@ -90,7 +90,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     general_settings.function = bt.GENERAL_CTRL_PWM_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_2_MASK
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
@@ -115,8 +115,8 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     #for k in range(128, 129):
     #for k in range(63,64):
     #for k in range(191, 192):
-    for k in range(32767, 32768):
-    #for k in range(16383, 16384):
+    #for k in range(32767, 32768):
+    for k in range(16383, 16384):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.int32_t_ptr_setitem(packet.channels, i, k)
 
@@ -150,10 +150,10 @@ def test_seq_dac(handle, sample_rate, streaming):
     general_settings.function = bt.GENERAL_CTRL_DAC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
@@ -174,6 +174,7 @@ def test_seq_dac(handle, sample_rate, streaming):
     test_seq_dac_count = 0
 
     for k in range(0, 4095 + 1):
+    #for k in range(2048, 2048 + 1):
         for i in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_7 + 1):
             bt.int32_t_ptr_setitem(packet.channels, i, k)
 
@@ -211,7 +212,7 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
     #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
+    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
     
     general_settings.resolution = bt.RESOLUTION_CTRL_SUPER
 
@@ -244,7 +245,7 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
 
     time.sleep(0.1)
 
-    recv_packets = 0;
+    recv_packets = 0
     first_packet = True
     for i in range(0, 1000):
         err_code = bt.buddy_read_counter(handle, packet, streaming)
@@ -271,6 +272,8 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
                     raise NameError('Could not write into CSV writer object')
                     return False
 
+            print 'entry = {}'.format(entry)
+
         elif err_code == bt.BUDDY_ERROR_CODE_GENERAL:
             print 'test_seq_counter: could not read counter packet'
             print 'err_code = %d' % err_code
@@ -278,7 +281,7 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
         else:
             print 'unknown error code, err_code = %d' % err_code
     
-    return 0;
+    return 0
 
 '''
     configures buddy device for ADC operation.  A low/high resolution field specifies
@@ -339,9 +342,9 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
 
     time.sleep(0.1)
 
-    recv_packets = 0;
+    recv_packets = 0
     first_packet = True
-    for i in range(0, 1000):
+    for i in range(0, 10000):
         err_code = bt.buddy_read_adc(handle, packet, streaming)
 
         if err_code == bt.BUDDY_ERROR_CODE_OK:
@@ -379,7 +382,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
         else:
             print 'unknown error code, err_code = %d' % err_code
     
-    return 0;
+    return 0
 
 def display_usb_info(hid_info):
     print 'USB Manufacturer String: %s' % hid_info.str_mfr
@@ -411,7 +414,7 @@ def display_fw_info(fw_info):
 
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
-    bt.buddy_cleanup(hid_handle, hid_info)
+    bt.buddy_cleanup(hid_handle, hid_info, False)
     sys.exit(0)
 
 if __name__ == '__main__':
@@ -443,7 +446,7 @@ if __name__ == '__main__':
         (args.dac_mode and )
         print 'ERROR: must select either DAC, ADC, or PWM mode!'
         parser.print_help()
-        sys.exit()
+        sys.exit()f
     '''
 
     if args.output_file and (args.adc_mode or args.counter_mode):
