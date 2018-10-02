@@ -36,7 +36,7 @@ code firmware_info_t fw_info = {
 void print_device_info(void)
 {
     printf("                                 \r\n");
-	printf(" ____            _     _         \r\n");
+		printf(" ____            _     _         \r\n");
     printf("| __ ) _   _  __| | __| |_   _   \r\n");
     printf("|  _ \| | | |/ _` |/ _` | | | |  \r\n");
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");

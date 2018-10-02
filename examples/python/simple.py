@@ -345,7 +345,10 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     recv_packets = 0
     first_packet = True
     for i in range(0, 10000):
-        err_code = bt.buddy_read_adc(handle, packet, streaming)
+        if ((recv_packets % 10) == 0):
+            print('got packet {}'.format(recv_packets))
+
+        err_code = bt.buddy_read_adc_noblock(handle, packet, streaming, 1000)
 
         if err_code == bt.BUDDY_ERROR_CODE_OK:
             if first_packet:
@@ -493,7 +496,7 @@ if __name__ == '__main__':
                                 BUDDY_TEST_ADC_FREQ,
                                 args.stream_mode,
                                 log_file_writer)
-    
+                                
     if args.counter_mode:
         print 'running a counter mode test'
         err_code = test_seq_counter(hid_handle,

@@ -8,6 +8,15 @@ void io_init(void)
 		in_packet_offset = 0;
 }
 
+void usb_buffer_clear(void)
+{
+	P_IN_PACKET_RECORD = &IN_PACKET[0];
+	
+	in_packet_record_cycle = 0;
+	in_packet_offset = 0;
+	in_packet_ready = false;
+}
+
 void respond_data(uint8_t *buffer, uint8_t length)
 {
 		IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_DATA;
@@ -38,11 +47,13 @@ void build_adc_packet(void)
 	uint8_t data current_channel = 0;
 	uint16_t data value;
 	
-	P3 = P3 & ~0x40;
+	static uint16_t count = 0;
+	
+	//P3 = P3 & ~0x40;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 	  if (buddy_ctx.m_chan_enable[i]) {
 			#if defined(ADC_TEST)
-			value = channel_value++;
+			value = count++;
 			//value = adc_timer_count;
 			#else
 			value = adc_results[current_channel];
@@ -70,6 +81,7 @@ void build_adc_packet(void)
 		*(P_IN_PACKET_RECORD + BUDDY_APP_INDIC_OFFSET) = encode_count;
 		P_IN_PACKET_SEND = P_IN_PACKET_RECORD;
 		
+	  // USB double buffer assignment for future build_adc_packet calls
 		if (in_packet_record_cycle) {
 			P_IN_PACKET_RECORD = &IN_PACKET[0];
 			in_packet_record_cycle = 0;
@@ -83,7 +95,7 @@ void build_adc_packet(void)
 		in_packet_offset = 0;
 	}
 	
-	P3 = P3 | 0x40;
+	//P3 = P3 | 0x40;
 }
 
 void build_counter_packet(void)
@@ -94,7 +106,7 @@ void build_counter_packet(void)
 	int32_t counter_chan0;
 	int32_t counter_chan1;
 	
-	P3 = P3 & ~0x40;
+	//P3 = P3 & ~0x40;
 	if ((!buddy_ctx.m_chan_enable[COUNTER_CHANNEL_0]) && (!buddy_ctx.m_chan_enable[COUNTER_CHANNEL_1])) {
 		// TODO: verbose exit with failure
 		return;
@@ -144,7 +156,7 @@ void build_counter_packet(void)
 		in_packet_offset = 0;
 	}
 	
-	P3 = P3 | 0x40;
+	//P3 = P3 | 0x40;
 }
 
 void execute_out_stream(void)

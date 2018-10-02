@@ -123,8 +123,8 @@ void timer2_isr(void) interrupt 5
     TF2H = 0;
 	timer2_flag = 1;
 	
-    P3 = P3 & ~0x40;
-	P3 = P3 | 0x40;
+    //P3 = P3 & ~0x40;
+	//P3 = P3 | 0x40;
     
 	if (buddy_ctx.daq_state == GENERAL_CTRL_ADC_ENABLE) {
 		if (adc_channel_index == (adc_channel_count - 1)) {

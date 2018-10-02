@@ -6,6 +6,7 @@
 #include <wchar.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <wchar.h>
 #include "buddy.h"
 #include "hidapi.h"
@@ -35,6 +36,8 @@
 #define BUDDY_HIGH_RESOLUTION_MAX 65535
 #define BUDDY_SUPER_RESOLUTION_MIN 1
 #define BUDDY_SUPER_RESOLUTION_MAX 4294967295
+
+#define BUDDY_WAIT_LONGEST INT_MAX
 
 typedef struct _buddy_hid_info_t {
 	char *str_mfr;
@@ -177,6 +180,8 @@ BUDDY_EXPORT int buddy_send_dac(hid_device *handle, general_packet_t *packet, bo
 */
 BUDDY_EXPORT int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming);
 
+BUDDY_EXPORT int buddy_read_adc_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
+
 BUDDY_EXPORT int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming);
 
 /** @brief writes the bytes that remain in the codec buffer.  This needs to be performed
@@ -196,8 +201,20 @@ int buddy_count_channels(uint8_t chan_mask);
 */
 BUDDY_EXPORT int buddy_trigger(hid_device *handle);
 
+/** @brief empty the system USB HID IN report buffer.  This action must be performed
+ *         before immediate reads as the buffer is likely stuffed with the continuous
+ *		   stream of previous acquisition
+ *  @todo (consider moving this logic internal not invoked by user).
+ *  @param handle hidapi internal handle returned from buddy_init
+ *  @return -1 on failure, 0 on success. 
+ */
+BUDDY_EXPORT int buddy_clear(hid_device *handle);
+
 int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length);
 
 int buddy_reset_device(hid_device *handle);
 
+int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming);
+int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
+							   
 #endif

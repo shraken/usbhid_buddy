@@ -16,41 +16,7 @@ hid_info = None
 def reset_device(hid_handle):
     bt.buddy_reset_device(hid_handle)
 
-def buddy_get_adc_value(hid_handle, channel, sample_rate=100, streaming=True):
-    general_settings = bt.ctrl_general_t()
-    timing_settings = bt.ctrl_timing_t()
-    runtime_settings = bt.ctrl_runtime_t()
-    packet = bt.general_packet_t()
-
-    general_settings.function = bt.GENERAL_CTRL_ADC_ENABLE
-    general_settings.mode = bt.MODE_CTRL_STREAM
-    general_settings.channel_mask = (1 << int(channel))
-    general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
-
-    timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
-    timing_settings.averaging = 1
-
-    runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_SINGLE_ENDED
-    runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
-
-    if (bt.buddy_configure(hid_handle,
-                           general_settings,
-                           runtime_settings,
-                           timing_settings) != bt.BUDDY_ERROR_CODE_OK):
-        return -1
-
-    time.sleep(0.1)
-
-    adc_value = -1
-    for i in range(0, 100):
-        err_code = bt.buddy_read_adc(hid_handle, packet, streaming)
-
-        if err_code == bt.BUDDY_ERROR_CODE_OK:
-            adc_value = bt.int32_t_ptr_getitem(packet.channels, int(channel))
-
-    return adc_value
-
-def buddy_get_adc_value_old(hid_handle, channel, sample_rate=1, streaming=False):
+def buddy_get_adc_value(hid_handle, channel, sample_rate=1):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -73,19 +39,14 @@ def buddy_get_adc_value_old(hid_handle, channel, sample_rate=1, streaming=False)
                            timing_settings) != bt.BUDDY_ERROR_CODE_OK):
         return -1
 
-    # @todo: bug workaround, we have to read one sample out and toss it.  it sticks
-    # to previous ADC value for some reason
-    for index in range(0,5):
-        err_code = bt.buddy_read_adc(hid_handle, packet, streaming)
-        
-    l = []
-    for index in range(0,5):
-        err_code = bt.buddy_read_adc(hid_handle, packet, streaming)
-        adc_value = bt.int32_t_ptr_getitem(packet.channels, int(channel))
-        l.append(adc_value)
+    time.sleep(0.1)
+    
+    err_code = bt.buddy_clear(hid_handle)
 
-    adc_mean = sum(l) / float(len(l))
-    return adc_mean
+    err_code = bt.buddy_read_adc(hid_handle, packet, False)
+    adc_value = bt.int32_t_ptr_getitem(packet.channels, int(channel))
+    
+    return adc_value
 
 def display_usb_info(hid_info):
     print 'USB Manufacturer String: %s' % hid_info.str_mfr

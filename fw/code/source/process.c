@@ -53,7 +53,8 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 		case GENERAL_CTRL_ADC_ENABLE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_ADC_ENABLE\r\n"));
 			disable_all();
-
+			usb_buffer_clear();
+		
 			io_init();
 			in_packet_ready = false;
 

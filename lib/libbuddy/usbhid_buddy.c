@@ -6,6 +6,7 @@
 #include <usbhid_buddy.h>
 #include <utility.h>
 #include <support.h>
+#include <time.h>
 #include <buddy.h>
 #include <utility.h>
 
@@ -313,6 +314,11 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 
 int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming)
 {
+	return buddy_read_generic_noblock(handle, packet, streaming, BUDDY_WAIT_LONGEST);
+}
+
+int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout)
+{
 	static int decode_status = CODEC_STATUS_FULL;
 	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int err_code;
@@ -328,17 +334,24 @@ int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool stream
 
 	err_code = BUDDY_ERROR_CODE_OK;
 	if ((!streaming) || (decode_status == CODEC_STATUS_FULL)) {
+		int res;
+		clock_t start_time;
+
 		res = 0;
+		start_time = clock();
 		while (res == 0) {
+			if (((clock() - start_time) / (CLOCKS_PER_SEC / 1000)) >= timeout) {
+				return BUDDY_ERROR_CODE_TIMEOUT;
+			}
+
 			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE);
 
 			if (res < 0) {
-				critical(("buddy_read_adc: could not buddy_read_packet\n"));
-				//debugf("res < 0: failed on buddy_read_packet\n");
-				return -1;
+				critical(("buddy_read_generic_noblock: could not buddy_read_packet\n"));
+				return BUDDY_ERROR_CODE_GENERAL;
 			}
 		}
-
+		
 		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
 			// remote data packet
 			codec_byte_offset = 0;
@@ -453,14 +466,44 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 
 int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	//printf("buddy_read_counter() entered\n");
 	return buddy_read_generic(handle, packet, streaming);
 }
 
 int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	//printf("buddy_read_adc() entered\n");
 	return buddy_read_generic(handle, packet, streaming);
+}
+
+int buddy_read_adc_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout)
+{
+	return buddy_read_generic_noblock(handle, packet, streaming, timeout);
+}
+
+int buddy_clear(hid_device *handle)
+{
+	int res;
+	uint8_t buffer[MAX_IN_SIZE] = { 0 };
+	size_t read_length;
+
+	read_length = (MAX_IN_SIZE - 1);
+	while (1) {
+		res = hid_read(handle, buffer, read_length);
+
+		if (res > 0) {
+			// get next buffer repot
+			continue;
+		}
+
+		if (res == -1) {
+			// error
+			return -1;
+		}
+
+		if (res == 0) {
+			// no more buffer reports, stop.
+			return 0;
+		}
+	}
 }
 
 int buddy_flush(hid_device *handle)

@@ -36,6 +36,7 @@ extern unsigned char xdata *P_IN_PACKET_RECORD;
 extern unsigned char xdata in_packet_record_cycle;
 
 void io_init(void);
+void usb_buffer_clear(void);
 void respond_data(uint8_t *buffer, uint8_t length);
 void respond_status(int8_t error_code);
 void build_adc_packet(void);
