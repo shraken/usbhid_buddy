@@ -12,6 +12,9 @@
 #include <tlv563x.h>
 #include <utility.h>
 #include <pwm.h>
+#include <i2c.h>
+#include <tca9555.h>
+#include <poncho.h>
 #include <globals.h>
 
 //-----------------------------------------------------------------------------
@@ -36,7 +39,7 @@ code firmware_info_t fw_info = {
 void print_device_info(void)
 {
     printf("                                 \r\n");
-		printf(" ____            _     _         \r\n");
+	printf(" ____            _     _         \r\n");
     printf("| __ ) _   _  __| | __| |_   _   \r\n");
     printf("|  _ \| | | |/ _` |/ _` | | | |  \r\n");
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");
@@ -85,44 +88,37 @@ void contexts_init(void)
 	buddy_ctx.m_chan_number     = 0;
 }
 
-// timer0 - i2c clock source
-// timer1 - uart0
-// timer2 - stream mode interrupt
-// timer3 - i2c timeout detection
-// timer4 - 
-
 //-----------------------------------------------------------------------------
 // Main Routine
 //-----------------------------------------------------------------------------
 void main(void)
 {
-    system_init();
+	system_init();
 	contexts_init();
 	
 	gpio_init();
 	
-    usb_init();
-    spi_init();
+  usb_init();
+  spi_init();
     
-    adc_init();
-    uart_init();
+  adc_init();
+  uart_init();
 
-	timer2_init();
+  timers_init();
 
-    // 10msec
-    timer2_set_period(10000000);
-    
-    tlv563x_dac_init();
-	tlv563x_disable();
+  tlv563x_dac_init();
 	
+  tca9555_init();
+  poncho_default_config();
+
 	print_device_info();
-    debug(("tlv563x_dac_init passed\r\n"));
+  debug(("tlv563x_dac_init passed\r\n"));
 	
 	PCA0MD = 0x00;                      // Disable watchdog timer
 	EA = 1;                             // Globally enable interrupts
 		
 	while (1) {
 		process();
-	}
+    }
 }
 

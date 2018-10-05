@@ -47,7 +47,9 @@ void build_adc_packet(void)
 	uint8_t data current_channel = 0;
 	uint16_t data value;
 	
+	#if defined(ADC_TEST)
 	static uint16_t count = 0;
+	#endif
 	
 	//P3 = P3 & ~0x40;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {

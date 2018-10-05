@@ -463,6 +463,16 @@
               <FileType>1</FileType>
               <FilePath>..\code\source\process.c</FilePath>
             </File>
+            <File>
+              <FileName>i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>poncho.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\poncho.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -472,6 +482,11 @@
               <FileName>tlv563x.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\drivers\tlv563x.c</FilePath>
+            </File>
+            <File>
+              <FileName>tca9555.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\drivers\tca9555.c</FilePath>
             </File>
           </Files>
         </Group>

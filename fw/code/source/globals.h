@@ -5,6 +5,10 @@
 
 //#define ADC_TEST
 
+#define SMB_FREQUENCY          100000	// Target SCL clock rate
+                                        // This example supports between 10kHz
+                                        // and 100kHz    
+
 typedef struct _buddy_ctx_t {
 	uint8_t daq_state;
 	uint8_t m_ctrl_mode;
@@ -18,12 +22,6 @@ typedef struct _buddy_ctx_t {
 	uint8_t m_chan_number;
 	uint8_t m_chan_enable[BUDDY_CHAN_LENGTH];
 } buddy_ctx_t;
-
-/*
-typedef struct _adc_ctx {
-	
-} adc_ctx;
-*/
 
 #define STATUS_TX_LED_PIN GPIO_P3_4
 #define STATUS_RX_LED_PIN GPIO_P3_5

@@ -33,6 +33,13 @@ extern uint8_t adc_channel_count;
 extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
 extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
 
+extern bit SMB_BUSY;
+
+void timers_init(void);
+
+void timer0_init(void);
+void timer3_init(void);
+
 /** @brief Configures Timer0 with default count values with a 16-bit mode.  The timer
  *				 is by default set to use a SYSCLK/12 reference, timer0 interrupt is enabled,
  *				 and the timer is enabled.

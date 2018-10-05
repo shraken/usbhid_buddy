@@ -15,6 +15,69 @@ uint8_t timer2_flag = 0;
 static uint8_t timer2_low_set;
 static uint8_t timer2_high_set;
 
+// timer0 - i2c clock source
+// timer1 - uart0
+// timer2 - stream mode interrupt
+// timer3 - i2c timeout detection
+
+void timers_init(void)
+{
+    timer0_init();
+    timer2_init();
+    timer3_init();
+}
+
+void timer0_init(void)
+{
+// Make sure the Timer can produce the appropriate frequency in 8-bit mode
+// Supported SMBus Frequencies range from 10kHz to 100kHz.  The CKCON register
+// settings may need to change for frequencies outside this range.
+#if ((SYSCLK/SMB_FREQUENCY/3) < 255)
+   #define SCALE 1
+      CKCON |= 0x04;                   // Timer0 clock source = SYSCLK
+#elif ((SYSCLK/SMB_FREQUENCY/4/3) < 255)
+   #define SCALE 4
+      // Timer1 clock source = SYSCLK / 4
+    
+      CKCON &= ~(0x07);
+      CKCON |= 0x01;              
+#endif
+
+   TMOD &= ~(0x07);
+   TMOD |= 0x02;                        // Timer0 in 8-bit auto-reload mode
+
+   // Timer0 configured to overflow at 1/3 the rate defined by SMB_FREQUENCY
+   TH0 = -(SYSCLK/SMB_FREQUENCY/SCALE/3);
+
+   TL0 = TH1;                          // Init Timer0
+
+   TR0 = 1;                            // Timer0 enabled
+}
+
+void timer3_init(void)
+{
+	// Timer3 configured for 16-bit auto-
+    // reload, low-byte interrupt disabled
+	TMR3CN = 0x00;
+
+	// Timer3 uses SYSCLK/12
+	CKCON &= ~0x40;
+
+	// Timer3 configured to overflow after
+	// ~25ms (for SMBus low timeout detect):
+	// 1/.025 = 40
+	
+	// @todo: sysclk isn't 12Mhz, its 48Mhz fix.
+	TMR3RL = -(SYSCLK/12/40);           
+	TMR3 = TMR3RL;                      
+              
+	// Timer3 interrupt enable
+	EIE1 |= 0x80;
+	
+	// Start Timer3
+	TMR3CN |= 0x04;    
+}
+
 void timer2_init(void)
 {
     // By default, configure Timer2 to be a SYSCLK/12 base
@@ -115,11 +178,6 @@ void timer2_set_period(uint32_t period)
 
 void timer2_isr(void) interrupt 5
 {
-    /*
-	TH0 = timer0_high_set;
-	TL0 = timer0_low_set;
-    */
-    
     TF2H = 0;
 	timer2_flag = 1;
 	
@@ -138,4 +196,13 @@ void timer2_isr(void) interrupt 5
   } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
 		build_counter_packet();
 	}
+}
+
+void timer3_isr(void) interrupt 14
+{
+   SMB0CF &= ~0x80;                    // Disable SMBus
+   SMB0CF |= 0x80;                     // Re-enable SMBus
+   TMR3CN &= ~0x80;                    // Clear Timer3 interrupt-pending flag
+   STA = 0;
+   SMB_BUSY = 0;                       // Free SMBus
 }
