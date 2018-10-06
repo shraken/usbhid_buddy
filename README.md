@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/shraken/usbhid_buddy.svg?branch=master)](https://travis-ci.org/shraken/usbhid_buddy)
+
 # Buddy DAQ
 
 Buddy is a free, open source, and low-cost data acquisition (DAQ) instrument.  It has 8 configurable
@@ -46,3 +48,17 @@ following command:
 or when cloning the buddy repo with:
 
 `git clone --recursive https://github.com/shraken/usbhid_buddy.git`
+
+## Tests
+
+The `tests` directory contains the unit tests.  The [Catch2](https://github.com/catchorg/Catch2) test
+framework is used for all unit tests.  To manually build and run the unit test, run the following:
+
+```shell
+cd tests/
+mkdir -p build
+cd build
+cmake ..
+make
+./testLibBuddy
+```

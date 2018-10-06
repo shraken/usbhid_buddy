@@ -1,0 +1,60 @@
+language: cpp
+sudo: true
+
+compiler:
+  - gcc
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y libudev-dev libusb-1.0-0-dev
+  - sudo apt-get install -y sdcc
+  - sudo apt-get install -y srecord
+  - sudo pip install intelhex
+
+jobs:
+  include:
+    - stage: "software libbuddy library compile"
+      before_script:
+        - cd lib/libbuddy
+        - mkdir -p build
+        - cd build
+        - cmake ..
+
+      script:
+        - make
+
+    - stage: "software C example compile"
+      before_script:
+        - cd examples/C/simple
+        - mkdir -p build
+        - cd build
+        - cmake ..
+
+      script:
+        - make
+
+    - stage: "baremetal gboot bootloader firmware compile"
+      script:
+        - cd bootloader/gboot
+        - make FLASH_SIZE=64 VARIANT=F38x
+
+    - stage: "gflash bootloader host utility compile"
+      before_script:
+        - cd bootloader/gflash
+        - mkdir -p build
+        - cd build
+        - cmake ..
+      
+      script:
+        - make
+        
+    - stage: "unit tests"
+      before_script:
+        - cd tests/
+        - mkdir -p build
+        - cd build
+        - cmake ..
+
+      script:
+        - make
+        - ./testLibBuddy

@@ -555,13 +555,13 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 
 	buddy_cfg_reg_t cfg_regs[NUMBER_CFG_REG_ENTRIES] = {
 		{
-		  	CTRL_RUNTIME, runtime, sizeof(ctrl_runtime_t),
+		  	CTRL_RUNTIME, (uint8_t *) runtime, sizeof(ctrl_runtime_t),
 		},
 		{
-			CTRL_TIMING, timing, sizeof(ctrl_timing_t),
+			CTRL_TIMING, (uint8_t *) timing, sizeof(ctrl_timing_t),
 		},
 		{
-			CTRL_GENERAL, general, sizeof(ctrl_general_t),
+			CTRL_GENERAL, (uint8_t *) general, sizeof(ctrl_general_t),
 		}
 	};
 
@@ -705,7 +705,7 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 		if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *)NULL, 0) == BUDDY_ERROR_CODE_OK) {
 			short_sleep(100);
 
-			if (buddy_get_response(handle, fw_info, sizeof(firmware_info_t)) == BUDDY_ERROR_CODE_OK) {
+			if (buddy_get_response(handle, (uint8_t *) fw_info, sizeof(firmware_info_t)) == BUDDY_ERROR_CODE_OK) {
 				// adjust for endian conversion
 				fw_info->flash_datetime = swap_uint32(fw_info->flash_datetime);
 				fw_info->serial = swap_uint32(fw_info->serial);
