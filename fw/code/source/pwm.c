@@ -10,6 +10,9 @@ static uint8_t pwm_chan_enable[BUDDY_CHAN_LENGTH] = { 0 };
 static uint8_t pwm_mode;
 static uint8_t pwm_resolution = RESOLUTION_CTRL_HIGH;
 
+/** @brief Configures pins for PWM operation crossbar mode with as a push/pull output. 
+ *  @return Void.
+ */
 void pwm_pin_init(void)
 {
 	// enable push-pull on P2.0 - P2.7
@@ -28,6 +31,13 @@ void pwm_pin_init(void)
   XBR1      = 0x45;
 }
 
+/**
+ * @brief initialize the PWM subsystem mode acting as a variable duty
+ *  cycle.  
+ * 
+ * @return int8_t PWM_ERROR_CODE_OK if success, otherwise enum of type
+ *  PWM_ERROR_CODE.
+ */
 int8_t pwm_duty_cycle_init(void)
 {
 	uint8_t i;
@@ -70,6 +80,13 @@ int8_t pwm_duty_cycle_init(void)
 	return PWM_ERROR_CODE_OK;
 }
 
+/**
+ * @brief initialize the PWM subsystem mode acting as a variable frequency
+ *  configuration.
+ * 
+ * @return int8_t PWM_ERROR_CODE_OK if success, otherwise enum of type
+ *  PWM_ERROR_CODE.
+ */
 int8_t pwm_frequency_init(void)
 {
 	uint8_t i;
@@ -99,6 +116,16 @@ int8_t pwm_frequency_init(void)
 	return PWM_ERROR_CODE_OK;
 }
 
+/** @brief Initialize the PWM device.  Sets the pins to a PWM state and saves off
+ *				 local PWM state values.  Checks if frequency or duty cycle operation is
+ *				 requested and delegates to function.  
+ *  @param mode enum of type RUNTIME_PWM_MODE specifying duty cycle or frequency mode.
+ *  @param resolution enum of type BUDDY_DATA_SIZE specifying low (8-bit), high (16-bit),
+ *				 or super (32-bit) resolution.
+ *	@param chan_mask enum of BUDDY_CHANNELS_MASK bitmask values representing the channels
+ *				 requested for operation.
+ *  @return PWM_ERROR_CODE_OK on success, PWM_ERROR_CODE_GENERAL_ERROR on error.
+ */
 int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 {
 	uint8_t i;
@@ -128,6 +155,9 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
 	return PWM_ERROR_CODE_OK;
 }
 
+/** @brief Enable PCA interrupts and enable PCA mode.
+ *  @return Void.
+ */
 void pwm_enable(void)
 {
 	// Enable PCA interrupts
@@ -137,6 +167,9 @@ void pwm_enable(void)
   CR = 1;
 }
 
+/** @brief Disable PCA interrupts and disable PCA mode.
+ *  @return Void.
+ */
 void pwm_disable(void)
 {
 	// Stop counter; clear all flags
@@ -149,6 +182,13 @@ void pwm_disable(void)
 	XBR1     &= ~(0x05);
 }
 
+/** @brief Sets the timebase used for PWM frequency mode of operation.  The timebase
+ *				 specifies the maximum frequency that is a fraction of the provided PWM
+ *				 counter value.
+ *  @param value enum of type RUNTIME_PWM_TIMEBASE specifying the SYSCLK frequency used
+ *				 as a timebase for PWM frequency mode.
+ *  @return PWM_ERROR_CODE_OK on sucess, PWM_ERROR_CODE_GENERAL_ERROR on error.
+ */
 int8_t pwm_set_timebase(uint8_t value)
 {
 	//debug(("pwm_set_timebase: value = %bd\r\n", value));
@@ -179,6 +219,13 @@ int8_t pwm_set_timebase(uint8_t value)
 		return PWM_ERROR_CODE_OK;
 }
 
+/** @brief Sets the PWM frequency for a given channel.
+ *  @param channel enum of type BUDDY_CHANNELS specifying the channel to set frequency on.
+ *  @param value integer value specifying the fractional count value that the pwm_timebase
+ *				 should be set to.  The max integer value is 255, 65535, or 4294967295 depending
+ *				 on the resolution setting specified in the pwm_init call.
+ *  @return PWM_ERROR_CODE_OK on sucess, PWM_ERROR_CODE_GENERAL_ERROR on error.
+ */
 int8_t pwm_set_frequency(uint8_t channel, uint32_t value)
 {
 	uint16_t reg_value;
@@ -227,6 +274,16 @@ int8_t pwm_set_frequency(uint8_t channel, uint32_t value)
 	return PWM_ERROR_CODE_OK;
 }
 
+/** @brief Sets the PWM duty cycle for the given channel.
+ *  @param channel enum of type BUDDY_CHANNELS specifying the channel to set duty cycle on.
+ *  @param value integer value specifying the frational count value that the duty cycle is set
+ *				 to.  The max integer value is 255, 65535, or 4294967295 depending
+ *				 on the resolution setting specified in the pwm_init call.
+ *
+ *				 If the channel value is passed as 32767 and the resolution is set to 16-bit mode
+ *				 then a 50% duty cycle will be set.
+ *  @return PWM_ERROR_CODE_OK on sucess, PWM_ERROR_CODE_GENERAL_ERROR on error.
+ */
 int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 {
 	if ((channel < BUDDY_CHAN_0) ||
@@ -292,6 +349,10 @@ int8_t pwm_set_duty_cycle(uint8_t channel, uint16_t value)
 	return PWM_ERROR_CODE_OK;
 }
 
+/**
+ * @brief PWM interrupt
+ * 
+ */
 void PCA0_ISR (void) interrupt 11
 {
 	if (pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {

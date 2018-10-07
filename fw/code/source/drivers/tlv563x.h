@@ -99,49 +99,11 @@ typedef enum _TLV563X_REG {
     TLV563X_REG_DAC_G_H_COMP,
 } TLV563X_REG;
 
-/**
- * @brief Reset all DAC values on the device to zero.  Usually called
- *			by initialization routine when device is first brought up.
- *
- * @return Void.
- */
 void tlv563x_dac_reset(void);
-
-/**
- * @brief Writes the word reg_value into the register defined by the
- *			reg_channel parameter.
- *
- * @param reg_channel register to be written into, see @TLV5630_REGISTERS
- * @param reg_value 16-bit value to be written to the selected register
- * @return Void.
- */
 void tlv563x_write(uint8_t reg_channel, uint16_t reg_value);
-
-/**
- * @brief Configures the TLV563x DAC setting the CTRL0 and CTRL1 register
- * 			values.
- *
- * @return Void.
- */
 void tlv563x_dac_init(void);
-
-/**
- * @brief Set the TLV563x device in a power mode OFF state.
- * @return Void.
- */
 void tlv563x_disable(void);
-
-/**
- * @brief Set the TLV563x device in a power mode ON state.
- * @return Void.
- */
 void tlv563x_enable(void);
-
-/**
- * @brief Helper function for single reg write interface.
- * @param reg register 
- * @return Void.
- */
 void tlv563x_reg_write(uint8_t reg, uint8_t value);
 
 #endif /* _TLV563X_H_ */

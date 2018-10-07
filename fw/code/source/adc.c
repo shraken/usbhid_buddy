@@ -31,6 +31,9 @@ uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 	ADC_P2_7,	// ADC7_IN
 };
 
+/** @brief Enable the ADC.
+ *  @return 0 on sucess, -1 on error.
+ */
 int8_t adc_enable(void)
 {
 	AD0EN = 1;
@@ -38,6 +41,9 @@ int8_t adc_enable(void)
 	return 0;
 }
 
+/** @brief Disable the ADC.
+ *  @return 0 on sucess, -1 on error.
+ */
 int8_t adc_disable(void)
 {
 	// Disable ADC0
@@ -46,6 +52,10 @@ int8_t adc_disable(void)
 	return 0;
 }
 
+/** @brief Disables ADC, sets a default single ended conversion, sets up default ADC conversion
+ *				 register values, and enables the ADC interrupt.
+ *  @return 0 on sucess, -1 on error.
+ */
 int8_t adc_init(void)
 {	
 	AD0EN = 0;
@@ -62,6 +72,10 @@ int8_t adc_init(void)
 	return 0;
 }
 
+/** @brief Sets the reference voltage used for the ADC.  The value is controlled by
+ *				 the host driver and can be VDD, bandgap, or external reference.  
+ *  @return 0 on sucess, -1 on error.
+ */
 int8_t adc_set_reference(uint8_t value)
 {
 	debug(("adc_set_reference(): value = %bd (%bx)\r\n", value, value));
@@ -70,6 +84,10 @@ int8_t adc_set_reference(uint8_t value)
 	return 0;
 }
 
+/** @brief ADC interrupt.  Save ADC channel value to accumulator storage.
+ * 	When a sufficient number of ADC channel values are collected, an ADC
+ * 	packet is built and encoded into the HID frame.
+ */
 void adc_isr (void) interrupt 10
 {
 	static int32_t adc_accumulator[MAX_ANALOG_INPUTS] = { 0 };

@@ -60,6 +60,16 @@ static uint8_t TARGET = 0x20;
 
 static unsigned long NUM_ERRORS;
 
+/**
+ * @brief write the buffer with length provided to the i2c slave peripheral
+ *  specified in the previous `i2c_init` call.
+ * 
+ * @param buffer pointer to unsigned byte array buffer of contents to write
+ * @param len the number of bytes to write to the i2c slave
+ * 
+ * @return I2C_ERROR_CODE_OK on success, otherwise I2C_ERROR_CODE_BAD_MEMORY on
+ *  bad buffer.
+ */
 int8_t i2c_write(uint8_t *buffer, uint16_t len) {
 	if (!buffer) {
 		return I2C_ERROR_CODE_BAD_MEMORY;
@@ -81,6 +91,15 @@ int8_t i2c_write(uint8_t *buffer, uint16_t len) {
 	return I2C_ERROR_CODE_OK;
 }
 
+/**
+ * @brief initialize the i2c master.  this must be called before subsequent calls of
+ *  the `i2c_write` and `i2c_read` functions.  This function configures the MCU timers
+ *  and SMBUS peripheral and interrupts.  
+ * 
+ * @param i2c_addr unsigned byte with the i2c slave address being addressed
+ * 
+ * @return I2C_ERROR_CODE_OK on success. 
+ */
 int8_t i2c_init(uint8_t i2c_addr) {
     if (!i2c_initialized) {
         i2c_initialized = true;
@@ -104,6 +123,9 @@ int8_t i2c_init(uint8_t i2c_addr) {
 	return I2C_ERROR_CODE_OK;
 }
 
+/**
+ * @brief i2c interrupt
+ */
 void i2c_isr(void) interrupt 7 {
    bit FAIL = 0;                       // Used by the ISR to flag failed
                                        // transfers

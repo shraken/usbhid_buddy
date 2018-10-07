@@ -2,6 +2,11 @@
 #include <uart.h>
 #include <globals.h>
 
+/** @brief Sets up the UART device by configuring the crossbar for UART operation pin
+ *         pin mode on pins P0.5/P0.4 with baudrate provided by BAUDRATE define.  Uses
+ *				 timer1 for baud rate generation.
+ *  @return Void.
+ */
 void uart_init (void)
 {
    SCON0 = 0x10;                       // SCON0: 8-bit variable bit rate

@@ -23,6 +23,8 @@
 
 extern buddy_ctx_t buddy_ctx;
 
+/** firmware info structure that identifies serial, version,
+ *   and hardware specific (DAC & expander) types. */
 code firmware_info_t fw_info = {
 	BUDDY_FW_INFO_SERIAL,
 	BUDDY_FW_INFO_DATETIME,
@@ -33,9 +35,12 @@ code firmware_info_t fw_info = {
 	BUDDY_FW_BOOTLREV_INFO_MINOR,
 	BUDDY_FW_BOOTLREV_INFO_TINY,
 	FIRMWARE_INFO_DAC_TYPE_TLV5630,
-	//FIRMWARE_INFO_DAC_TYPE_TLV5632,
 };
 
+/**
+ * @brief print the firmware information to the debug uart console
+ * @return Void. 
+ */
 void print_device_info(void)
 {
     printf("                                 \r\n");
@@ -74,6 +79,12 @@ void print_device_info(void)
 	printf("\r\n");
 }
 
+/**
+ * @brief initialize the buddy context structure.  the context
+ * 	structure stores the real time configuration settings
+ *  during operation.  
+ * 
+ */
 void contexts_init(void)
 {
 	buddy_ctx.daq_state         = GENERAL_CTRL_NONE;

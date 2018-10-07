@@ -20,6 +20,14 @@ static uint8_t tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
 static uint8_t tlv563x_ctrl0_reg = DEFAULT_TLV563X_CTRL0_REG;
 static uint8_t tlv563x_ctrl1_reg = DEFAULT_TLV563X_CTRL1_REG;
 
+/**
+ * @brief Writes the word reg_value into the register defined by the
+ *			reg_channel parameter.
+ *
+ * @param reg_channel register to be written into, see @TLV5630_REGISTERS
+ * @param reg_value 16-bit value to be written to the selected register
+ * @return Void.
+ */
 void tlv563x_write(uint8_t reg_channel, uint16_t reg_value)
 {
 	spi_select();
@@ -35,6 +43,12 @@ void tlv563x_write(uint8_t reg_channel, uint16_t reg_value)
 	return;
 }
 
+/**
+ * @brief Configures the TLV563x DAC setting the CTRL0 and CTRL1 register
+ * 			values.
+ *
+ * @return Void.
+ */
 void tlv563x_dac_init(void)
 {
 	// set DAC bit resolution
@@ -69,20 +83,39 @@ void tlv563x_dac_init(void)
 	return;
 }
 
+/**
+ * @brief Set the TLV563x device in a power mode OFF state.
+ * @return Void.
+ */
 void tlv563x_disable(void) {
 	tlv563x_ctrl0_reg |= (1 << TLV563X_CTRL0_POWER);
 	tlv563x_reg_write(TLV563X_REG_CTRL0, tlv563x_ctrl0_reg);
 }
 
+/**
+ * @brief Set the TLV563x device in a power mode ON state.
+ * @return Void.
+ */
 void tlv563x_enable(void) {
 	tlv563x_ctrl0_reg &= ~(1 << TLV563X_CTRL0_POWER);
 	tlv563x_reg_write(TLV563X_REG_CTRL0, tlv563x_ctrl0_reg);
 }
 
+/**
+ * @brief Helper function for single reg write interface.
+ * @param reg register 
+ * @return Void.
+ */
 void tlv563x_reg_write(uint8_t reg, uint8_t value) {
 	tlv563x_write(reg, value);
 }
 
+/**
+ * @brief Reset all DAC values on the device to zero.  Usually called
+ *			by initialization routine when device is first brought up.
+ *
+ * @return Void.
+ */
 void tlv563x_dac_reset(void)
 {
 	int i;

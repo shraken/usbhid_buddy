@@ -69,26 +69,9 @@ typedef enum _ADC_REF0CN_BITMASK {
 #define ADC_GND 0x1F  // 011111b
 #define ADC_VREF 0x1E // 011110b
 
-/** @brief Disables ADC, sets a default single ended conversion, sets up default ADC conversion
- *				 register values, and enables the ADC interrupt.
- *  @return 0 on sucess, -1 on error.
- */
 int8_t adc_init(void);
-
-/** @brief Enable the ADC.
- *  @return 0 on sucess, -1 on error.
- */
 int8_t adc_enable(void);
-
-/** @brief Disable the ADC.
- *  @return 0 on sucess, -1 on error.
- */
 int8_t adc_disable(void);
-
-/** @brief Sets the reference voltage used for the ADC.  The value is controlled by
- *				 the host driver and can be VDD, bandgap, or external reference.  
- *  @return 0 on sucess, -1 on error.
- */
 int8_t adc_set_reference(uint8_t value);
 
 #endif

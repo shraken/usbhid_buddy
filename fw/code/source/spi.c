@@ -16,6 +16,10 @@ uint8_t SPI_Data_Tx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
 
 uint8_t bytes_trans;
 
+/**
+ * @brief SPI interrupt
+ * 
+ */
 void spi_isr(void) interrupt 6
 {
 	static unsigned char state = 0;
@@ -57,6 +61,13 @@ void spi_isr(void) interrupt 6
 	SPIF = 0;
 }
 
+/**
+ * @brief Configures SPI0 to use 4-wire Single Master mode. The SPI timing is
+ *		  configured for Mode 0,0 (data centered on first edge of clock phase and
+ *		  SCK line low in idle state).
+ *
+ * @return Void.
+ */
 void spi_init(void)
 {
    // set the number of bytes in transcation to zero
@@ -72,6 +83,11 @@ void spi_init(void)
    ESPI0 = 1;                          // Enable SPI interrupts
 }
 
+/**
+ * @brief Preforms a SPI read/write transaction of length `bytes_trans`.
+ *
+ * @return Void.
+ */
 void spi_array_readwrite(void)
 {
 		//P3 = P3 & ~0x40;
@@ -91,6 +107,13 @@ void spi_array_readwrite(void)
 		//P3 = P3 | 0x40;
 }
 
+/**
+ * @brief Configures the DAC CS as the primary SPI chip select.  This is a leftover
+ *			  artificat when multiple SPI devices were supported and isn't explictly necessary
+ *	      and in future should be revised and removed.
+ *
+ * @return Void.
+ */
 void spi_select(void)
 {
 	// Use mode 2 with data valid on leading edge but clock idle high

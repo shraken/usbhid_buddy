@@ -27,6 +27,14 @@ static poncho_pin_cfg_t poncho_cfg[] = {
     { BUDDY_CHAN_7, TCA9555_PIN_2, TCA9555_PIN_7 },
 };
 
+/**
+ * @brief Set the operating mode (IN or OUT) of the Poncho expander board.  The IN mode is
+ *			  used for input signals (ADC & Counter).  The OUT mode is used for DAC and PWM output
+ *			  applications.
+ * @param pin enum of type BUDDY_CHANNELS specifying the channel index
+ * @param pos enum of type TCA9555_PIN_VALUE specifying if a high or low pin state is requested
+ * @return PONCHO_ERROR_CODE_OK on success, otherwise see PONCHO_ERROR_CODE.
+ */
 int8_t poncho_set_mode(uint8_t pin, uint8_t pos) {
     int i;
     
@@ -49,14 +57,30 @@ int8_t poncho_set_mode(uint8_t pin, uint8_t pos) {
     return PONCHO_ERROR_CODE_OK;
 }
 
+/**
+ * @brief Set the requested buddy pin to an output mode.
+ * @param pin enum of type BUDDY_CHANNELS specifying the channel index
+ * @return PONCHO_ERROR_CODE_OK on success, otherwise see PONCHO_ERROR_CODE.
+ */
 int8_t poncho_set_out_mode(uint8_t pin) {
     return poncho_set_mode(pin, TCA9555_PIN_VALUE_LOW);
 }
 
+/**
+ * @brief Set the requested buddy pin to an output mode.
+ * @param pin enum of type BUDDY_CHANNELS specifying the channel index
+ * @return PONCHO_ERROR_CODE_OK on success, otherwise see PONCHO_ERROR_CODE.
+ */
 int8_t poncho_set_in_mode(uint8_t pin) {
     return poncho_set_mode(pin, TCA9555_PIN_VALUE_HIGH);
 }
 
+/**
+ * @brief Put the poncho board in a default pin state.  The default pin state should
+ *        make the IN mode active so that we never have big rail voltages accidentally
+ *			  hanging off the terminal jack connectors.
+ * @return PONCHO_ERROR_CODE_OK on success, otherwise see PONCHO_ERROR_CODE.
+ */
 int8_t poncho_default_config(void) {
 	uint8_t pins[] = {
 		BUDDY_CHAN_0,

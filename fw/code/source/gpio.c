@@ -12,6 +12,11 @@
 #include <globals.h>
 #include <gpio.h>
 
+/** @brief Explicitly initializes the GPIO pins required for
+  *         "drive" functionality as open-drain. 
+  *
+  *  @return error_t enum indicating success or error.
+ */
 int8_t gpio_init()
 {
 	// red and green LEDs used to indicate RX/TX
@@ -36,6 +41,12 @@ int8_t gpio_init()
   return GPIO_ERROR_CODE_SUCCESS;
 }
 
+/** @brief Sets the pin value to high or low state.
+  *
+  *  @param pin Encoded pin value from gpio_drive_pins.
+  *  @param value High or Low enum enumeration.
+  *  @return error_t enum indicating success or error.
+ */
 int8_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
 {
     gpio_major_pin pin_major;
@@ -78,6 +89,12 @@ int8_t gpio_set_pin_value(gpio_pin pin, gpio_value value)
     return GPIO_ERROR_CODE_SUCCESS;
 }
 
+/** @brief Sets the pin mode to open-drain or push-pull.
+  *
+  *  @param pin Encoded pin value from gpio_drive_pins
+  *  @param mode Open Drain or Push Pull enumeration
+  *  @return error_t enum indicating success or error.
+ */
 int8_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
 {
     gpio_major_pin pin_major;
@@ -148,6 +165,11 @@ int8_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode)
     return GPIO_ERROR_CODE_SUCCESS;
 }
 
+/** @brief Gets the pin value.
+  *
+  *  @param pin Encoded pin value from gpio_drive_pins.
+  *  @return 0 if the pin is off, 1 otherwise
+ */
 uint8_t gpio_get_pin_value(gpio_pin pin)
 {
     uint8_t pin_value;

@@ -128,34 +128,9 @@ typedef enum _gpio_pin_value gpio_value;
 typedef enum _gpio_major_type gpio_major_pin;
 typedef enum _gpio_minor_type gpio_minor_pin;
 
-/** @brief Explicitly initializes the GPIO pins required for
-  *         "drive" functionality as open-drain. 
-  *
-  *  @return error_t enum indicating success or error.
- */
 int8_t gpio_init();
-
-/** @brief Sets the pin value to high or low state.
-  *
-  *  @param pin Encoded pin value from gpio_drive_pins.
-  *  @param value High or Low enum enumeration.
-  *  @return error_t enum indicating success or error.
- */
 int8_t gpio_set_pin_value(gpio_pin pin, gpio_value value);
-
-/** @brief Sets the pin mode to open-drain or push-pull.
-  *
-  *  @param pin Encoded pin value from gpio_drive_pins
-  *  @param mode Open Drain or Push Pull enumeration
-  *  @return error_t enum indicating success or error.
- */
 int8_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode);
-
-/** @brief Gets the pin value.
-  *
-  *  @param pin Encoded pin value from gpio_drive_pins.
-  *  @return 0 if the pin is off, 1 otherwise
- */
 uint8_t gpio_get_pin_value(gpio_pin pin);
 
 #endif

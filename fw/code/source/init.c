@@ -6,6 +6,9 @@
 #include <gpio.h>
 #include <globals.h>
 
+/** @brief This top-level initialization routine calls all support routine.
+ *  @return Void.
+ */
 void system_init(void)
 {
    PCA0MD &= ~0x40;                    // Disable Watchdog timer
@@ -19,6 +22,9 @@ void system_init(void)
    usb_init();                         // Initialize USB0
 }
 
+/** @brief Initialize system clock to maximum frequency.
+ *  @return Void.
+ */
 void sysclk_init(void)
 {
 #ifdef _USB_LOW_SPEED_
@@ -48,6 +54,9 @@ void sysclk_init(void)
 #endif  /* _USB_LOW_SPEED_ */
 }
 
+/** @brief Routine configure the Crossbar and GPIO ports.
+ *  @return Void.
+ */
 void port_init(void)
 {	
     P2MDIN    = 0x00;
@@ -72,6 +81,10 @@ void port_init(void)
 		gpio_set_pin_value(SPI_DAC_CS_PIN, GPIO_VALUE_HIGH);
 }
 
+/** @brief Initialize USB0. Enable USB0 interrupts. Enable USB0 transceiver.
+ *         Enable USB0 with suspend detection
+ *  @return Void.
+ */
 void usb_init(void)
 {
    POLL_WRITE_BYTE(POWER,  0x08);      // Force Asynchronous USB Reset
@@ -97,17 +110,9 @@ void usb_init(void)
    //Setup_IN_BUFFER();
 }
 
-//-----------------------------------------------------------------------------
-// Delay
-//-----------------------------------------------------------------------------
-//
-// Return Value - None
-// Parameters - None
-//
-// Used for a small pause, approximately 80 us in Full Speed,
-// and 1 ms when clock is configured for Low Speed
-//
-// ----------------------------------------------------------------------------
+/** @brief Busy wait delay routine used for USB timing.
+ *  @return Void.
+ */
 void Delay(void)
 {
    volatile int x;

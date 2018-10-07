@@ -3,11 +3,19 @@
 static uint8_t data in_packet_offset = 0;
 static uint8_t data codec_byte_offset = 0;
 
+/**
+ * @brief initialize the io subsystem.  set the initial USB
+ *  in packet offset to 0.
+ */
 void io_init(void)
 {
-		in_packet_offset = 0;
+	in_packet_offset = 0;
 }
 
+/**
+ * @brief clear the USB in packet buffer.  set the pointer
+ *  for the USB IN buffer to the first buffer.  
+ */
 void usb_buffer_clear(void)
 {
 	P_IN_PACKET_RECORD = &IN_PACKET[0];
@@ -17,6 +25,16 @@ void usb_buffer_clear(void)
 	in_packet_ready = false;
 }
 
+/**
+ * @brief send response data message to the host system.  copies the
+ *  the provided buffer of given length into the USB IN buffer.
+ * 
+ * @param buffer pointer to the response data source to be written
+ *  to the host PC system.
+ * @param length the number of bytes to be written in the USB IN packet
+ * 
+ * @return Void.
+ */
 void respond_data(uint8_t *buffer, uint8_t length)
 {
 		IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_DATA;
@@ -30,6 +48,15 @@ void respond_data(uint8_t *buffer, uint8_t length)
 		return;
 }
 
+/**
+ * @brief send response error status message to the host system.  copies the
+ *  the provided buffer of given length into the USB IN buffer.
+ * 
+ * @param error_code arbitary signed byte to be sent to the host when
+ *  wrapped in a type status message.  
+ * 
+ * @return Void.
+ */
 void respond_status(int8_t error_code)
 {
 		IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_STATUS;
@@ -40,6 +67,10 @@ void respond_status(int8_t error_code)
 		return;
 }
 
+/**
+ * @brief build an ADC packet
+ * @return Void
+ */
 void build_adc_packet(void)
 {
 	static uint8_t data encode_count = 0;
@@ -100,6 +131,10 @@ void build_adc_packet(void)
 	//P3 = P3 | 0x40;
 }
 
+/**
+ * @brief build an counter packet
+ * @return Void
+ */
 void build_counter_packet(void)
 {
 	static uint8_t data encode_count = 0;
@@ -161,6 +196,11 @@ void build_counter_packet(void)
 	//P3 = P3 | 0x40;
 }
 
+/**
+ * @brief runs only for ADC and PWM modes.  only for stream mode when the
+ * 	stream timer has elapsed. 
+ * @return Void.
+ */
 void execute_out_stream(void)
 {
 	static uint8_t decode_count = 0;
@@ -243,6 +283,12 @@ void execute_out_stream(void)
 	return;	
 }
 
+/**
+ * @brief runs only for DAC and PWM modes.  if immediate mode then the DAC or PWM
+ *  value is set immediately.  the codec byte offset is advanced for processing of
+ *  the next values. 
+ * @return Void.
+ */
 void execute_out(void)
 {
 	uint8_t i;

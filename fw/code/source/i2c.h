@@ -34,7 +34,6 @@ typedef enum _I2C_ERROR_CODE {
 #define I2C_SCL_PIN_NUM 1
 
 int8_t i2c_write(uint8_t *buffer, uint16_t len);
-int8_t i2c_read(uint8_t *buffer, uint16_t len);
 int8_t i2c_init(uint8_t i2c_addr);
 
 #endif /* _I2C_H_ */

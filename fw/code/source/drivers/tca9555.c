@@ -13,6 +13,10 @@ static uint8_t reg_cfg_1 = 0;
 
 extern void Delay(void);
 
+/**
+ * @brief Initialize the TCA9555 I2C device.
+ * @return Return code specified by TCA9555_ERROR_CODE enum.
+ */
 int8_t tca9555_init(void)
 {
     int i;
@@ -40,6 +44,12 @@ int8_t tca9555_init(void)
 	return TCA9555_ERROR_CODE_OK;
 }
 
+/**
+ * @brief Set the TCA9555 port direction to either input or output.
+ * @param port_num enum of type TCA9555_CHANNEL specifying the channel
+ * @param enum of type TCA9555_PIN_STATE specifying if output or input operation is desired
+ * @return Return code specified by TCA9555_ERROR_CODE enum.
+ */
 int8_t tca9555_set_port_direction(uint8_t port_num, uint8_t pin_num, uint8_t dir)
 {
     uint8_t tbuf[2];
@@ -84,6 +94,12 @@ int8_t tca9555_set_port_direction(uint8_t port_num, uint8_t pin_num, uint8_t dir
 	return TCA9555_ERROR_CODE_OK;
 }
 
+/**
+ * @brief Set the TCA9555 port and pin combination to a polarity inversion mode. 
+ * @param port_num enum of type TCA9555_CHANNEL specifying the channel
+ * @Param pol integer of 0 or 1 to set polarity inversion on provided channel
+ * @return Return code specified by TCA9555_ERROR_CODE enum.
+ */
 int8_t tca9555_set_port_polarity(uint8_t port_num, uint8_t pin_num, uint8_t pol)
 {
     uint8_t tbuf[2];
@@ -128,11 +144,12 @@ int8_t tca9555_set_port_polarity(uint8_t port_num, uint8_t pin_num, uint8_t pol)
 	return TCA9555_ERROR_CODE_OK;
 }
 
-int8_t tca9555_set_port_pin_help(uint8_t port_num, uint8_t pin_num, uint8_t value)
-{
-    return 0;
-}
-
+/**
+ * @brief Set the TCA9555 port and pin combination to a high or low state.
+ * @param port_num enum of type TCA9555_CHANNEL specifying the channel
+ * @Param value integer of 0 or 1 to set channel state low or high respectively
+ * @return Return code specified by TCA9555_ERROR_CODE enum.
+ */
 int8_t tca9555_set_port_pin(uint8_t port_num, uint8_t pin_num, uint8_t value)
 {
     uint8_t tbuf[2];

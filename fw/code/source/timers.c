@@ -20,6 +20,10 @@ static uint8_t timer2_high_set;
 // timer2 - stream mode interrupt
 // timer3 - i2c timeout detection
 
+/**
+ * @brief initialize the core timers
+ * 
+ */
 void timers_init(void)
 {
     timer0_init();
@@ -27,6 +31,10 @@ void timers_init(void)
     timer3_init();
 }
 
+/**
+ * @brief initialize timer0 used for i2c clock source.
+ * 
+ */
 void timer0_init(void)
 {
 // Make sure the Timer can produce the appropriate frequency in 8-bit mode
@@ -54,6 +62,10 @@ void timer0_init(void)
    TR0 = 1;                            // Timer0 enabled
 }
 
+/**
+ * @brief initialize timer3 used for i2c timeout detection.
+ * 
+ */
 void timer3_init(void)
 {
 	// Timer3 configured for 16-bit auto-
@@ -78,6 +90,11 @@ void timer3_init(void)
 	TMR3CN |= 0x04;    
 }
 
+/** @brief Configures Timer0 with default count values with a 16-bit mode.  The timer
+ *				 is by default set to use a SYSCLK/12 reference, timer0 interrupt is enabled,
+ *				 and the timer is enabled.
+ *  @return Void.
+ */
 void timer2_init(void)
 {
     // By default, configure Timer2 to be a SYSCLK/12 base
@@ -102,6 +119,13 @@ void timer2_init(void)
     TR2 = 1;
 }
 
+/** @brief Sets the requested period (in nsec) for Timer 2.  A calculation is performed to
+ *				 determine if the timer0 clock base needs to be modified from the default SYSCLK/12
+ *				 reference and is modified if need be.  The timer is used for stream mode for triggering
+ *				 a conversion on the request DAQ function.
+ *  @param period the time period (in nsec) that the timer elapses at.
+ *  @return Void.
+ */
 void timer2_set_period(uint32_t period)
 {
 	uint16_t timer_set;
@@ -172,10 +196,10 @@ void timer2_set_period(uint32_t period)
 	ET2 = 1;
 }
 
-//-----------------------------------------------------------------------------
-// Interrupt Service Routines
-//-----------------------------------------------------------------------------
-
+/**
+ * @brief timer2 interrupt.  this is the stream mode interrupt source.  
+ * 
+ */
 void timer2_isr(void) interrupt 5
 {
     TF2H = 0;
