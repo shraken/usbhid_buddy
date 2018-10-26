@@ -14,13 +14,13 @@ static bool _stream_mode = false;
 static uint8_t _daq_function = 0;
 static uint8_t _chan_mask = 0;
 static uint8_t _chan_number = 0;
-static uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
-static uint8_t _resolution_mode = 0;
-static uint8_t _data_size = 2;
+uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
+uint8_t _resolution_mode = 0;
+uint8_t _data_size = 2;
 
-static uint8_t codec_byte_offset = 0;
-static uint8_t encode_count = 0;
-static uint8_t decode_count = 0;
+uint8_t codec_byte_offset = 0;
+uint8_t encode_count = 0;
+uint8_t decode_count = 0;
 
 static uint8_t out_hold_buf[MAX_OUT_SIZE] = { 0 };
 static buddy_driver_context driver_ctx = { 0 };
@@ -82,23 +82,23 @@ void print_buffer_simple(uint16_t *buffer)
 	printf("\n\n");
 }
 
-int number_channels(uint8_t channel_mask) 
-{
-	int i;
-	int channel_count = 0;
-
-	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (channel_mask & (1 << i)) {
-			channel_count++;
-		}
-	}
-
-	return channel_count;
+/*
+ * @brief put the codec encoder and decoder in an initial state where
+ *  the offset and decode and encode counts are set to zero.
+ */
+void reset_codec(void) {
+	codec_byte_offset = 0;
+	encode_count = 0;
+	decode_count = 0;
 }
 
 int encode(uint8_t *frame, general_packet_t *packet)
 {
 	uint8_t i;
+
+	if ((!frame) || (!packet)) {
+		return CODEC_STATUS_ERROR;
+	}
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
@@ -122,7 +122,8 @@ int encode(uint8_t *frame, general_packet_t *packet)
 	}
 
 	// check if subsequent packet will overflow buffer
-	if ((codec_byte_offset + (_data_size * _chan_number)) > (MAX_REPORT_SIZE - 3)) {
+	uint8_t encode_max_offset = (codec_byte_offset + (_data_size * _chan_number));
+	if (encode_max_offset >= (MAX_REPORT_SIZE - 3)) {
 		codec_byte_offset = 0;
 		return CODEC_STATUS_FULL;
 	} else {
@@ -135,9 +136,12 @@ int decode(uint8_t *frame, general_packet_t *packet)
 	uint8_t count;
 	int i;
 
-	count = *(frame + BUDDY_APP_INDIC_OFFSET);
-	//printf("decode() with count = %d\n", count);
+	if ((!frame) || (!packet)) {
+		return CODEC_STATUS_ERROR;
+	}
 
+	count = *(frame + BUDDY_APP_INDIC_OFFSET);
+	
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
 			if (_resolution_mode == RESOLUTION_CTRL_SUPER) {
@@ -170,11 +174,12 @@ int decode(uint8_t *frame, general_packet_t *packet)
 	decode_count++;
 
 	// check if the next packet can fit in the packed array
-	if (((codec_byte_offset + (_data_size * _chan_number)) > (MAX_REPORT_SIZE - 3)) ||
-	     (decode_count >= count)) {
+	uint8_t decode_max_offset = (codec_byte_offset + (_data_size * _chan_number));
+	
+	// @todo: changed decode_count >= count to decode_count > count check if works
+	if ((decode_max_offset >= (MAX_REPORT_SIZE - 3)) || (decode_count > count)) {
 		codec_byte_offset = 0;
 		decode_count = 0;
-
 		return CODEC_STATUS_FULL;
 	} else {
 		return CODEC_STATUS_CONTINUE;

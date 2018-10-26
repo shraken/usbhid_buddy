@@ -1,19 +1,20 @@
 language: cpp
+dist: trusty
 sudo: true
 
 compiler:
   - gcc
 
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y libudev-dev libusb-1.0-0-dev
-  - sudo apt-get install -y sdcc
-  - sudo apt-get install -y srecord
-  - sudo pip install intelhex
-
 jobs:
   include:
     - stage: "software libbuddy library compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+
       before_script:
         - cd lib/libbuddy
         - mkdir -p build
@@ -24,6 +25,13 @@ jobs:
         - make
 
     - stage: "software C example compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+
       before_script:
         - cd examples/C/simple
         - mkdir -p build
@@ -34,11 +42,32 @@ jobs:
         - make
 
     - stage: "baremetal gboot bootloader firmware compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+            - sdcc
+            - srecord
+
+      before_script:
+        - sudo pip install intelhex
+      
       script:
         - cd bootloader/gboot
         - make FLASH_SIZE=64 VARIANT=F38x
 
     - stage: "gflash bootloader host utility compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+            - sdcc
+            - srecord
+
       before_script:
         - cd bootloader/gflash
         - mkdir -p build
@@ -47,14 +76,30 @@ jobs:
       
       script:
         - make
-        
+
     - stage: "unit tests"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+            - sdcc
+            - srecord
+      
       before_script:
+        - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
+        - sudo ln -s /usr/bin/g++-6 /usr/local/bin/g++
         - cd tests/
         - mkdir -p build
         - cd build
         - cmake ..
 
       script:
+        - gcc -v && g++ -v && cmake --version
         - make
         - ./testLibBuddy

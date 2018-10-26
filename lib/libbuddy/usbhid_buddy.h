@@ -65,7 +65,6 @@ extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
 void print_fw_info_dac_types(void);
 void print_buffer(uint8_t *buffer, uint8_t length);
 void print_buffer_simple(uint16_t *buffer);
-int number_channels(uint8_t channel_mask) ;
 
 int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length);
 int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length);
@@ -92,5 +91,9 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length);
 int buddy_reset_device(hid_device *handle);
 int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming);
 int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
-							   
+
+void reset_codec(void);
+int encode(uint8_t *frame, general_packet_t *packet);
+int decode(uint8_t *frame, general_packet_t *packet);
+					   
 #endif
