@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <tca9555.h>
 #include <i2c.h>
 
@@ -13,6 +14,12 @@ static uint8_t reg_cfg_1 = 0;
 
 extern void Delay(void);
 
+/** boolean, set to True when device initialization has run
+			otherwise set to False.  Initialization must be run before
+		  use.  
+*/
+static bool deviceInit = false;
+
 /**
  * @brief Initialize the TCA9555 I2C device.
  * @return Return code specified by TCA9555_ERROR_CODE enum.
@@ -21,7 +28,11 @@ int8_t tca9555_init(void)
 {
     int i;
         
-		if (i2c_init(0x20 << 1) != I2C_ERROR_CODE_OK) {
+		if (deviceInit) {
+			return TCA9555_ERROR_CODE_OK;
+		}
+		
+		if (i2c_init(TCA95555_I2C_ADDRESS << 1) != I2C_ERROR_CODE_OK) {
         return TCA9555_ERROR_CODE_GENERAL_ERROR;
     }
 
@@ -41,7 +52,8 @@ int8_t tca9555_init(void)
         tca9555_set_port_pin(TCA9555_PORT_1, i, TCA9555_PIN_VALUE_HIGH);
     }
 
-	return TCA9555_ERROR_CODE_OK;
+		deviceInit = true;
+		return TCA9555_ERROR_CODE_OK;
 }
 
 /**

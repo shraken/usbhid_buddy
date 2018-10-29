@@ -8,7 +8,8 @@ import signal
 import csv
 import buddy as bt
 
-BUDDY_TEST_DAC_FREQ = 50       # 5 Hz
+# DAC sample frequency
+BUDDY_TEST_DAC_FREQ = 50
 
 hid_handle = None
 hid_info = None
@@ -16,7 +17,7 @@ hid_info = None
 def reset_device(hid_handle):
     bt.buddy_reset_device(hid_handle)
 
-def set_dac_value(hid_handle, channel, value):
+def set_dac_value(hid_handle, channel, value, mode):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -30,6 +31,15 @@ def set_dac_value(hid_handle, channel, value):
 
     runtime_settings.dac_power = bt.RUNTIME_DAC_POWER_ON
     runtime_settings.dac_ref = bt.RUNTIME_DAC_REF_EXT
+
+    if mode:
+        print('Poncho mode activated')
+        
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_OUT
+        general_settings.expander_pin_state = bt.BUDDY_CHAN_0_MASK
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
 
     if (bt.buddy_configure(hid_handle,
                            general_settings,
@@ -99,6 +109,9 @@ if __name__ == '__main__':
                         help="DAC channel that the value is set on", required=True)
     parser.add_argument('-v,--value', nargs=1, dest="dac_value",
                         help="DAC value to set on given channel", required=True)
+    parser.add_argument('-p,--poncho', action='store_true', dest='poncho_mode',
+                        help='Enable the Poncho Expander board in output mode for high voltage DAC output')
+
     args = parser.parse_args()
 
     if ((args.dac_channel is None) or (args.dac_value is None)):
@@ -118,5 +131,5 @@ if __name__ == '__main__':
     display_fw_info(fw_info)
 
     print 'Setting DAC value'
-    err_code = set_dac_value(hid_handle, int(args.dac_channel[0]), int(args.dac_value[0]))
+    err_code = set_dac_value(hid_handle, int(args.dac_channel[0]), int(args.dac_value[0]), args.poncho_mode)
     bt.buddy_cleanup(hid_handle, hid_info, False)

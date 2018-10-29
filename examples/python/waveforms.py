@@ -10,13 +10,15 @@ import numpy as np
 from scipy import signal as scisig
 
 BUDDY_TEST_DAC_FREQ = 1000     # 1000 Hz
-WAVEFORM_TIME = 5             # 20 seconds
-WAVEFORM_FREQUENCY = 5         # 1 Hz
+WAVEFORM_TIME = 20             # 20 seconds
+WAVEFORM_FREQUENCY = 1         # 1 Hz
 
 hid_handle = None
 hid_info = None
 
-def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
+def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming, poncho_mode):
+    mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK | bt.BUDDY_CHAN_2_MASK | bt.BUDDY_CHAN_3_MASK
+    
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -25,13 +27,22 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
     #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
+    general_settings.channel_mask = mask
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
     runtime_settings.dac_power = bt.RUNTIME_DAC_POWER_ON
     runtime_settings.dac_ref = bt.RUNTIME_DAC_REF_EXT
+
+    if poncho_mode:
+        print('Poncho mode activated')
+        
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_OUT
+        general_settings.expander_pin_state = mask
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
 
     if (bt.buddy_configure(handle,
                            general_settings,
@@ -46,7 +57,9 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming):
     test_seq_dac_count = 0
     
     #y_mag = 255
-    y_mag = 2700
+    #y_mag = 2700
+    y_mag = 4000
+
     t = np.linspace(0, WAVEFORM_TIME, sample_rate * WAVEFORM_TIME, endpoint=False)
 
     if wave_type == 'square':    
@@ -121,8 +134,10 @@ if __name__ == '__main__':
 
     parser.add_argument('-s,--stream', action='store_true', dest='stream_mode',
                         help='enable streaming for higher throughput')
+    parser.add_argument('-p,--poncho', action='store_true', dest='poncho_mode',
+                        help='Enable the Poncho Expander board')
     parser.add_argument('-t,--type', action='store', dest='wave_type',
-                        help='specify type of waveform to generate (sine, square, triangle, noise, etc.)')
+                        help='specify type of waveform to generate (sine, square, sawtooth)')
     args = parser.parse_args()
 
     if args.wave_type is None:
@@ -147,7 +162,8 @@ if __name__ == '__main__':
                                 fw_info,
                                 BUDDY_TEST_DAC_FREQ,
                                 args.wave_type,
-                                args.stream_mode)
+                                args.stream_mode,
+                                args.poncho_mode)
     
     time_end = time.time()
     time_diff = time_end - time_start

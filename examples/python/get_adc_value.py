@@ -8,15 +8,13 @@ import signal
 import csv
 import buddy as bt
 
-BUDDY_TEST_DAC_FREQ = 50       # 5 Hz
-
 hid_handle = None
 hid_info = None
 
 def reset_device(hid_handle):
     bt.buddy_reset_device(hid_handle)
 
-def buddy_get_adc_value(hid_handle, channel, sample_rate=1):
+def buddy_get_adc_value(hid_handle, channel, poncho_mode, sample_rate=1):
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -32,6 +30,13 @@ def buddy_get_adc_value(hid_handle, channel, sample_rate=1):
 
     runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_SINGLE_ENDED
     runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
+
+    if poncho_mode:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_IN
+        general_settings.expander_pin_state = channel
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
 
     if (bt.buddy_configure(hid_handle,
                            general_settings,
@@ -87,6 +92,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-c,--channel', nargs=1, dest="adc_channel",
                         help="ADC channel that the value is set on", required=True)
+    parser.add_argument('-p,--poncho', action='store_true', dest='poncho_mode',
+                        help='Enable the Poncho Expander board')
     args = parser.parse_args()
 
     if ((args.adc_channel is None)):
@@ -105,6 +112,6 @@ if __name__ == '__main__':
     display_usb_info(hid_info)
     display_fw_info(fw_info)
 
-    adc_value = buddy_get_adc_value(hid_handle, int(args.adc_channel[0]))
+    adc_value = buddy_get_adc_value(hid_handle, int(args.adc_channel[0]), args.poncho_mode)
     print('adc_value = {}'.format(adc_value))
     bt.buddy_cleanup(hid_handle, hid_info, False)

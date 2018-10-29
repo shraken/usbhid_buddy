@@ -288,6 +288,25 @@ typedef enum _BUDDY_CHANNELS_MASK {
 	BUDDY_CHAN_7_MASK = (1 << BUDDY_CHAN_7),
 } BUDDY_CHANNELS_MASK;
 
+/**
+ * \enum BUDDY_EXPANDER_TYPE
+ * \brief an enum entry is defined for each expander board ID.
+ */
+typedef enum _BUDDY_EXPANDER_TYPE {
+  BUDDY_EXPANDER_TYPE_BASE = 0,
+  BUDDY_EXPANDER_TYPE_PONCHO
+} BUDDY_EXPANDER_TYPE;
+
+/**
+ * \enum BUDDY_EXPANDER_PONCHO_MODE
+ * \brief  specifies if the poncho terminal jack pin should be
+ * 		   treated as an output or an input.
+ */
+typedef enum _BUDDY_EXPANDER_PONCHO_MODE {
+  BUDDY_EXPANDER_PONCHO_MODE_OUT = 0,
+  BUDDY_EXPANDER_PONCHO_MODE_IN,
+} BUDDY_EXPANDER_PONCHO_MODE;
+
 #ifdef SWIG
 %constant int BUDDY_CHAN_ALL_MASK = (BUDDY_CHAN_0_MASK | 
 							 		 BUDDY_CHAN_1_MASK | 
@@ -373,6 +392,11 @@ typedef struct _ctrl_general_t {
 	uint8_t mode;
 	uint8_t channel_mask;
 	uint8_t resolution;
+
+	/* optional expander board options */
+	uint8_t expander_type;
+	uint8_t expander_mode;
+	uint8_t expander_pin_state;
 } ctrl_general_t;
 
 /**

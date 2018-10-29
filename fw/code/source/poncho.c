@@ -27,6 +27,12 @@ static poncho_pin_cfg_t poncho_cfg[] = {
     { BUDDY_CHAN_7, TCA9555_PIN_2, TCA9555_PIN_7 },
 };
 
+/** boolean, set to True when device initialization has run
+			otherwise set to False.  Initialization must be run before
+		  use.  
+*/
+static bool deviceInit = false;
+
 /**
  * @brief Set the operating mode (IN or OUT) of the Poncho expander board.  The IN mode is
  *			  used for input signals (ADC & Counter).  The OUT mode is used for DAC and PWM output
@@ -75,13 +81,33 @@ int8_t poncho_set_in_mode(uint8_t pin) {
     return poncho_set_mode(pin, TCA9555_PIN_VALUE_HIGH);
 }
 
+int8_t poncho_configure(uint8_t mode, uint8_t pin_state) {
+		int i;
+
+		for (i = BUDDY_CHAN_0; i < BUDDY_CHAN_7; i++) {
+			if (!(pin_state & (1 << (uint8_t) i))) {
+				continue;
+			}
+			
+			if (mode == BUDDY_EXPANDER_PONCHO_MODE_OUT) {
+				poncho_set_out_mode(i);
+			} else if (mode == BUDDY_EXPANDER_PONCHO_MODE_IN) {
+				poncho_set_in_mode(i);
+			} else {
+		    return PONCHO_ERROR_CODE_UNKNOWN;
+			}
+		}
+		
+		return PONCHO_ERROR_CODE_OK;
+}
+
 /**
  * @brief Put the poncho board in a default pin state.  The default pin state should
  *        make the IN mode active so that we never have big rail voltages accidentally
  *			  hanging off the terminal jack connectors.
  * @return PONCHO_ERROR_CODE_OK on success, otherwise see PONCHO_ERROR_CODE.
  */
-int8_t poncho_default_config(void) {
+int8_t poncho_init(void) {
 	uint8_t pins[] = {
 		BUDDY_CHAN_0,
 		BUDDY_CHAN_1,
@@ -92,14 +118,24 @@ int8_t poncho_default_config(void) {
 		BUDDY_CHAN_6,
 		BUDDY_CHAN_7
 	};
-	
 	int i;
+	
+	if (deviceInit) {
+		return PONCHO_ERROR_CODE_OK;
+	}
+	
+	printf("poncho_init: init tca9555\n");
+	if (tca9555_init() != TCA9555_ERROR_CODE_OK) {
+		return PONCHO_ERROR_CODE_GENERAL_ERROR;
+	}
 	
 	for (i = 0; i < (sizeof(pins) / sizeof(pins[0])); i++) {
 		if (poncho_set_in_mode(pins[i]) != PONCHO_ERROR_CODE_OK) {
-		  return PONCHO_ERROR_CODE_OK;
+		  return PONCHO_ERROR_CODE_GENERAL_ERROR;
 		}			
 	}
 	
+	printf("poncho_init: expander initialized\n");
+	deviceInit = true;
 	return PONCHO_ERROR_CODE_OK;
 }

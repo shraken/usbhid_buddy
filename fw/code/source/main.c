@@ -97,6 +97,10 @@ void contexts_init(void)
 	buddy_ctx.m_resolution      = RESOLUTION_CTRL_HIGH;
 	buddy_ctx.m_data_size       = BUDDY_DATA_SIZE_HIGH;
 	buddy_ctx.m_chan_number     = 0;
+	
+	buddy_ctx.m_expander_type = BUDDY_EXPANDER_TYPE_BASE;
+	buddy_ctx.m_expander_mode = 0;
+	buddy_ctx.m_expander_pin_state = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -116,12 +120,8 @@ void main(void)
   uart_init();
 
   timers_init();
-
   tlv563x_dac_init();
 	
-  tca9555_init();
-  poncho_default_config();
-
 	print_device_info();
   debug(("tlv563x_dac_init passed\r\n"));
 	
@@ -130,6 +130,6 @@ void main(void)
 		
 	while (1) {
 		process();
-    }
+  }
 }
 

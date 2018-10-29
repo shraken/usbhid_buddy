@@ -21,6 +21,10 @@ typedef struct _buddy_ctx_t {
 	uint8_t m_data_size;
 	uint8_t m_chan_number;
 	uint8_t m_chan_enable[BUDDY_CHAN_LENGTH];
+	
+	uint8_t m_expander_type;
+	uint8_t m_expander_mode;
+	uint8_t m_expander_pin_state;
 } buddy_ctx_t;
 
 #define STATUS_TX_LED_PIN GPIO_P3_4

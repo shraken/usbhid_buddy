@@ -16,6 +16,7 @@
 #include <io.h>
 #include <globals.h>
 #include <utility.h>
+#include <poncho.h>
 
 uint8_t flag_usb_out = 0;
 uint8_t new_dac_packet = 0;
@@ -32,7 +33,6 @@ buddy_ctx_t buddy_ctx;
  */
 int8_t process_ctrl_function(ctrl_general_t *p_general)
 {
-	int8_t err_code;
 	debug(("process_ctrl_function()\r\n"));
 	
 	// check if requested DAQ function value is in boundary
@@ -110,6 +110,47 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 	return 0;
 }
 
+int8_t process_ctrl_chan_expander(ctrl_general_t *p_general) {
+	printf("process_ctrl_chan_expander invoked\n");
+	
+	if (p_general->expander_type != BUDDY_EXPANDER_TYPE_BASE) {
+		buddy_ctx.m_expander_type = p_general->expander_type;
+		buddy_ctx.m_expander_mode = p_general->expander_mode;
+		buddy_ctx.m_expander_pin_state = p_general->expander_pin_state;
+	} else {
+		return BUDDY_ERROR_CODE_UNKNOWN;
+	}
+	
+	switch (buddy_ctx.m_expander_type) {
+		case BUDDY_EXPANDER_TYPE_PONCHO:
+			printf("running poncho_init\r\n");
+			if (poncho_init() != PONCHO_ERROR_CODE_OK) {
+				printf("could not init poncho expander board\n");
+				return BUDDY_ERROR_CODE_GENERAL;
+			}
+			
+			printf("running poncho_configure\r\n");
+			printf("buddy_ctx.m_expander_mode = %bd\n", buddy_ctx.m_expander_mode);
+			printf("buddy_ctx.m_expander_pin_state = %bd\n", buddy_ctx.m_expander_pin_state);
+			
+			if (poncho_configure(buddy_ctx.m_expander_mode, 
+												   buddy_ctx.m_expander_pin_state) != PONCHO_ERROR_CODE_OK) {
+			    
+					printf("could not configure poncho expander board\n");
+			    return BUDDY_ERROR_CODE_GENERAL;
+			}
+			
+			break;
+		
+		default:
+			printf("unknown expander board with type = %d\n",
+				  buddy_ctx.m_expander_type);
+			return BUDDY_ERROR_CODE_UNKNOWN;
+	}
+	
+	return BUDDY_ERROR_CODE_OK;
+}
+
 /** @brief determines resolution and number of channels being requested by the host driver.
  *				 if ADC mode is selected then it prepares the required ADC mux arrays.
  *	@param p_general pointer to ctrl_general_t structure with general settings from host driver.
@@ -171,6 +212,9 @@ int8_t process_ctrl_chan_res(ctrl_general_t *p_general)
 				
 		debug(("adc_channel_count = %bd\r\n", adc_channel_count));
 	}
+	
+	// expander check
+	process_ctrl_chan_expander(p_general);
 	
 	return 0;
 }

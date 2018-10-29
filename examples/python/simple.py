@@ -8,10 +8,10 @@ import signal
 import csv
 import buddy as bt
 
-BUDDY_TEST_ADC_FREQ = 1000      # 1 kHz
-BUDDY_TEST_DAC_FREQ = 50       # 5 Hz
-BUDDY_TEST_PWM_FREQ = 10       # 1 kHz
-BUDDY_TEST_COUNTER_FREQ = 10000     # 10 Hz
+BUDDY_TEST_ADC_FREQ = 1000        # 1 kHz
+BUDDY_TEST_DAC_FREQ = 200         # 5 Hz
+BUDDY_TEST_PWM_FREQ = 10          # 1 kHz
+BUDDY_TEST_COUNTER_FREQ = 10000   # 10 Hz
 hid_handle = None
 hid_info = None
 
@@ -20,7 +20,9 @@ hid_info = None
     of the ctrl_runtime_t defines the base tick frequency.  The resolution is
     specifies if an 8, 16, or 32-bit value will be sent. 
 '''
-def test_seq_pwm_freq(handle, sample_rate, streaming):
+def test_seq_pwm_freq(handle, sample_rate, streaming, poncho_mode):
+    mask = bt.BUDDY_CHAN_0_MASK
+
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -28,7 +30,7 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
     general_settings.function = bt.GENERAL_CTRL_PWM_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    general_settings.channel_mask = mask
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_SUPER
@@ -38,6 +40,13 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
     runtime_settings.pwm_mode = bt.RUNTIME_PWM_MODE_FREQUENCY
     runtime_settings.pwm_timebase = bt.RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12
 
+    if poncho_mode:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_OUT
+        general_settings.expander_pin_state = mask
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
+        
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
@@ -52,7 +61,7 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
 
     #for k in range(50000, (50000 + 1)):
     #for k in range(6000, (6000 + 1)):
-    for k in range(60000, (60000 + 1)):
+    for k in range(10000, (60000 + 1)):
     #for k in range(2, (500 + 1)):
     #for k in range(100000, (100000 + 1)):
     #for k in range(45000, (45000 +1)):
@@ -82,7 +91,9 @@ def test_seq_pwm_freq(handle, sample_rate, streaming):
     value is sent to control the duty cycle of a fixed frequency controlled
     by the pwm_timebase field of the ctrl_runtime_t structure.
 '''
-def test_seq_pwm_duty(handle, sample_rate, streaming):
+def test_seq_pwm_duty(handle, sample_rate, streaming, poncho_mode):
+    mask = bt.BUDDY_CHAN_2_MASK
+
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -90,7 +101,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     general_settings.function = bt.GENERAL_CTRL_PWM_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.channel_mask = bt.BUDDY_CHAN_2_MASK
+    general_settings.channel_mask = mask
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
@@ -99,6 +110,13 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     runtime_settings.pwm_mode = bt.RUNTIME_PWM_MODE_DUTY_CYCLE
     runtime_settings.pwm_timebase = bt.RUNTIME_PWM_TIMEBASE_SYSCLK
 
+    if poncho_mode:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_OUT
+        general_settings.expander_pin_state = mask
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
+        
     if (bt.buddy_configure(handle,
                            general_settings,
                            runtime_settings,
@@ -111,6 +129,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     packet = bt.general_packet_t()
     test_seq_pwm_count = 0
 
+    # in counts
     #for k in range(0, 65535, 10):
     #for k in range(128, 129):
     #for k in range(63,64):
@@ -142,7 +161,9 @@ def test_seq_pwm_duty(handle, sample_rate, streaming):
     configures buddy device for DAC operation.  An iterative loop over all
     the codes for a 12-bit DAC (0 - 4095) are sent.
 '''
-def test_seq_dac(handle, sample_rate, streaming):
+def test_seq_dac(handle, sample_rate, streaming, poncho_mode):
+    mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK | bt.BUDDY_CHAN_2_MASK | bt.BUDDY_CHAN_3_MASK
+    
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -150,11 +171,15 @@ def test_seq_dac(handle, sample_rate, streaming):
     general_settings.function = bt.GENERAL_CTRL_DAC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_7_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    general_settings.channel_mask = mask
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
+    
+    if poncho_mode:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_OUT
+        general_settings.expander_pin_state = mask
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
@@ -201,7 +226,9 @@ def test_seq_dac(handle, sample_rate, streaming):
     are counted on IN0 and/or IN1 pins.  A total of 1,000 tick counts are
     collected before the test is terminated. 
 '''
-def test_seq_counter(handle, sample_rate, streaming, log_file):
+def test_seq_counter(handle, sample_rate, streaming, log_file, poncho_mode):
+    mask = bt.BUDDY_CHAN_0_MASK
+    
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -210,15 +237,20 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
     general_settings.function = bt.GENERAL_CTRL_COUNTER_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    #general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_0_MASK
+    general_settings.channel_mask = mask
     
     general_settings.resolution = bt.RESOLUTION_CTRL_SUPER
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
     runtime_settings.counter_control = bt.RUNTIME_COUNTER_CONTROL_ACTIVE_LOW
 
+    if poncho_mode:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_IN
+        general_settings.expander_pin_state = mask
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
+        
     # write CSV header
     if log_file:
         header = []
@@ -289,7 +321,9 @@ def test_seq_counter(handle, sample_rate, streaming, log_file):
     or differential ADC mode is specified.   A total of 1,000 tick counts are
     collected before the test is terminated. 
 '''
-def test_seq_adc(handle, sample_rate, streaming, log_file):
+def test_seq_adc(handle, sample_rate, streaming, log_file, poncho_mode):
+    mask = bt.BUDDY_CHAN_1_MASK
+
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
     runtime_settings = bt.ctrl_runtime_t()
@@ -298,8 +332,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     general_settings.function = bt.GENERAL_CTRL_ADC_ENABLE
     general_settings.mode = \
         bt.MODE_CTRL_STREAM if streaming else bt.MODE_CTRL_IMMEDIATE
-    #general_settings.channel_mask = bt.BUDDY_CHAN_ALL_MASK
-    general_settings.channel_mask = bt.BUDDY_CHAN_1_MASK
+    general_settings.channel_mask = mask
     general_settings.resolution = bt.RESOLUTION_CTRL_HIGH
     #general_settings.resolution = bt.RESOLUTION_CTRL_LOW
 
@@ -310,6 +343,13 @@ def test_seq_adc(handle, sample_rate, streaming, log_file):
     #runtime_settings.adc_mode = bt.RUNTIME_ADC_MODE_DIFFERENTIAL
     runtime_settings.adc_ref = bt.RUNTIME_ADC_REF_VDD
 
+    if poncho_mode:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_PONCHO
+        general_settings.expander_mode = bt.BUDDY_EXPANDER_PONCHO_MODE_IN
+        general_settings.expander_pin_state = mask
+    else:
+        general_settings.expander_type = bt.BUDDY_EXPANDER_TYPE_BASE
+        
     print 'timing_settings.period = %d (0x%x)' % (timing_settings.period, timing_settings.period)
 
     # write CSV header
@@ -431,7 +471,9 @@ if __name__ == '__main__':
                         help='enable ADC (analog to digital) mode')
     parser.add_argument('-c,--counter', action='store_true', dest='counter_mode',
                         help='enable counter mode')
-    parser.add_argument('-p,--pwm_duty', action='store_true', dest='pwm_mode_duty',
+    parser.add_argument('-p,--poncho', action='store_true', dest='poncho_mode',
+                        help='Enable the Poncho Expander board')
+    parser.add_argument('-u,--pwm_duty', action='store_true', dest='pwm_mode_duty',
                         help='enable PWM (pulse width modulation) duty cycle mode')
     parser.add_argument('-t,--pwm_freq', action='store_true', dest='pwm_mode_freq',
                         help='enable PWM (pulse width modulation) frequency mode')
@@ -488,33 +530,38 @@ if __name__ == '__main__':
         print 'running a DAC mode test'
         err_code = test_seq_dac(hid_handle,
                                 BUDDY_TEST_DAC_FREQ,
-                                args.stream_mode)
+                                args.stream_mode,
+                                args.poncho_mode)
     
     if args.adc_mode:
         print 'running a ADC mode test'
         err_code = test_seq_adc(hid_handle,
                                 BUDDY_TEST_ADC_FREQ,
                                 args.stream_mode,
-                                log_file_writer)
+                                log_file_writer,
+                                args.poncho_mode)
                                 
     if args.counter_mode:
         print 'running a counter mode test'
         err_code = test_seq_counter(hid_handle,
                                    BUDDY_TEST_COUNTER_FREQ,
                                    args.stream_mode,
-                                   log_file_writer)
+                                   log_file_writer,
+                                   args.poncho_mode)
 
     if args.pwm_mode_duty:
         print 'running a PWM duty cycle mode test'
         err_code = test_seq_pwm_duty(hid_handle,
                                      BUDDY_TEST_PWM_FREQ,
-                                     args.stream_mode)
+                                     args.stream_mode,
+                                     args.poncho_mode)
     
     if args.pwm_mode_freq:
         print 'running a PWM frequency mode test'
         err_code = test_seq_pwm_freq(hid_handle,
                                      BUDDY_TEST_PWM_FREQ,
-                                     args.stream_mode)
+                                     args.stream_mode,
+                                     args.poncho_mode)
 
     time_end = time.time()
     time_diff = time_end - time_start
