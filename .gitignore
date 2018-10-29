@@ -65,3 +65,4 @@ fw/bootload/build/*
 fw/standard/build/*
 
 *.csv
+*.gcov

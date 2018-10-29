@@ -315,11 +315,3 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
         REQUIRE( decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_ERROR );
     }
 }
-
-/*
-TEST_CASE( "", "" ) {
-    SECTION( "", "" ) {
-        
-    }
-}
-*/

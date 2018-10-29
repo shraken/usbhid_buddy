@@ -35,4 +35,9 @@ set (BUDDY_SOURCES ${LIBBUDDY_SOURCES} ${HIDAPI_SOURCES})
 
 include_directories(${BUDDY_INCLUDE_DIRS})
 add_executable (testLibBuddy testLibBuddy.cpp ${BUDDY_SOURCES})
+
 target_link_libraries(testLibBuddy ${EXTRA_LIBS})
+target_link_libraries(testLibBuddy ${EXTRA_LIBS} --coverage)
+
+target_compile_options( testLibBuddy PRIVATE -O0 -g --coverage)
+set_target_properties( testLibBuddy PROPERTIES COMPILE_FLAGS "-O0 -g --coverage" )
