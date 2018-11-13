@@ -34,7 +34,7 @@ Should Be True    [Arguments]    @{args}
     Run Keyword And Continue On Failure    BuiltIn.Should Be True    @{args}
 
 *** Test Cases ***
-BUDDY_DAC_DYNAMIC_R0001
+BUDDY_FW_VER_CHECK
     [Documentation]  Buddy firmware version is sane and bounded
     
     Buddy Reset Device
@@ -43,7 +43,7 @@ BUDDY_DAC_DYNAMIC_R0001
     Check Firmware Version
     Check Bootloader Version
 
-BUDDY_DAC_DYNAMIC_R0002
+BUDDY_FW_SERIAL_NUM_CHECK
     [Documentation]  Buddy firmware serial number is correct
     
     Buddy Reset Device
@@ -54,7 +54,7 @@ BUDDY_DAC_DYNAMIC_R0002
 
     Should Be Equal    ${result}    ${int_serialNum}
 
-BUDDY_DAC_DYNAMIC_R0003
+BUDDY_USB_ID_CHECK
     [Documentation]  Buddy USB manufacturer and device strings are correct
 
     Buddy Reset Device
@@ -66,14 +66,14 @@ BUDDY_DAC_DYNAMIC_R0003
     ${result}=  Get Firmware USB Device String
     Should Be Equal    ${result}    ${BUDDY_TEST_USB_DEV}
 
-BUDDY_DAC_DYNAMIC_R0004
+BUDDY_TEENSY_ID_CHECK
     [Documentation]  External Teensy controller version are correct
 
     Teensy Reset Device
     Sleep  2.0s
     Check Teensy Firmware Version
     
-BUDDY_DAC_DYNAMIC_R0005
+BUDDY_DAC_DYNAMIC_CHECK
     [Documentation]  Buddy DAC sine wave dynamic values check on all channels
 
     Buddy Reset Device

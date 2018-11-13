@@ -31,7 +31,7 @@ ${BUDDY_DYN_WAVE_FREQ_ADC}  50
 
 *** Test Cases ***
 
-BUDDY_ADC_STATIC_R0001
+BUDDY_FW_VER_CHECK
     [Documentation]  Buddy firmware version is sane and bounded
     
     Buddy Reset Device
@@ -40,7 +40,7 @@ BUDDY_ADC_STATIC_R0001
     Check Firmware Version
     Check Bootloader Version
 
-BUDDY_ADC_STATIC_R0002
+BUDDY_FW_SERIAL_NUM_CHECK
     [Documentation]  Buddy firmware serial number is correct
     
     Buddy Reset Device
@@ -51,7 +51,7 @@ BUDDY_ADC_STATIC_R0002
 
     Should Be Equal    ${result}    ${int_serialNum}
 
-BUDDY_ADC_STATIC_R0003
+BUDDY_USB_ID_CHECK
     [Documentation]  Buddy USB manufacturer and device strings are correct
 
     Buddy Reset Device
@@ -63,14 +63,14 @@ BUDDY_ADC_STATIC_R0003
     ${result}=  Get Firmware USB Device String
     Should Be Equal    ${result}    ${BUDDY_TEST_USB_DEV}
 
-BUDDY_ADC_STATIC_R0004
+BUDDY_TEENSY_ID_CHECK
     [Documentation]  External Teensy controller version are correct
 
     Teensy Reset Device
     Sleep  2.0s
     Check Teensy Firmware Version
     
-BUDDY_ADC_STATIC_R0005
+BUDDY_ADC_STATIC_CHECK
     [Documentation]  Buddy ADC static values check on all channels
 
     Buddy Reset Device
