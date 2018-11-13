@@ -1,0 +1,14 @@
+v0.2:
+ x * resisitive divider from FIO pins on the ADC.  Place the divider network
+   on the ADC pin side of the multiplexor.  The divider should bring 5V max
+   to 3.3V.
+ x * LED indicators on board driven by Teensy to indicate when test is ongoing
+ and maybe a visual indicator for pass/fail.
+ x * replace teensy 3.2 with teensy 3.6 for the the additional RAM and CPU.
+ (NO) consider usage of secondary ADC and DAC as a means to perhaps scan for
+  crosstalk measurements.
+ x * use +5V logic almost everywhere.  Replace 3.3V with 5.0V on MAX335 and
+ MAX4617..
+ (THERE) consider SD card access to save logs on teensy?
+* test points or some secondary header to expose FIO_0 - FIO_7 for
+saleae analyzer.
