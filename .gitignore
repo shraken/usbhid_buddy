@@ -66,4 +66,8 @@ examples/C/simple/CMakeLists.txt
 fw/bootload/build/*
 fw/standard/build/*
 
+robot/sw/reports/
+
+*.pyc
 *.csv
+*.gcov

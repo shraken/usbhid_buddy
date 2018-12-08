@@ -31,24 +31,8 @@
 extern "C" {
 #endif
 
-/** @brief opens a debug file that will be written to by subsequent
- *			debug_write calls.
- *  @param output_file null terminated string for file to open
- *  @return 0 on sucess, -1 on failure.
-*/
 int debug_init(char *output_file);
-
-/** @brief writes a debug message to the file previously open with debug_init
- *			function.
- *  @param message null terminated string with message to be written to the
- *			debug file.
- *  @return Void.
-*/
 void debug_write(char *message);
-
-/** @brief closes the debug file handle.
- *  @return Void.
-*/
 void debug_cleanup(void);
 
 #ifdef __cplusplus

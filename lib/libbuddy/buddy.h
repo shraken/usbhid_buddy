@@ -27,8 +27,15 @@
 #define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type
 #define BUDDY_APP_VALUE_OFFSET 3   // CTRL (Control) Value
 
-#define DEFAULT_ADC0CN 0x01
+// ADC0 start-of-conversion source is overflow of Timer 2
+#define DEFAULT_ADC0CN 0x02
+
+// 1x gain, VDD used as voltage reference, temperature sensor ON,
+// internal bias generator on, on-chip reference buffer on.
 #define DEFAULT_REF0CN 0x8F
+
+// ADC0 SAR conversion clock period bits
+// Data is right justified
 #define DEFAULT_ADC0CF (((SYSCLK/8000000)-1)<<3)
 
 #define BUDDY_BIT_SIZE 8
@@ -47,6 +54,7 @@ typedef enum _APP_CODE {
 	APP_CODE_ADC,
 	APP_CODE_TRIGGER,
 	APP_CODE_INFO,
+	APP_CODE_RESET,
 } APP_CODE;
 
 /**
@@ -97,6 +105,7 @@ typedef enum _RESOLUTION_CTRL {
 	RESOLUTION_CTRL_LOW = 0, 	// 8-bit
 	RESOLUTION_CTRL_HIGH,	 	// 16-bit
 	RESOLUTION_CTRL_SUPER,   	// 32-bit
+	RESOLUTION_CTRL_END_MARKER,
 } RESOLUTION_CTRL;
 
 /**
@@ -274,6 +283,25 @@ typedef enum _BUDDY_CHANNELS_MASK {
 	BUDDY_CHAN_7_MASK = (1 << BUDDY_CHAN_7),
 } BUDDY_CHANNELS_MASK;
 
+/**
+ * \enum BUDDY_EXPANDER_TYPE
+ * \brief an enum entry is defined for each expander board ID.
+ */
+typedef enum _BUDDY_EXPANDER_TYPE {
+  BUDDY_EXPANDER_TYPE_BASE = 0,
+  BUDDY_EXPANDER_TYPE_PONCHO
+} BUDDY_EXPANDER_TYPE;
+
+/**
+ * \enum BUDDY_EXPANDER_PONCHO_MODE
+ * \brief  specifies if the poncho terminal jack pin should be
+ * 		   treated as an output or an input.
+ */
+typedef enum _BUDDY_EXPANDER_PONCHO_MODE {
+  BUDDY_EXPANDER_PONCHO_MODE_OUT = 0,
+  BUDDY_EXPANDER_PONCHO_MODE_IN,
+} BUDDY_EXPANDER_PONCHO_MODE;
+
 #ifdef SWIG
 %constant int BUDDY_CHAN_ALL_MASK = (BUDDY_CHAN_0_MASK | 
 							 		 BUDDY_CHAN_1_MASK | 
@@ -359,6 +387,11 @@ typedef struct _ctrl_general_t {
 	uint8_t mode;
 	uint8_t channel_mask;
 	uint8_t resolution;
+
+	/* optional expander board options */
+	uint8_t expander_type;
+	uint8_t expander_mode;
+	uint8_t expander_pin_state;
 } ctrl_general_t;
 
 /**

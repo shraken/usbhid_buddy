@@ -6,6 +6,7 @@
 #include <usbhid_buddy.h>
 #include <utility.h>
 #include <support.h>
+#include <time.h>
 #include <buddy.h>
 #include <utility.h>
 
@@ -13,13 +14,13 @@ static bool _stream_mode = false;
 static uint8_t _daq_function = 0;
 static uint8_t _chan_mask = 0;
 static uint8_t _chan_number = 0;
-static uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
-static uint8_t _resolution_mode = 0;
-static uint8_t _data_size = 2;
+uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
+uint8_t _resolution_mode = 0;
+uint8_t _data_size = 2;
 
-static uint8_t codec_byte_offset = 0;
-static uint8_t encode_count = 0;
-static uint8_t decode_count = 0;
+uint8_t codec_byte_offset = 0;
+uint8_t encode_count = 0;
+uint8_t decode_count = 0;
 
 static uint8_t out_hold_buf[MAX_OUT_SIZE] = { 0 };
 static buddy_driver_context driver_ctx = { 0 };
@@ -31,6 +32,10 @@ char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH] = {
 	"TI TLV5632 (8-bit)",
 };
 
+/** @brief prints a dump of the fw_info_dac_type_names ASCIIz
+ *			strings to the console.
+ *  @return Void.
+*/
 void print_fw_info_dac_types(void)
 {
 	int i;
@@ -41,6 +46,11 @@ void print_fw_info_dac_types(void)
 	}
 }
 
+/** @brief prints a hex dump of the internal HID IN packet buffer
+ *  @param buffer pointer to IN USBHID packet
+ *  @param length number of the bytes specified by the pointer buffer
+ *  @return Void.
+*/
 void print_buffer(uint8_t *buffer, uint8_t length)
 {
 	int i;
@@ -51,6 +61,10 @@ void print_buffer(uint8_t *buffer, uint8_t length)
 	printf("\n\n");
 }
 
+/** @brief prints a dump of ADC values for incoming HID IN packet buffer
+*   @param buffer pointer to IN USBHID packet
+*   @return Void.
+*/
 void print_buffer_simple(uint16_t *buffer)
 {
 	int i;
@@ -68,23 +82,23 @@ void print_buffer_simple(uint16_t *buffer)
 	printf("\n\n");
 }
 
-int number_channels(uint8_t channel_mask) 
-{
-	int i;
-	int channel_count = 0;
-
-	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (channel_mask & (1 << i)) {
-			channel_count++;
-		}
-	}
-
-	return channel_count;
+/*
+ * @brief put the codec encoder and decoder in an initial state where
+ *  the offset and decode and encode counts are set to zero.
+ */
+void reset_codec(void) {
+	codec_byte_offset = 0;
+	encode_count = 0;
+	decode_count = 0;
 }
 
 int encode(uint8_t *frame, general_packet_t *packet)
 {
 	uint8_t i;
+
+	if ((!frame) || (!packet)) {
+		return CODEC_STATUS_ERROR;
+	}
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
@@ -108,7 +122,8 @@ int encode(uint8_t *frame, general_packet_t *packet)
 	}
 
 	// check if subsequent packet will overflow buffer
-	if ((codec_byte_offset + (_data_size * _chan_number)) > (MAX_REPORT_SIZE - 3)) {
+	uint8_t encode_max_offset = (codec_byte_offset + (_data_size * _chan_number));
+	if (encode_max_offset >= (MAX_REPORT_SIZE - 3)) {
 		codec_byte_offset = 0;
 		return CODEC_STATUS_FULL;
 	} else {
@@ -121,9 +136,12 @@ int decode(uint8_t *frame, general_packet_t *packet)
 	uint8_t count;
 	int i;
 
-	count = *(frame + BUDDY_APP_INDIC_OFFSET);
-	//printf("decode() with count = %d\n", count);
+	if ((!frame) || (!packet)) {
+		return CODEC_STATUS_ERROR;
+	}
 
+	count = *(frame + BUDDY_APP_INDIC_OFFSET);
+	
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
 			if (_resolution_mode == RESOLUTION_CTRL_SUPER) {
@@ -156,17 +174,23 @@ int decode(uint8_t *frame, general_packet_t *packet)
 	decode_count++;
 
 	// check if the next packet can fit in the packed array
-	if (((codec_byte_offset + (_data_size * _chan_number)) > (MAX_REPORT_SIZE - 3)) ||
-	     (decode_count >= count)) {
+	uint8_t decode_max_offset = (codec_byte_offset + (_data_size * _chan_number));
+	
+	// @todo: changed decode_count >= count to decode_count > count check if works
+	if ((decode_max_offset >= (MAX_REPORT_SIZE - 3)) || (decode_count > count)) {
 		codec_byte_offset = 0;
 		decode_count = 0;
-
 		return CODEC_STATUS_FULL;
 	} else {
 		return CODEC_STATUS_CONTINUE;
 	}
 }
 
+/** @brief open hidapi handle for Buddy VID/PID, set to non-blocking mode and
+ *			return info on USB device and firmware.
+ *	@param hid_info pointer to structure to store USB device information
+ *  @return NULL on failure, hidapi handle pointer on success.
+ */
 hid_device* hidapi_init(buddy_hid_info_t *hid_info)
 {
 	hid_device *handle;
@@ -238,6 +262,14 @@ hid_device* hidapi_init(buddy_hid_info_t *hid_info)
 	return handle;
 }
 
+/** @brief sends a USB OUT request with the specified binary data
+*   @param hidapi handle pointer
+*   @param BUDDY_APP_CODE_OFFSET enum offset value
+*   @param BUDDY_APP_INDIC_OFFSET enum offset value
+*   @param binary data to be written in the USB HID OUT request
+*   @param length of the binary data to written
+*   @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+*/
 int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *raw, uint8_t length)
 {
 	unsigned char out_buf[MAX_OUT_SIZE] = { 0 };
@@ -260,6 +292,12 @@ int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *ra
 	return BUDDY_ERROR_CODE_OK;
 }
 
+/** @brief use the hidapi library to write a USBHID packet
+ *  @param handle hidapi internal handle returned from buddy_init
+ *  @param buffer pointer to OUT USBHID packet
+ *  @param length number of the bytes specified by the pointer buffer
+ *  @return -1 on failure, 0 on success. 
+ */
 int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 {
 	static int count = 0;
@@ -275,6 +313,12 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 	return BUDDY_ERROR_CODE_OK;
 }
 
+/** @brief use the hidapi library to read a USBHID packet
+ *  @param handle hidapi internal handle returned from buddy_init
+ *  @param buffer pointer to location to store the IN USBHID packet
+ *  @param length number of bytes to read in
+ *  @return -1 on failure, 0 on success. 
+ */
 int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 {
 	int res;
@@ -301,6 +345,13 @@ int buddy_empty(hid_device *handle)
     return BUDDY_ERROR_CODE_OK;
 }
 
+/** @brief 
+*   @param hidapi handle pointer
+*   @param pointer to general_packet_t structure with DAC values to be sent
+*	@param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+*   @param type enum of type APP_CODE specific to the send operation requested
+*   @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+*/
 int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool streaming, uint8_t type)
 {
 	int err_code;
@@ -332,6 +383,11 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 
 int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming)
 {
+	return buddy_read_generic_noblock(handle, packet, streaming, BUDDY_WAIT_LONGEST);
+}
+
+int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout)
+{
 	static int decode_status = CODEC_STATUS_FULL;
 	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int err_code;
@@ -347,17 +403,24 @@ int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool stream
 
 	err_code = BUDDY_ERROR_CODE_OK;
 	if ((!streaming) || (decode_status == CODEC_STATUS_FULL)) {
+		int res;
+		clock_t start_time;
+
 		res = 0;
+		start_time = clock();
 		while (res == 0) {
+			if (((clock() - start_time) / (CLOCKS_PER_SEC / 1000)) >= timeout) {
+				return BUDDY_ERROR_CODE_TIMEOUT;
+			}
+
 			res = buddy_read_packet(handle, in_buf, MAX_IN_SIZE);
 
 			if (res < 0) {
-				critical(("buddy_read_adc: could not buddy_read_packet\n"));
-				//debugf("res < 0: failed on buddy_read_packet\n");
-				return -1;
+				critical(("buddy_read_generic_noblock: could not buddy_read_packet\n"));
+				return BUDDY_ERROR_CODE_GENERAL;
 			}
 		}
-
+		
 		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
 			// remote data packet
 			codec_byte_offset = 0;
@@ -394,7 +457,7 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (_chan_enable[i]) {
-			printf("buddy_send_pwm(): packet->channels[%d] = %d\n", i, packet->channels[i]);
+			//printf("buddy_send_pwm(): packet->channels[%d] = %d\n", i, packet->channels[i]);
 
 			switch (driver_ctx.general.resolution) {
 				case RESOLUTION_CTRL_SUPER:
@@ -465,6 +528,13 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 	return buddy_send_generic(handle, packet, streaming, APP_CODE_PWM);
 }
 
+/** @brief encodes the packet using codec and sends either immediately or if using
+*			streaming then waits for codec buffer to be full before sending.
+*   @param hidapi handle pointer
+*   @param pointer to general_packet_t structure with DAC values to be sent
+*	@param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+*   @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+*/
 int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 {
 	return buddy_send_generic(handle, packet, streaming, APP_CODE_DAC);
@@ -472,16 +542,64 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 
 int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	//printf("buddy_read_counter() entered\n");
 	return buddy_read_generic(handle, packet, streaming);
 }
 
+/** @brief if streaming mode is on then a packet is decoded from the current frame, if
+*			the frame buffer is empty then a new HID IN packet is received and decoded.
+*   @param hidapi handle pointer
+*   @param pointer to general_packet_t structure with ADC values to be received
+*	@param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+*   @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+*/
 int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 {
-	//printf("buddy_read_adc() entered\n");
 	return buddy_read_generic(handle, packet, streaming);
 }
 
+int buddy_read_adc_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout)
+{
+	return buddy_read_generic_noblock(handle, packet, streaming, timeout);
+}
+
+/** @brief empty the system USB HID IN report buffer.  This action must be performed
+ *         before immediate reads as the buffer is likely stuffed with the continuous
+ *		   stream of previous acquisition
+ *  @todo (consider moving this logic internal not invoked by user).
+ *  @param handle hidapi internal handle returned from buddy_init
+ *  @return -1 on failure, 0 on success. 
+ */
+int buddy_clear(hid_device *handle)
+{
+	int res;
+	uint8_t buffer[MAX_IN_SIZE] = { 0 };
+	size_t read_length;
+
+	read_length = (MAX_IN_SIZE - 1);
+	while (1) {
+		res = hid_read(handle, buffer, read_length);
+
+		if (res > 0) {
+			// get next buffer repot
+			continue;
+		}
+
+		if (res == -1) {
+			// error
+			return -1;
+		}
+
+		if (res == 0) {
+			// no more buffer reports, stop.
+			return 0;
+		}
+	}
+}
+
+/** @brief writes the bytes that remain in the codec buffer.  This needs to be performed
+*		    on the last write to prevent stagnant data remaining in the codec buffer.
+*   @param BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+*/
 int buddy_flush(hid_device *handle)
 {
 	if (codec_byte_offset) {
@@ -508,6 +626,10 @@ int buddy_flush(hid_device *handle)
 	return BUDDY_ERROR_CODE_OK;
 }
 
+/** @brief returns the number of active channels by looking at the channel_mask
+*			and counting them.
+*   @param number of channels activated in the current request
+*/
 int buddy_count_channels(uint8_t chan_mask)
 {
 	int i;
@@ -522,6 +644,16 @@ int buddy_count_channels(uint8_t chan_mask)
 	return adc_channel_count;
 }
 
+/** @brief configure the Buddy device
+ *	@param general pointer to ctrl_general_t structure describing the
+ *			operation (ADC/DAC), channels, resolution, etc.
+ *	@param runtime pointer to ctrl_runtime_t structure describing the
+ *			register settings for the ADC and DAC device.
+ *  @param timing pointer to ctrl_timing_t structure desribing the
+ *			sample period and averaging.
+ *  @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
+// EXPORT
 int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing)
 {
 	char buffer[128];
@@ -529,21 +661,16 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	int j;
     uint8_t resp_type;
 	int8_t err_code;
+
 	buddy_cfg_reg_t cfg_regs[NUMBER_CFG_REG_ENTRIES] = {
 		{
-		  	.type_indic = CTRL_RUNTIME,
-		  	.record_cfg = runtime,
-		  	.record_len = sizeof(ctrl_runtime_t),
+		  	CTRL_RUNTIME, (uint8_t *) runtime, sizeof(ctrl_runtime_t),
 		},
 		{
-			.type_indic = CTRL_TIMING,
-			.record_cfg = timing,
-			.record_len = sizeof(ctrl_timing_t),
+			CTRL_TIMING, (uint8_t *) timing, sizeof(ctrl_timing_t),
 		},
 		{
-			.type_indic = CTRL_GENERAL,
-			.record_cfg = general,
-			.record_len = sizeof(ctrl_general_t),
+			CTRL_GENERAL, (uint8_t *) general, sizeof(ctrl_general_t),
 		}
 	};
 
@@ -700,6 +827,17 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer
 	return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 }
 
+int buddy_reset_device(hid_device *handle)
+{
+	return buddy_write_raw(handle, APP_CODE_RESET, 0x00, (uint8_t *) NULL, 0);
+}
+
+/** @brief configure the Buddy device
+ *  @param handle hidapi internal handle returned from buddy_init
+ *  @param fw_info pointer firmware_info_t structure that will be filled with
+ *			firmware device info
+ *  @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
@@ -725,10 +863,15 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 		if (buddy_write_raw(handle, APP_CODE_INFO, 0x00, (uint8_t *)NULL, 0) == BUDDY_ERROR_CODE_OK) {
 			short_sleep(100);
 
+<<<<<<< HEAD
             err_code = buddy_get_response(handle, &resp_type, (uint8_t *) fw_info, sizeof(firmware_info_t));
 
             if ((resp_type == BUDDY_ERROR_CODE_OK) && (err_code == BUDDY_RESPONSE_DRV_TYPE_DATA)) {  
                 // adjust for endian conversion
+=======
+			if (buddy_get_response(handle, (uint8_t *) fw_info, sizeof(firmware_info_t)) == BUDDY_ERROR_CODE_OK) {
+				// adjust for endian conversion
+>>>>>>> master
 				fw_info->flash_datetime = swap_uint32(fw_info->flash_datetime);
 				fw_info->serial = swap_uint32(fw_info->serial);
 				
@@ -746,6 +889,14 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 	return BUDDY_ERROR_CODE_INVALID;
 }
 
+/** @brief initialize the USB HID connection and get the remote firmware device
+ *			info and capabilities.
+ *  @param hid_info pointer to buddy_hid_info_t structure that will be filled
+ *			with USB HID info (mfr name, serial #, etc.)
+ *	@param fw_info pointer firmware_info_t structure that will be filled with
+ *			firmware device info
+ *  @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 {
 	hid_device* handle;

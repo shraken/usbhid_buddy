@@ -1,0 +1,112 @@
+language: cpp
+dist: trusty
+sudo: true
+
+compiler:
+  - gcc
+
+jobs:
+  include:
+    - stage: "software libbuddy library compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+
+      before_script:
+        - cd lib/libbuddy
+        - mkdir -p build
+        - cd build
+        - cmake ..
+
+      script:
+        - make
+
+    - stage: "software C example compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+
+      before_script:
+        - cd examples/C/simple
+        - mkdir -p build
+        - cd build
+        - cmake ..
+
+      script:
+        - make
+
+    - stage: "baremetal gboot bootloader firmware compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+            - sdcc
+            - srecord
+
+      before_script:
+        - sudo pip install intelhex
+      
+      script:
+        - cd bootloader/gboot
+        - make FLASH_SIZE=64 VARIANT=F38x
+
+    - stage: "gflash bootloader host utility compile"
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+            - sdcc
+            - srecord
+
+      before_script:
+        - cd bootloader/gflash
+        - mkdir -p build
+        - cd build
+        - cmake ..
+      
+      script:
+        - make
+
+    - stage: "unit tests"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - cmake
+            - libudev-dev
+            - libusb-1.0-0-dev
+            - sdcc
+            - srecord
+      
+      before_install:
+        - pip install --user pyyaml cpp-coveralls
+        
+      before_script:
+        - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
+        - sudo ln -s /usr/bin/g++-6 /usr/local/bin/g++
+        - cd tests/
+        - mkdir -p build
+        - cd build
+        - cmake ..
+
+      script:
+        - gcc -v && g++ -v && cmake --version
+        - make
+        - ./testLibBuddy
+
+      after_success:
+        - cd ../../
+        - coveralls -i lib/libbuddy -e lib/libbuddy/bindings --gcov-options '\-lp'
