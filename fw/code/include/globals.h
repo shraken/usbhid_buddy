@@ -8,6 +8,9 @@
 #include <stdint.h>
 #include <buddy.h>
 
+// I2C SCL clock frequency (in units of Hz)
+#define SMB_FREQUENCY          100000
+
 typedef struct _buddy_ctx_t {
 	uint8_t daq_state;
 	uint8_t m_ctrl_mode;
@@ -20,17 +23,11 @@ typedef struct _buddy_ctx_t {
 	uint8_t m_data_size;
 	uint8_t m_chan_number;
 	uint8_t m_chan_enable[BUDDY_CHAN_LENGTH];
+
+    uint8_t m_expander_type;
+	uint8_t m_expander_mode;
+	uint8_t m_expander_pin_state;
 } buddy_ctx_t;
-
-// error code used globally for all routines
-enum _config_error
-{
-    E_SUCCESS = 0,
-    E_GENERAL_FAIL = -1,
-    E_INDEX_OUT_BOUND = -2
-};
-
-typedef enum _config_error error_t;
 
 //#define SYSCLK        12000000/1         // SYSCLK frequency in Hz
 

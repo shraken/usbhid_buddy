@@ -45,7 +45,7 @@ extern buddy_ctx_t buddy_ctx;
 
 /** firmware info structure that identifies serial, version,
  *   and hardware specific (DAC & expander) types. */
-code firmware_info_t fw_info = {
+__code firmware_info_t fw_info = {
 	BUDDY_FW_INFO_SERIAL,
 	BUDDY_FW_INFO_DATETIME,
 	BUDDY_FW_FWREV_INFO_MAJOR,
@@ -93,12 +93,12 @@ void print_device_info(void)
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");
     printf("|____/ \__,_|\__,_|\__,_|\__, |  \r\n");
     printf("                         |___/   \r\n");
-		printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
-				fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
-		printf("   serial id: %lu (%08lx)\r\n", 
-				fw_info.serial, fw_info.serial);
-		printf("   build datetime: %lu (%08lx)\r\n", 
-				fw_info.flash_datetime, fw_info.flash_datetime);
+	printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
+	    fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
+	printf("   serial id: %lu (%08lx)\r\n", 
+		fw_info.serial, fw_info.serial);
+	printf("   build datetime: %lu (%08lx)\r\n", 
+		fw_info.flash_datetime, fw_info.flash_datetime);
 	
 	switch (fw_info.type_dac) {
 		case FIRMWARE_INFO_DAC_TYPE_TLV5630:
@@ -132,7 +132,7 @@ void contexts_init(void)
 {
 	buddy_ctx.daq_state         = GENERAL_CTRL_NONE;
 	buddy_ctx.m_ctrl_mode       = MODE_CTRL_IMMEDIATE;
-	buddy_ctx.m_adc_mode          = RUNTIME_ADC_MODE_SINGLE_ENDED;
+	buddy_ctx.m_adc_mode        = RUNTIME_ADC_MODE_SINGLE_ENDED;
 	buddy_ctx.m_pwm_mode        = RUNTIME_PWM_MODE_FREQUENCY;
 	buddy_ctx.m_pwm_timebase    = RUNTIME_PWM_TIMEBASE_SYSCLK;
 	buddy_ctx.m_counter_control = RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH;

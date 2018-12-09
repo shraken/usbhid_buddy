@@ -9,18 +9,18 @@
 #include <process.h>
 #include <io.h>
 
-uint8_t adc_channel_index = 0;
+uint8_t __data adc_channel_index = 0;
 uint8_t adc_channel_count = 0;
 uint8_t adc_int_dec = 1;
 uint8_t adc_int_dec_max = 1;
-int16_t adc_results[MAX_ANALOG_INPUTS];            
+int16_t __data adc_results[MAX_ANALOG_INPUTS];            
 
 uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS] = { 0 };
 uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS] = { 0 };
 
 uint16_t adc_timer_count;
 
-uint8_t adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
+uint8_t __code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 	ADC_P2_0,	// ADC0_IN
 	ADC_P2_1,	// ADC1_IN
 	ADC_P2_2,	// ADC2_IN

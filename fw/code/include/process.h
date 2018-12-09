@@ -15,20 +15,22 @@
 #include <stdint.h>
 #include <adc.h>
 
+#include "compiler_defs.h"
+
 extern bit SendPacketBusy;
 extern uint8_t timer2_flag;
 extern unsigned char OUT_PACKET[];
 extern unsigned char *P_IN_PACKET_SEND;
 
-extern code firmware_info_t fw_info;
+extern __code firmware_info_t fw_info;
 
-extern int16_t data adc_results[MAX_ANALOG_INPUTS];
-extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
+extern int16_t __data adc_results[MAX_ANALOG_INPUTS];
+extern uint8_t __code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
 extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
 extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
 extern uint8_t adc_channel_count;
 extern uint8_t adc_int_dec_max;
-extern uint8_t data adc_channel_index;
+extern uint8_t __data adc_channel_index;
 extern uint8_t adc_int_dec;
 extern uint16_t adc_timer_count;
 

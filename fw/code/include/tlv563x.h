@@ -18,7 +18,7 @@
 #define DEFAULT_TLV563X_CTRL0_REG 0
 #define DEFAULT_TLV563X_CTRL1_REG 0
 
-extern code firmware_info_t fw_info;
+extern __code firmware_info_t fw_info;
 
 extern uint8_t SPI_Data_Rx_Array[];
 extern uint8_t SPI_Data_Tx_Array[];

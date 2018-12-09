@@ -1,6 +1,6 @@
 CC = sdcc
-INCLUDE_DIRS = -Iinc -I../lib/libbuddy
-SOURCE_DIR = src
+INCLUDE_DIRS = -Icode/include -I../lib/libbuddy
+SOURCE_DIR = code/source
 BUILD_DIR = build
 EXECUTABLE = buddy
 
