@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <compiler_defs.h>
+#include <c8051f380.h>
+
 typedef enum _I2C_ERROR_CODE {
 	I2C_ERROR_CODE_OK = 0,
 	I2C_ERROR_CODE_GENERAL_ERROR = -1,

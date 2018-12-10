@@ -32,6 +32,7 @@ void timer3_init(void);
 void timer2_init (void);
 void timer2_set_period(uint32_t period);
 
-void timer_isr (void) __interrupt (INTERRUPT_TIMER0);
+void timer2_isr (void) __interrupt (INTERRUPT_TIMER2);
+void timer3_isr (void) __interrupt (INTERRUPT_TIMER3);
 
 #endif

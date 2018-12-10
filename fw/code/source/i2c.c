@@ -126,7 +126,7 @@ int8_t i2c_init(uint8_t i2c_addr) {
 /**
  * @brief i2c interrupt
  */
-void i2c_isr(void) interrupt 7 {
+void i2c_isr (void) __interrupt (INTERRUPT_SMBUS0) {
    bit FAIL = 0;                       // Used by the ISR to flag failed
                                        // transfers
 
@@ -136,8 +136,7 @@ void i2c_isr(void) interrupt 7 {
 
    static bit SEND_START = 0;          // Send a start
 
-   switch (SMB0CN & 0xF0)              // Status vector
-   {
+   switch (SMB0CN & 0xF0) {
       // Master Transmitter/Receiver: START condition transmitted.
       case SMB_MTSTA:
          SMB0DAT = TARGET;             // Load address of the target slave

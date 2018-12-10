@@ -199,36 +199,31 @@ void timer2_set_period(uint32_t period)
 //-----------------------------------------------------------------------------
 // Interrupt Service Routines
 //-----------------------------------------------------------------------------
-void timer_isr (void) __interrupt (INTERRUPT_TIMER0)
+
+void timer2_isr (void) __interrupt (INTERRUPT_TIMER2)
 {
-	TH0 = timer0_high_set;
-	TL0 = timer0_low_set;
-
-	timer0_flag = 1;
-
+    TF2H = 0;
+	timer2_flag = 1;
+	
 	if (buddy_ctx.daq_state == GENERAL_CTRL_ADC_ENABLE) {
-		//P3 = P3 & ~0x40;
-		//P3 = P3 | 0x40;
-		
-        //printf("timer_isr invoked for ADC\r\n");
-
 		if (adc_channel_index == (adc_channel_count - 1)) {
 			AMX0P = adc_mux_tbl_n[0];
 			AMX0N = adc_mux_tbl_p[0];
-        } else {
+        }
+        else {
             AMX0P = adc_mux_tbl_n[adc_channel_index + 1];
 		    AMX0N = adc_mux_tbl_p[adc_channel_index + 1];
-	    }
+		}
     } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
-	    build_counter_packet();
+		build_counter_packet();
     }
 }
 
-void timer3_isr(void) interrupt 14
+void timer3_isr (void) __interrupt (INTERRUPT_TIMER3)
 {
-   SMB0CF &= ~0x80;                    // Disable SMBus
-   SMB0CF |= 0x80;                     // Re-enable SMBus
-   TMR3CN &= ~0x80;                    // Clear Timer3 interrupt-pending flag
-   STA = 0;
-   SMB_BUSY = 0;                       // Free SMBus
+    SMB0CF &= ~0x80;                    // Disable SMBus
+    SMB0CF |= 0x80;                     // Re-enable SMBus
+    TMR3CN &= ~0x80;                    // Clear Timer3 interrupt-pending flag
+    STA = 0;
+    SMB_BUSY = 0;                       // Free SMBus
 }

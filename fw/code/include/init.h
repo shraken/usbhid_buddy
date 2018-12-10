@@ -14,6 +14,20 @@
 #include <c8051f380.h>
 #include <globals.h>
 
+// USB clock selections (SFR CLKSEL)
+#define USB_4X_CLOCK       0x00        // Select 4x clock multiplier, for USB
+#define USB_INT_OSC_DIV_2  0x10        // Full Speed
+#define USB_EXT_OSC        0x20
+#define USB_EXT_OSC_DIV_2  0x30
+#define USB_EXT_OSC_DIV_3  0x40
+#define USB_EXT_OSC_DIV_4  0x50
+
+// System clock selections (SFR CLKSEL)
+#define SYS_INT_OSC        0x00        // Select to use internal oscillator
+#define SYS_EXT_OSC        0x01        // Select to use an external oscillator
+#define SYS_4X_DIV_2       0x02
+#define SYS_4x             0x03
+
 void system_init(void);
 void sysclk_init(void);
 void port_init(void);
