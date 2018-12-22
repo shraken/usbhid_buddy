@@ -1,23 +1,22 @@
+/**
+ * @author Nicholas L Shrake
+ * @date 12-21-2018
+ * @brief structures, enums and defines used by Buddy DAQ software and firmware
+ * 
+ */
 #ifndef  _BUDDY_H_
 #define  _BUDDY_H_
 
 #include <stdint.h>
-//#include <stdbool.h>
+#include <stdbool.h>
+#include <stdio.h>
 
-/*
-#if defined(C8051)
-#include <globals.h>
-#endif
-*/
+// C8051 microcontroller System Clock Frequency
+#define BUDDY_SYSCLK     48000000
 
-// C8051 System Clock Frequency
-#define SYSCLK     48000000
-
-#define MAX_REPORT_SIZE 63
+#define MAX_REPORT_SIZE 64
 #define MAX_OUT_SIZE MAX_REPORT_SIZE
 #define MAX_IN_SIZE MAX_REPORT_SIZE
-
-#define NUM_DAC_CHANNELS 8
 
 #define BUDDY_OUT_DATA_ID 0x01
 #define BUDDY_IN_DATA_ID  0x02
@@ -27,24 +26,7 @@
 #define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type
 #define BUDDY_APP_VALUE_OFFSET 3   // CTRL (Control) Value
 
-// ADC0 start-of-conversion source is overflow of Timer 2
-#define DEFAULT_ADC0CN 0x02
-
-// 1x gain, VDD used as voltage reference, temperature sensor ON,
-// internal bias generator on, on-chip reference buffer on.
-#define DEFAULT_REF0CN 0x8F
-
-// ADC0 SAR conversion clock period bits
-// Data is right justified
-#define DEFAULT_ADC0CF (((SYSCLK/8000000)-1)<<3)
-
-#define BUDDY_BIT_SIZE 8
 #define BUDDY_MAX_COUNTER 0x7F
-
-//typedef int bool;
-#define bool int
-#define false 0
-#define true 1
 
 /**
  * \enum APP_CODE 
@@ -428,6 +410,7 @@ typedef struct _ctrl_timing_t {
 	uint8_t averaging;
 } ctrl_timing_t;
 
+#define BUDDY_MAX_NUM_CHANNELS 8
 /**
  * \struct general_packet_t
  * \brief General-purpose encoder packet type.  Channel values
@@ -435,7 +418,7 @@ typedef struct _ctrl_timing_t {
  *				 they are are encoded into a frame.
  */
 typedef struct _general_packet_t {
-	int32_t channels[NUM_DAC_CHANNELS];
+	int32_t channels[BUDDY_MAX_NUM_CHANNELS];
 } general_packet_t;
 
 #endif

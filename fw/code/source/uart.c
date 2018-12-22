@@ -15,7 +15,7 @@ void uart_init (void)
                                        //        ninth bits are zeros
                                        //        clear RI0 and TI0 bits
 
-   TH1 = -(SYSCLK/BAUDRATE/2);
+   TH1 = -(BUDDY_SYSCLK/BAUDRATE/2);
    CKCON &= ~0x0B;                     // T1M = 1; SCA1:0 = xx
    CKCON |=  0x08;
 

@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include <support.h>
+
+#include "support.h"
 
 /** @brief swap the endian byte order of a unsigned 16-bit integer
  *  @param val unsigned 16-bit integer to be swapped
@@ -45,9 +46,13 @@ int32_t swap_int32(int32_t val)
 */
 void short_sleep(int sleep_msec)
 {
+#if !defined(__SDCC)
+
 #ifdef WIN32
 	Sleep(sleep_msec);
 #else
 	usleep(sleep_msec * 1000);
+#endif
+
 #endif
 }

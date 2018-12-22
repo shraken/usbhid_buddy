@@ -4,7 +4,6 @@
 #include <math.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
 #include <F3xx_USB0_ReportHandler.h>
-#include <buddy.h>
 #include <process.h>
 #include <support.h>
 #include <timers.h>

@@ -78,7 +78,7 @@ void spi_init(void)
    SPI0CN    = 0x0D;                   // 4-wire Single Master, SPI enabled
 
    // SPI clock frequency equation from the datasheet
-   SPI0CKR   = (SYSCLK/(2*SPI_CLOCK))-1;
+   SPI0CKR   = (BUDDY_SYSCLK/(2*SPI_CLOCK))-1;
 
    ESPI0 = 1;                          // Enable SPI interrupts
 }

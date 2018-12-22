@@ -10,7 +10,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <c8051f3xx.h>
-#include <buddy.h>
+
+#include "buddy_common.h"
+#include "codec.h"
+
 #include <tlv563x.h>
 #include <utility.h>
 

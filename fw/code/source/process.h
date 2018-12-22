@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <adc.h>
+#include "buddy_common.h"
 
 extern bit SendPacketBusy;
 extern uint8_t timer2_flag;

@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <c8051f3xx.h>
 #include <timers.h>
-#include <buddy.h>
 #include <globals.h>
 #include <process.h>
 #include <adc.h>
@@ -40,7 +39,7 @@ void timer0_init(void)
 // Make sure the Timer can produce the appropriate frequency in 8-bit mode
 // Supported SMBus Frequencies range from 10kHz to 100kHz.  The CKCON register
 // settings may need to change for frequencies outside this range.
-#if ((SYSCLK/SMB_FREQUENCY/3) < 255)
+#if ((BUDDY_SYSCLK/SMB_FREQUENCY/3) < 255)
    #define SCALE 1
       CKCON |= 0x04;                   // Timer0 clock source = SYSCLK
 #elif ((SYSCLK/SMB_FREQUENCY/4/3) < 255)
@@ -55,7 +54,7 @@ void timer0_init(void)
    TMOD |= 0x02;                        // Timer0 in 8-bit auto-reload mode
 
    // Timer0 configured to overflow at 1/3 the rate defined by SMB_FREQUENCY
-   TH0 = -(SYSCLK/SMB_FREQUENCY/SCALE/3);
+   TH0 = -(BUDDY_SYSCLK/SMB_FREQUENCY/SCALE/3);
 
    TL0 = TH1;                          // Init Timer0
 
@@ -80,7 +79,7 @@ void timer3_init(void)
 	// 1/.025 = 40
 	
 	// @todo: sysclk isn't 12Mhz, its 48Mhz fix.
-	TMR3RL = -(SYSCLK/12/40);           
+	TMR3RL = -(BUDDY_SYSCLK/12/40);           
 	TMR3 = TMR3RL;                      
               
 	// Timer3 interrupt enable
@@ -152,9 +151,9 @@ void timer2_set_period(uint32_t period)
 		
 	// set Timer0 clock base and 16-bit timer comparator value
 	
-	if ((period < (((1.0 /SYSCLK) * 0xFFFF) / 1e-9)) &&
-	    (period > (((1.0 /SYSCLK) * 0x0001) / 1e-9))) {
-		timer_set = 0xFFFF - (period * 1e-9) * SYSCLK;
+	if ((period < (((1.0 /BUDDY_SYSCLK) * 0xFFFF) / 1e-9)) &&
+	    (period > (((1.0 /BUDDY_SYSCLK) * 0x0001) / 1e-9))) {
+		timer_set = 0xFFFF - (period * 1e-9) * BUDDY_SYSCLK;
 		timer2_high_set = ((timer_set & 0xFF00) >> 8);
 		timer2_low_set = (timer_set & 0x00FF);
 		debug(("Timer2 set region 1 with %u\r\n", timer_set));
@@ -162,9 +161,9 @@ void timer2_set_period(uint32_t period)
         // SYSCLK is timebase
         // Timer2 low byte and Timer high byte clock sets both use SYSCLK not TMR2CN
         CKCON |= 0x30; 
-	} else if ((period < (((1.0 /(SYSCLK/12)) * 0xFFFF) / 1e-9)) &&
-	    (period > (((1.0 /(SYSCLK/12)) * 0x0001) / 1e-9))) {
-		timer_set = 0xFFFF - (period * 1e-9) * (SYSCLK/12);
+	} else if ((period < (((1.0 /(BUDDY_SYSCLK/12)) * 0xFFFF) / 1e-9)) &&
+	    (period > (((1.0 /(BUDDY_SYSCLK/12)) * 0x0001) / 1e-9))) {
+		timer_set = 0xFFFF - (period * 1e-9) * (BUDDY_SYSCLK/12);
 		timer2_high_set = ((timer_set & 0xFF00) >> 8);
 		timer2_low_set = (timer_set & 0x00FF);
 		debug(("Timer2 set region 3 with %u\r\n", timer_set));

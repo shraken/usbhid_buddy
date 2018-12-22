@@ -8,8 +8,11 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <wchar.h>
-#include "buddy.h"
+
+#include "utility.h"
 #include "hidapi.h"
+#include "buddy.h"
+
 
 //#define LABVIEW_BUILD _USRDLL
 
@@ -58,13 +61,15 @@ typedef struct _buddy_cfg_reg_t {
 	uint8_t record_len;	
 } buddy_cfg_reg_t;
 
+typedef enum _BUDDY_RESPONSE_DRV_TYPE {
+    BUDDY_RESPONSE_DRV_TYPE_INTERNAL = 0,
+    BUDDY_RESPONSE_DRV_TYPE_STATUS,
+    BUDDY_RESPONSE_DRV_TYPE_DATA
+} BUDDY_RESPONSE_DRV_TYPE;
+
 #define NUMBER_CFG_REG_ENTRIES 3
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
-
-void print_fw_info_dac_types(void);
-void print_buffer(uint8_t *buffer, uint8_t length);
-void print_buffer_simple(uint16_t *buffer);
 
 int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length);
 int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length);
@@ -79,21 +84,19 @@ BUDDY_EXPORT int buddy_read_adc(hid_device *handle, general_packet_t *packet, bo
 BUDDY_EXPORT int buddy_read_adc_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
 BUDDY_EXPORT int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming);
 BUDDY_EXPORT int buddy_flush(hid_device *handle);
-BUDDY_EXPORT int buddy_trigger(hid_device *handle);
 BUDDY_EXPORT int buddy_clear(hid_device *handle);
+
+int buddy_empty(hid_device *handle);
+
+int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length);
 
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info);
 int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *raw, uint8_t length);
 int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool streaming, uint8_t type);
-int buddy_count_channels(uint8_t chan_mask);
-int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length);
 
 int buddy_reset_device(hid_device *handle);
 int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming);
 int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
 
-void reset_codec(void);
-int encode(uint8_t *frame, general_packet_t *packet);
-int decode(uint8_t *frame, general_packet_t *packet);
 					   
 #endif

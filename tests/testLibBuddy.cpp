@@ -14,7 +14,6 @@ extern "C" {
 #include <stdio.h>
 #include <sys/timeb.h> 
 
-extern uint8_t encode_count;
 extern uint8_t decode_count;
 extern uint8_t codec_byte_offset;
 
@@ -79,7 +78,7 @@ TEST_CASE( "buddy codec has it's state and offsets reset", "" ) {
     reset_codec();
 
     REQUIRE( codec_byte_offset == 0 );
-    REQUIRE( encode_count == 0 );
+    REQUIRE( codec_get_encode_count() == 0 );
     REQUIRE( decode_count == 0 );
 }
 

@@ -17,7 +17,8 @@
 #include <stdint.h>
 #include <globals.h>
 #include <adc.h>
-#include <buddy.h>
+
+#include "buddy_common.h"
 
 // Timer 2
 #define TIMER2_LOW_PERIOD 21		    // in nsec, 21 nsec

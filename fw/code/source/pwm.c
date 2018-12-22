@@ -3,7 +3,7 @@
 #include <C8051F3xx.h>
 #include <pwm.h>
 
-static uint32_t pwm_timebase = SYSCLK;
+static uint32_t pwm_timebase = BUDDY_SYSCLK;
 static uint32_t pwm_cex[NUMBER_PCA_CHANNELS];
 static uint8_t pwm_chan_mask;
 static uint8_t pwm_chan_enable[BUDDY_CHAN_LENGTH] = { 0 };
@@ -198,17 +198,17 @@ int8_t pwm_set_timebase(uint8_t value)
 		switch (value) {
 			case RUNTIME_PWM_TIMEBASE_SYSCLK:
 				PCA0MD |= 0x08;
-				pwm_timebase = SYSCLK;
+				pwm_timebase = BUDDY_SYSCLK;
 				break;
 			
 			case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_4:
 				PCA0MD |= 0x02;
-				pwm_timebase = (SYSCLK / 4);
+				pwm_timebase = (BUDDY_SYSCLK / 4);
 				break;
 			
 			case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12:
 				PCA0MD |= 0x00;
-				pwm_timebase = (SYSCLK / 12);
+				pwm_timebase = (BUDDY_SYSCLK / 12);
 				break;
 			
 			case RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW:

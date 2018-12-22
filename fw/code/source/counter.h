@@ -12,8 +12,8 @@
 #ifndef  _COUNTER_H
 #define  _COUNTER_H
 
-#include <buddy.h>
 #include <stdint.h>
+#include "buddy_common.h"
 #include <utility.h>
 
 #define RUNTIME_DEFAULT_COUNTER_CONTROL \

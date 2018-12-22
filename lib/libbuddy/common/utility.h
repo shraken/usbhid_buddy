@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 // enable to write debug messages to output file
-#define DEBUG_FILE
+// #define DEBUG_FILE
 
 // things we want to log to file
 #if defined(DEBUG_FILE)

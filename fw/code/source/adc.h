@@ -12,10 +12,21 @@
 #define  _ADC_H
 
 #include <stdint.h>
-#include <buddy.h>
+#include "buddy_common.h"
 
 #define ADC_BIT_SIZE 10
 #define MAX_ANALOG_INPUTS 8
+
+// ADC0 start-of-conversion source is overflow of Timer 2
+#define DEFAULT_ADC0CN 0x02
+
+// 1x gain, VDD used as voltage reference, temperature sensor ON,
+// internal bias generator on, on-chip reference buffer on.
+#define DEFAULT_REF0CN 0x8F
+
+// ADC0 SAR conversion clock period bits
+// Data is right justified
+#define DEFAULT_ADC0CF (((BUDDY_SYSCLK/8000000)-1)<<3)
 
 // CTRL0 register bits, pg. 12
 typedef enum _ADC_REF0CN_BITMASK {

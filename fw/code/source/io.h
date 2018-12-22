@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <buddy.h>
 #include <adc.h>
 #include <counter.h>
 #include <pwm.h>
@@ -14,6 +13,7 @@
 #include <c8051f3xx.h>
 
 #include <globals.h>
+#include "buddy_common.h"
 
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata IN_PACKET[];

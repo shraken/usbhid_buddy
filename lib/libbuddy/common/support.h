@@ -1,13 +1,17 @@
-#ifndef _SUPPORT
-#define _SUPPORT
+#ifndef _BUDDY_SUPPORT
+#define _BUDDY_SUPPORT
 
 #include <stdint.h>
+
+#if !defined(__SDCC)
 
 // Headers needed for sleeping.
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
+#endif
+
 #endif
 
 void short_sleep(int sleep_msec);

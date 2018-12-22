@@ -13,7 +13,8 @@
 #define _PWM_H
 
 #include <stdint.h>
-#include <buddy.h>
+
+#include "buddy_common.h"
 #include <utility.h>
 
 #define NUMBER_PCA_CHANNELS 5
