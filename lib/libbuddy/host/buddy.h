@@ -9,10 +9,10 @@
 #include <limits.h>
 #include <wchar.h>
 
-#include "utility.h"
 #include "hidapi.h"
-#include "buddy.h"
-
+#include "buddy_common.h"
+#include "utility.h"
+#include "support.h"
 
 //#define LABVIEW_BUILD _USRDLL
 

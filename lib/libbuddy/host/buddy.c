@@ -17,8 +17,6 @@
 #include "codec.h"
 #include "support.h"
 
-static uint8_t _chan_number = 0;
-
 static uint8_t out_hold_buf[MAX_OUT_SIZE] = { 0 };
 static buddy_driver_context driver_ctx = { 0 };
 
@@ -215,7 +213,7 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 		}
 
         codec_set_encode_count(0);
-		codec_byte_offset = 0;
+        codec_set_offset_count(0);
 
 		return BUDDY_ERROR_CODE_OK;
 	} else if (err_code == CODEC_STATUS_CONTINUE) {
@@ -268,7 +266,7 @@ int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, boo
 		
 		if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
 			// remote data packet
-			codec_byte_offset = 0;
+            codec_set_offset_count(0);
 			decode_status = codec_decode(in_buf, packet);
 		} else if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_STATUS) {
 			// remote error status packet -- extract error code
@@ -301,7 +299,7 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 	// regardless of the resolution value
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (_chan_enable[i]) {
+		if (codec_is_channel_active(i)) {
 			//printf("buddy_send_pwm(): packet->channels[%d] = %d\n", i, packet->channels[i]);
 
 			switch (driver_ctx.general.resolution) {
@@ -447,24 +445,24 @@ int buddy_clear(hid_device *handle)
 */
 int buddy_flush(hid_device *handle)
 {
-	if (codec_byte_offset) {
-		if (general->function == GENERAL_CTRL_DAC_ENABLE) {
+	if (codec_get_offset_count()) {
+		if (driver_ctx.general.function == GENERAL_CTRL_DAC_ENABLE) {
 			out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_DAC;
-		} else if (general->function == GENERAL_CTRL_PWM_ENABLE) {
+		} else if (driver_ctx.general.function == GENERAL_CTRL_PWM_ENABLE) {
 			out_hold_buf[BUDDY_APP_CODE_OFFSET] = APP_CODE_PWM;
 		} else {
 			return BUDDY_ERROR_CODE_GENERAL;
 		}
 
 		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
-		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = encode_count;
+		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = codec_get_encode_count();
 
 		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == BUDDY_ERROR_CODE_GENERAL) {
 			critical(("buddy_flush: buddy_write_packet call failed\n"));
 			return BUDDY_ERROR_CODE_GENERAL;
 		}
 
-		codec_byte_offset = 0;
+        codec_set_offset_count(0);
         codec_set_encode_count(0);
 	}
 
@@ -514,36 +512,30 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 
 	switch (general->resolution) {
 		case RESOLUTION_CTRL_SUPER:
-			_data_size = BUDDY_DATA_SIZE_SUPER;
+            codec_set_data_size(BUDDY_DATA_SIZE_SUPER);
 			break;
 
 		case RESOLUTION_CTRL_HIGH:
-			_data_size = BUDDY_DATA_SIZE_HIGH;
+            codec_set_data_size(BUDDY_DATA_SIZE_HIGH);
 			break;
 
 		case RESOLUTION_CTRL_LOW:
-			_data_size = BUDDY_DATA_SIZE_LOW;
+            codec_set_data_size(BUDDY_DATA_SIZE_LOW);
 			break;
 
 		default:
 			return 10;
 	}
-
-	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (general->channel_mask & (1 << i)) {
-			_chan_enable[i] = 1;
-			_chan_number++;
-		} else {
-			_chan_enable[i] = 0;
-		}
-	}
+    
+    // apply codec initialization
+    codec_init(general->channel_mask, general->resolution);
 
 	// if ADC, DAC, or PWM Mode then scale the input sample rate by the number of channels 
 	// so that all channels are sampling at the requested rate.  If counter mode then set
 	// period to user requested value.
 
 	if (!(general->function == GENERAL_CTRL_COUNTER_ENABLE)) {
-        timing->period = timing->period / buddy_count_channels(general->channel_mask);
+        timing->period = timing->period / codec_get_channel_count();
     }
 
 	for (i = 0; i < NUMBER_CFG_REG_ENTRIES; i++) {

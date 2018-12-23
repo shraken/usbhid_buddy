@@ -15,21 +15,19 @@ extern "C" {
 #include <sys/timeb.h> 
 
 extern uint8_t decode_count;
-extern uint8_t codec_byte_offset;
 
 extern uint8_t _resolution_mode;
-extern uint8_t _chan_enable[BUDDY_CHAN_LENGTH];
 extern uint8_t _data_size;
 
 void clear_channels(general_packet_t &packet) {
     for (int i = BUDDY_CHAN_0; i < BUDDY_CHAN_7; i++) {
         packet.channels[i] = 0;
-        _chan_enable[i] = 0;
+        codec_set_channel_active(i, false);
     }
 }
 
 void reset_state(int resolution_mode, int data_size) {
-    codec_byte_offset = 0;
+    codec_set_offset_count(0);
     _resolution_mode = resolution_mode;
     _data_size = data_size;
 }
@@ -77,7 +75,7 @@ TEST_CASE( "time sleep functions keep time and delay properly =", "" ) {
 TEST_CASE( "buddy codec has it's state and offsets reset", "" ) {
     reset_codec();
 
-    REQUIRE( codec_byte_offset == 0 );
+    REQUIRE( codec_get_offset_count() == 0 );
     REQUIRE( codec_get_encode_count() == 0 );
     REQUIRE( decode_count == 0 );
 }
@@ -123,13 +121,13 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
             uint32_t out_value_expect = std::get<3>(item);
 
             packet.channels[BUDDY_CHAN_0] = in_value;
-            _chan_enable[BUDDY_CHAN_0] = 1;
+            codec_set_channel_active(BUDDY_CHAN_0, true);
 
             reset_state(res_mode, data_size);
 
-            int old_codec_byte_offset = codec_byte_offset;
+            int old_codec_byte_offset = codec_get_offset_count();
             REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
-            REQUIRE( codec_byte_offset == (old_codec_byte_offset + data_size) );
+            REQUIRE( codec_get_offset_count() == (old_codec_byte_offset + data_size) );
             
             uint32_t frame_channel_value = 0;
 
@@ -155,7 +153,8 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
             { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, MAX_EXPECTED_PACKET_FILLS / 4 },
         };
 
-        _chan_enable[BUDDY_CHAN_0] = 1; // only activate channel 0
+        // only activate channel 0
+        codec_set_channel_active(BUDDY_CHAN_0, true);
 
         for (const auto &item : expectedResponse) {
             int res_ctrl = std::get<0>(item);
@@ -169,17 +168,17 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
                 REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
 
                 if (res_ctrl == RESOLUTION_CTRL_LOW) {
-                    REQUIRE( codec_byte_offset == (i + 1) );
+                    REQUIRE( codec_get_offset_count() == (i + 1) );
                 } else if (res_ctrl == RESOLUTION_CTRL_HIGH) {
-                    REQUIRE( codec_byte_offset == ((i + 1) * 2) );
+                    REQUIRE( codec_get_offset_count() == ((i + 1) * 2) );
                 } else if (res_ctrl == RESOLUTION_CTRL_SUPER) {
-                    REQUIRE( codec_byte_offset == ((i + 1) * 4) );
+                    REQUIRE( codec_get_offset_count() == ((i + 1) * 4) );
                 }
             }
 
             // final
             REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_FULL );
-            REQUIRE( codec_byte_offset == 0 );
+            REQUIRE( codec_get_offset_count() == 0 );
         }
     }
 
@@ -202,8 +201,8 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
     SECTION( "buddy decode correctly converts for the various resolutions", "" ) {
         clear_channels(packet);
 
-        _chan_enable[BUDDY_CHAN_0] = 1;
-        _chan_enable[BUDDY_CHAN_4] = 1;
+        codec_set_channel_active(BUDDY_CHAN_0, true);
+        codec_set_channel_active(BUDDY_CHAN_4, true);
 
         const uint32_t MAGIC_BUDDY_DECODE_SUPER_VALUE_0 = 0xFFFFFFFF;
         const uint16_t MAGIC_BUDDY_DECODE_HIGH_VALUE_0 = 0xFFFF;
@@ -278,7 +277,8 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
             { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, MAX_EXPECTED_PACKET_FILLS / 4 },
         };
 
-        _chan_enable[BUDDY_CHAN_0] = 1; // only activate channel 0
+        // only activate channel 0
+        codec_set_channel_active(BUDDY_CHAN_0, true);
 
         for (const auto &item : expectedResponse) {
             int res_ctrl = std::get<0>(item);
@@ -294,17 +294,17 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
                 REQUIRE( decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
 
                 if (res_ctrl == RESOLUTION_CTRL_LOW) {
-                    REQUIRE( codec_byte_offset == (i + 1) );
+                    REQUIRE( codec_get_offset_count() == (i + 1) );
                 } else if (res_ctrl == RESOLUTION_CTRL_HIGH) {
-                    REQUIRE( codec_byte_offset == ((i + 1) * 2) );
+                    REQUIRE( codec_get_offset_count() == ((i + 1) * 2) );
                 } else if (res_ctrl == RESOLUTION_CTRL_SUPER) {
-                    REQUIRE( codec_byte_offset == ((i + 1) * 4) );
+                    REQUIRE( codec_get_offset_count() == ((i + 1) * 4) );
                 }
             }
 
             // final
             REQUIRE( decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_FULL );
-            REQUIRE( codec_byte_offset == 0 );
+            REQUIRE( codec_get_offset_count() == 0 );
         }
     }
 

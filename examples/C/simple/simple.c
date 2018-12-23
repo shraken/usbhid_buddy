@@ -1,18 +1,4 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <wchar.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <hidapi.h>
-#include <simple.h>
-#include <buddy.h>
-#include <usbhid_buddy.h>
-#include <support.h>
-#include <utility.h>
-
-#include <sys/timeb.h>
+#include "simple.h"
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
 
