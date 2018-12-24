@@ -5,14 +5,21 @@ set (CMAKE_CXX_STANDARD 11)
 
 # header files
 set (MAIN_INCLUDE ${PROJECT_SOURCE_DIR}) 
-set (LIBBUDDY_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/libbuddy) 
-set (HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/hidapi/hidapi) 
-set (BUDDY_INCLUDE_DIRS ${MAIN_INCLUDE} ${LIBBUDDY_INCLUDE} ${HIDAPI_INCLUDE})
+set (LIBBUDDY_COMMON_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/common)
+set (LIBBUDDY_HOST_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/host)
+set (HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/hidapi/hidapi) 
+set (BUDDY_INCLUDE_DIRS 
+        ${MAIN_INCLUDE} 
+        ${LIBBUDDY_COMMON_INCLUDE}
+        ${LIBBUDDY_HOST_INCLUDE}
+        ${HIDAPI_INCLUDE}
+)
 
+# source files
 set( LIBBUDDY_SOURCES
-    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/support.c
-    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/utility.c
-    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/usbhid_buddy.c
+    ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/common/codec.c
+    ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/common/support.c
+    ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/host/buddy.c
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
