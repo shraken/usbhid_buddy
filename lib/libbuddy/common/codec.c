@@ -52,6 +52,8 @@ void codec_reset(void) {
  * 
  */
 void codec_init(uint8_t chan_mask, uint8_t resolution) {
+    codec_reset();
+    
     m_chan_mask = chan_mask;
     m_resolution = resolution;
 

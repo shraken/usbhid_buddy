@@ -3,9 +3,10 @@
 #include "catch.hpp"
 
 extern "C" {
+#include "buddy_common.h"
+#include "codec.h"
 #include "support.h"
 #include "utility.h"
-#include "usbhid_buddy.h"
 }
 
 #include <vector>
@@ -14,41 +15,12 @@ extern "C" {
 #include <stdio.h>
 #include <sys/timeb.h> 
 
-extern uint8_t decode_count;
-
-extern uint8_t _resolution_mode;
 extern uint8_t _data_size;
 
 void clear_channels(general_packet_t &packet) {
     for (int i = BUDDY_CHAN_0; i < BUDDY_CHAN_7; i++) {
         packet.channels[i] = 0;
         codec_set_channel_active(i, false);
-    }
-}
-
-void reset_state(int resolution_mode, int data_size) {
-    codec_set_offset_count(0);
-    _resolution_mode = resolution_mode;
-    _data_size = data_size;
-}
-
-void setup_fake_decode_data(uint8_t *buffer, uint8_t resolution_mode) {
-    int i;
-
-    if (_resolution_mode == RESOLUTION_CTRL_LOW) {
-        for (i = 0; i < MAX_REPORT_SIZE; i++) {
-            *(buffer + i) = (uint8_t) i;
-        }
-    } else if (_resolution_mode == RESOLUTION_CTRL_HIGH) {
-        for (i = 0; i < (MAX_REPORT_SIZE / sizeof(uint16_t)); i++) {
-            *(buffer + (i * sizeof(uint16_t))) = (uint16_t) i;
-        }
-    } else if (_resolution_mode == RESOLUTION_CTRL_SUPER) {
-        for (i = 0; i < (MAX_REPORT_SIZE / sizeof(uint32_t)); i++) {
-            *(buffer + (i * sizeof(uint32_t))) = (uint32_t) i;
-        }
-    } else {
-        return;
     }
 }
 
@@ -73,11 +45,11 @@ TEST_CASE( "time sleep functions keep time and delay properly =", "" ) {
 }
 
 TEST_CASE( "buddy codec has it's state and offsets reset", "" ) {
-    reset_codec();
+    codec_reset();
 
     REQUIRE( codec_get_offset_count() == 0 );
     REQUIRE( codec_get_encode_count() == 0 );
-    REQUIRE( decode_count == 0 );
+    REQUIRE( codec_get_decode_count() == 0 );
 }
 
 TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
@@ -85,8 +57,8 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
     general_packet_t packet;
 
     SECTION( "buddy encode rejects invalid parameters", "" ) {
-        REQUIRE( encode(NULL, (general_packet_t *) &packet) == CODEC_STATUS_ERROR );
-        REQUIRE( encode( (uint8_t *) &test_buffer, NULL) == CODEC_STATUS_ERROR );
+        REQUIRE( codec_encode(NULL, (general_packet_t *) &packet) == CODEC_STATUS_ERROR );
+        REQUIRE( codec_encode( (uint8_t *) &test_buffer, NULL) == CODEC_STATUS_ERROR );
     }
 
     SECTION( "buddy encode correctly downscales packet values for lower resolutions", "" ) {
@@ -98,20 +70,20 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
         //
         // resolution_mode, data_size, packet value, encoded value
         std::vector<std::tuple<int, int, uint32_t, uint32_t>> expectedResponse = {
-            { RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0xFFFFFF, 0xFF },
-            { RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0xFFFF, 0xFF },
-            { RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0xFF, 0xFF },
-            { RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0x7F, 0x7F },
-            { RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0x00, 0x00 },
+            std::make_tuple(RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0xFFFFFF, 0xFF),
+            std::make_tuple(RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0xFFFF, 0xFF),
+            std::make_tuple(RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0xFF, 0xFF),
+            std::make_tuple(RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0x7F, 0x7F),
+            std::make_tuple(RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW, 0x00, 0x00),
 
-            { RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0xFFFFFFFF, 0xFFFF },
-            { RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0xFFFF, 0xFFFF },
-            { RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0x7FFF, swap_uint16(0x7FFF) },
-            { RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0x0000, 0x0000 },
+            std::make_tuple(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0xFFFFFFFF, 0xFFFF),
+            std::make_tuple(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0xFFFF, 0xFFFF),
+            std::make_tuple(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0x7FFF, swap_uint16(0x7FFF)),
+            std::make_tuple(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, 0x0000, 0x0000),
 
-            { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, 0xFFFFFFFF, 0xFFFFFFFF },
-            { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, 0x7FFFFFFF, swap_uint32(0x7FFFFFFF) },
-            { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, 0x00, 0x00 },
+            std::make_tuple(RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, 0xFFFFFFFF, 0xFFFFFFFF),
+            std::make_tuple(RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, 0x7FFFFFFF, swap_uint32(0x7FFFFFFF)),
+            std::make_tuple(RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, 0x00, 0x00),
         };
 
         for (const auto &item : expectedResponse) {
@@ -120,13 +92,13 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
             uint32_t in_value = std::get<2>(item);
             uint32_t out_value_expect = std::get<3>(item);
 
+            codec_init(BUDDY_CHAN_0_MASK, res_mode);
+
             packet.channels[BUDDY_CHAN_0] = in_value;
             codec_set_channel_active(BUDDY_CHAN_0, true);
 
-            reset_state(res_mode, data_size);
-
             int old_codec_byte_offset = codec_get_offset_count();
-            REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
+            REQUIRE( codec_encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
             REQUIRE( codec_get_offset_count() == (old_codec_byte_offset + data_size) );
             
             uint32_t frame_channel_value = 0;
@@ -148,9 +120,9 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
         // expecting that that the buffer has been filled.
         // 
         std::vector<std::tuple<int, int, int>> expectedResponse = {
-            { RESOLUTION_CTRL_LOW,  BUDDY_DATA_SIZE_LOW, MAX_EXPECTED_PACKET_FILLS },
-            { RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, MAX_EXPECTED_PACKET_FILLS / 2 },
-            { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, MAX_EXPECTED_PACKET_FILLS / 4 },
+            std::make_tuple(RESOLUTION_CTRL_LOW,  BUDDY_DATA_SIZE_LOW, MAX_EXPECTED_PACKET_FILLS),
+            std::make_tuple(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, MAX_EXPECTED_PACKET_FILLS / 2),
+            std::make_tuple(RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, MAX_EXPECTED_PACKET_FILLS / 4),
         };
 
         // only activate channel 0
@@ -161,11 +133,11 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
             int buddy_size = std::get<1>(item);
             int expectedCount = std::get<2>(item);
 
-            reset_state(res_ctrl, buddy_size);
+            codec_init(BUDDY_CHAN_0_MASK, res_ctrl);
 
             // initials
             for (int i = 0; i <= (expectedCount - 1); i++) {
-                REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
+                REQUIRE( codec_encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
 
                 if (res_ctrl == RESOLUTION_CTRL_LOW) {
                     REQUIRE( codec_get_offset_count() == (i + 1) );
@@ -177,15 +149,14 @@ TEST_CASE( "buddy frame encoder packages packets correctly", "" ) {
             }
 
             // final
-            REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_FULL );
+            REQUIRE( codec_encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_FULL );
             REQUIRE( codec_get_offset_count() == 0 );
         }
     }
 
     SECTION( "buddy encode correctly rejects invalid resolution modes", "" ) {
-        _resolution_mode = RESOLUTION_CTRL_END_MARKER;
-
-        REQUIRE( encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_ERROR );
+        codec_init(0, RESOLUTION_CTRL_END_MARKER);
+        REQUIRE( codec_encode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_ERROR );
     }
 }
 
@@ -194,8 +165,8 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
     general_packet_t packet;
 
     SECTION( "buddy decode rejects invalid parameters", "" ) {
-        REQUIRE( decode(NULL, (general_packet_t *) &packet) == CODEC_STATUS_ERROR );
-        REQUIRE( decode( (uint8_t *) &test_buffer, NULL) == CODEC_STATUS_ERROR );
+        REQUIRE( codec_decode(NULL, (general_packet_t *) &packet) == CODEC_STATUS_ERROR );
+        REQUIRE( codec_decode( (uint8_t *) &test_buffer, NULL) == CODEC_STATUS_ERROR );
     }
 
     SECTION( "buddy decode correctly converts for the various resolutions", "" ) {
@@ -246,21 +217,18 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
             (uint8_t) (MAGIC_BUDDY_DECODE_SUPER_VALUE_1 & 0xFF),
         };
 
-        reset_state(RESOLUTION_CTRL_LOW, BUDDY_DATA_SIZE_LOW);
-        reset_codec();
-        REQUIRE( decode( (uint8_t *) &buddy_packed_low_cont, &packet) == CODEC_STATUS_CONTINUE );
+        codec_init( BUDDY_CHAN_0_MASK | BUDDY_CHAN_4_MASK, RESOLUTION_CTRL_LOW );
+        REQUIRE( codec_decode( (uint8_t *) &buddy_packed_low_cont, &packet) == CODEC_STATUS_CONTINUE );
         REQUIRE( packet.channels[BUDDY_CHAN_0] == MAGIC_BUDDY_DECODE_LOW_VALUE_0 );
         REQUIRE( packet.channels[BUDDY_CHAN_4] == MAGIC_BUDDY_DECODE_LOW_VALUE_1 );
 
-        reset_state(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH);
-        reset_codec();
-        REQUIRE( decode( (uint8_t *) &buddy_packed_high_cont, &packet ) == CODEC_STATUS_CONTINUE );
+        codec_init( BUDDY_CHAN_0_MASK | BUDDY_CHAN_4_MASK, RESOLUTION_CTRL_HIGH );
+        REQUIRE( codec_decode( (uint8_t *) &buddy_packed_high_cont, &packet ) == CODEC_STATUS_CONTINUE );
         REQUIRE( static_cast<uint16_t>(packet.channels[BUDDY_CHAN_0]) == MAGIC_BUDDY_DECODE_HIGH_VALUE_0 );
         REQUIRE( static_cast<uint16_t>(packet.channels[BUDDY_CHAN_4]) == MAGIC_BUDDY_DECODE_HIGH_VALUE_1 );
 
-        reset_state(RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER);
-        reset_codec();
-        REQUIRE( decode( (uint8_t *) &buddy_packed_super_cont, &packet ) == CODEC_STATUS_CONTINUE );
+        codec_init( BUDDY_CHAN_0_MASK | BUDDY_CHAN_4_MASK, BUDDY_DATA_SIZE_SUPER );
+        REQUIRE( codec_decode( (uint8_t *) &buddy_packed_super_cont, &packet ) == CODEC_STATUS_CONTINUE );
         REQUIRE( static_cast<uint32_t>(packet.channels[BUDDY_CHAN_0]) == MAGIC_BUDDY_DECODE_SUPER_VALUE_0 );
         REQUIRE( static_cast<uint32_t>(packet.channels[BUDDY_CHAN_4]) == MAGIC_BUDDY_DECODE_SUPER_VALUE_1 );
     }
@@ -272,9 +240,9 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
         const int MAX_EXPECTED_PACKET_FILLS = MAX_REPORT_SIZE - BUDDY_APP_VALUE_OFFSET - 1;
 
         std::vector<std::tuple<int, int, int>> expectedResponse = {
-            { RESOLUTION_CTRL_LOW,  BUDDY_DATA_SIZE_LOW, MAX_EXPECTED_PACKET_FILLS },
-            { RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, (MAX_EXPECTED_PACKET_FILLS / 2) },
-            { RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, MAX_EXPECTED_PACKET_FILLS / 4 },
+            std::make_tuple(RESOLUTION_CTRL_LOW,  BUDDY_DATA_SIZE_LOW, MAX_EXPECTED_PACKET_FILLS),
+            std::make_tuple(RESOLUTION_CTRL_HIGH, BUDDY_DATA_SIZE_HIGH, (MAX_EXPECTED_PACKET_FILLS / 2)),
+            std::make_tuple(RESOLUTION_CTRL_SUPER, BUDDY_DATA_SIZE_SUPER, MAX_EXPECTED_PACKET_FILLS / 4),
         };
 
         // only activate channel 0
@@ -285,13 +253,12 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
             int buddy_size = std::get<1>(item);
             int expectedCount = std::get<2>(item);
 
-            reset_state(res_ctrl, buddy_size);
-            reset_codec();
+            codec_init( BUDDY_CHAN_0_MASK | BUDDY_CHAN_4_MASK, res_ctrl );
 
             // initials
             for (int i = 0; i <= (expectedCount - 1); i++) {
                 test_buffer[BUDDY_APP_INDIC_OFFSET] =  expectedCount;
-                REQUIRE( decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
+                REQUIRE( codec_decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_CONTINUE );
 
                 if (res_ctrl == RESOLUTION_CTRL_LOW) {
                     REQUIRE( codec_get_offset_count() == (i + 1) );
@@ -303,14 +270,13 @@ TEST_CASE( "buddy frame decoder parses frame to packets correctly", "" ) {
             }
 
             // final
-            REQUIRE( decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_FULL );
+            REQUIRE( codec_decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_FULL );
             REQUIRE( codec_get_offset_count() == 0 );
         }
     }
 
     SECTION( "buddy decode correctly rejects invalid resolution modes", "" ) {
-        _resolution_mode = RESOLUTION_CTRL_END_MARKER;
-
-        REQUIRE( decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_ERROR );
+        codec_init(0, RESOLUTION_CTRL_END_MARKER);
+        REQUIRE( codec_decode((uint8_t *) &test_buffer, &packet) == CODEC_STATUS_ERROR );
     }
 }
