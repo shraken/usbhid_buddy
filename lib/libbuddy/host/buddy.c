@@ -509,23 +509,6 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 			runtime, sizeof(ctrl_runtime_t));
 	memcpy( (ctrl_timing_t *) &driver_ctx.timing,
 			timing, sizeof(ctrl_timing_t));
-
-	switch (general->resolution) {
-		case RESOLUTION_CTRL_SUPER:
-            codec_set_data_size(BUDDY_DATA_SIZE_SUPER);
-			break;
-
-		case RESOLUTION_CTRL_HIGH:
-            codec_set_data_size(BUDDY_DATA_SIZE_HIGH);
-			break;
-
-		case RESOLUTION_CTRL_LOW:
-            codec_set_data_size(BUDDY_DATA_SIZE_LOW);
-			break;
-
-		default:
-			return 10;
-	}
     
     // apply codec initialization
     codec_init(general->channel_mask, general->resolution);

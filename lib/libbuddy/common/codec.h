@@ -14,7 +14,7 @@
 
 #define CODEC_FIXED_SIZE 2
 
-void codec_init(uint8_t chan_mask, uint8_t resolution);
+int codec_init(uint8_t chan_mask, uint8_t resolution);
 void codec_reset(void);
 
 void codec_set_data_size(const uint8_t data_size);
