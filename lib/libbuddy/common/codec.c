@@ -36,7 +36,7 @@ static bool m_initialized = false;
 
 /// channel enable bit array.  There are N positions for each of the N channels
 /// with 1 = active and 0 = inactive indication
-bool m_chan_enable[BUDDY_CHAN_LENGTH];
+static uint8_t m_chan_enable[BUDDY_CHAN_LENGTH];
 
 /*
  * @brief put the codec encoder and decoder in an initial state where
@@ -135,7 +135,8 @@ void codec_count_channels(void)
     m_chan_number = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_chan_mask & (1 << i)) {
-			m_chan_number++;
+			m_chan_enable[i] = 1;
+            m_chan_number++;
 		}
 	}
 }
@@ -219,6 +220,7 @@ void codec_set_channel_active(const uint8_t channel, bool state) {
 int codec_encode(uint8_t *frame, general_packet_t *packet)
 {
 	uint8_t i;
+  	uint8_t encode_max_offset;
 
 	if (!m_initialized) {
 		return CODEC_STATUS_UNINITIALIZED;
@@ -245,12 +247,14 @@ int codec_encode(uint8_t *frame, general_packet_t *packet)
 				return CODEC_STATUS_ERROR;
 			}
 			
+            //printf("add to m_offset now..\n");
 			m_offset += codec_get_data_size();
 		}
 	}
 
 	// check if subsequent packet will overflow buffer
-	uint8_t encode_max_offset = (m_offset + (codec_get_data_size() * m_chan_number));
+    encode_max_offset = (m_offset + (codec_get_data_size() * m_chan_number));
+    //printf("encode_max_offset = %d\n", encode_max_offset);
 
 	if (encode_max_offset >= (MAX_REPORT_SIZE - BUDDY_APP_VALUE_OFFSET)) {
 		m_offset = 0;
@@ -277,6 +281,7 @@ int codec_encode(uint8_t *frame, general_packet_t *packet)
 int codec_decode(uint8_t *frame, general_packet_t *packet)
 {
 	uint8_t count;
+    uint8_t decode_max_offset;
 	int i;
 
 	if (!m_initialized) {
@@ -321,7 +326,7 @@ int codec_decode(uint8_t *frame, general_packet_t *packet)
 	m_decode_count++;
 
 	// check if the next packet can fit in the packed array
-	uint8_t decode_max_offset = (m_offset + (codec_get_data_size() * m_chan_number));
+	decode_max_offset = (m_offset + (codec_get_data_size() * m_chan_number));
 
 	// @todo: changed decode_count >= count to decode_count > count check if works
 	if ((decode_max_offset >= (MAX_REPORT_SIZE - BUDDY_APP_VALUE_OFFSET)) || 

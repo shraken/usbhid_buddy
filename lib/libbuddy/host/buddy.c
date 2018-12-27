@@ -201,12 +201,14 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 	int err_code;
 
 	err_code = codec_encode(out_hold_buf, packet);
+    //printf("buddy_send_generic: err_code = %d\n", err_code);
 
 	if ((!streaming) || (err_code == CODEC_STATUS_FULL)) {
 		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
 		out_hold_buf[BUDDY_APP_CODE_OFFSET] = type;
 		out_hold_buf[BUDDY_APP_INDIC_OFFSET] = codec_get_encode_count();
 
+        //printf("buddy_send_generic: write a HID packet\n");
 		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == BUDDY_ERROR_CODE_GENERAL) {
 			critical(("buddy_send_generic: buddy_write_packet call failed\n"));
 			return BUDDY_ERROR_CODE_GENERAL;

@@ -249,6 +249,7 @@ void execute_out_stream(void)
 					}
 				}
 
+                // printf("write ch %d with %d\n", i, value);
 				tlv563x_write(i, (uint16_t) value);
 			} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
 				if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {

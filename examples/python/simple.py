@@ -9,7 +9,7 @@ import csv
 import buddy as bt
 
 BUDDY_TEST_ADC_FREQ = 1000        # 1 kHz
-BUDDY_TEST_DAC_FREQ = 200         # 5 Hz
+BUDDY_TEST_DAC_FREQ = 1000         # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10          # 1 kHz
 BUDDY_TEST_COUNTER_FREQ = 10000   # 10 Hz
 hid_handle = None
