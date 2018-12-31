@@ -19,6 +19,7 @@
 #include <C8051F380_defs.h>
 #include "globals.h"
 #include "tca9555.h"
+#include "init.h"
 
 /**
  * @brief Poncho Expander driver error codes

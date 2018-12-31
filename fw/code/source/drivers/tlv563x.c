@@ -6,16 +6,7 @@
  *
  */
 
-#include <spi.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <c8051f3xx.h>
-
-#include "buddy_common.h"
-#include "codec.h"
-
-#include <tlv563x.h>
-#include <utility.h>
+#include "tlv563x.h"
 
 // shraken TODO: make this configurable as build directive
 static uint8_t tlv563x_resolution = TLV5630_RESOLUTION_TYPE;

@@ -12,6 +12,14 @@
 #define  _TLV563X_H_
 
 #include <stdint.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <c8051f3xx.h>
+#include "spi.h"
+#include "codec.h"
+#include "tlv563x.h"
+#include "utility.h"
+#include "buddy_common.h"
 
 #define TLV563X_CHANNEL_COUNT 8        // TLV563x Number of Channels
 

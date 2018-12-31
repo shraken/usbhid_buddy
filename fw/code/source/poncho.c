@@ -1,7 +1,5 @@
 #include "poncho.h"
 
-extern void Delay(void);
-
 /* This is a map specific to a hardware revision of the poncho expander
  * board.  The first field `buddy_pin` is the key specifying the Buddy DAQ
  * output and the `ctrl_a_pin` and `ctrl_b_pin` are a tuple of the values

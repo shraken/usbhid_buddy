@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <tca9555.h>
-#include <i2c.h>
+#include "tca9555.h"
 
 static uint8_t reg_out_0 = 0;
 static uint8_t reg_out_1 = 0;
@@ -11,8 +8,6 @@ static uint8_t reg_polinv_1 = 0;
 
 static uint8_t reg_cfg_0 = 0;
 static uint8_t reg_cfg_1 = 0;
-
-extern void Delay(void);
 
 /** boolean, set to True when device initialization has run
 			otherwise set to False.  Initialization must be run before
