@@ -10,6 +10,9 @@
 #ifndef _UART_H
 #define _UART_H
 
+#include <c8051f3xx.h>
+#include "globals.h"
+
 #define BAUDRATE           115200           // Baud rate of UART in bps
 
 void uart_init (void);

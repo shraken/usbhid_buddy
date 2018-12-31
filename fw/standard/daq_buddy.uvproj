@@ -474,6 +474,11 @@
               <FileType>1</FileType>
               <FilePath>..\code\source\poncho.c</FilePath>
             </File>
+            <File>
+              <FileName>codec.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\lib\libbuddy\common\codec.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

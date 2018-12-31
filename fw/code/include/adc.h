@@ -12,6 +12,14 @@
 #define  _ADC_H
 
 #include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+#include <c8051f3xx.h>
+#include "utility.h"
+#include "globals.h"
+#include "gpio.h"
+#include "process.h"
+#include "io.h"
 #include "buddy_common.h"
 
 #define ADC_BIT_SIZE 10
@@ -79,6 +87,17 @@ typedef enum _ADC_REF0CN_BITMASK {
 
 #define ADC_GND 0x1F  // 011111b
 #define ADC_VREF 0x1E // 011110b
+
+extern int16_t data adc_results[MAX_ANALOG_INPUTS];
+
+extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
+extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
+extern uint8_t adc_channel_count;
+extern uint8_t adc_int_dec_max;
+extern uint8_t data adc_channel_index;
+extern uint8_t adc_int_dec;
+extern uint16_t adc_timer_count;
+extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
 
 int8_t adc_init(void);
 int8_t adc_enable(void);

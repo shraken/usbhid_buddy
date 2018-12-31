@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <c8051f3xx.h>
-#include <timers.h>
-#include <globals.h>
-#include <process.h>
-#include <adc.h>
-#include <io.h>
-#include <gpio.h>
-#include <utility.h>
+#include "timers.h"
 
 uint8_t timer2_flag = 0;
 
@@ -167,9 +158,6 @@ void timer2_set_period(uint32_t period)
 		timer2_high_set = ((timer_set & 0xFF00) >> 8);
 		timer2_low_set = (timer_set & 0x00FF);
 		debug(("Timer2 set region 3 with %u\r\n", timer_set));
-				 
-		// Timer2 low and high byte clock selects us TMR2CN
-		CKCON &= ~(0x30);
             
         // TMR2CN, Timer 2 clock is SYSCLK / 12
         TMR2CN &= ~(0x01);
@@ -177,7 +165,7 @@ void timer2_set_period(uint32_t period)
 		debug(("Timer2 region not settable\r\n"));
 			
 		// Timer0 uses SYSCLK / 48
-		CKCON |= 0x02;
+		//CKCON |= 0x02;
 			
 		timer2_high_set = 0x00;
 		timer2_low_set = 0x00;
@@ -218,6 +206,7 @@ void timer2_isr(void) interrupt 5
 		}
   } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
 		build_counter_packet();
+        //build_counter_packet2();
 	}
 }
 

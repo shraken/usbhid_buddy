@@ -10,6 +10,7 @@ static uint8_t data codec_byte_offset = 0;
 void io_init(void)
 {
 	in_packet_offset = 0;
+    P_IN_PACKET_RECORD = &IN_PACKET[0];
 }
 
 /**
@@ -19,10 +20,12 @@ void io_init(void)
 void usb_buffer_clear(void)
 {
 	P_IN_PACKET_RECORD = &IN_PACKET[0];
-	
+	codec_reset();
+    
 	in_packet_record_cycle = 0;
+    in_packet_ready = false;
+    
 	in_packet_offset = 0;
-	in_packet_ready = false;
 }
 
 /**
@@ -68,7 +71,11 @@ void respond_status(int8_t error_code)
 }
 
 /**
- * @brief build an ADC packet
+ * @brief build a ADC packet from the active ADC channel values.  We do not use the generic
+    codec routine here due firmware bug.  If the `codec_encode` routine is invoked then a hang is
+    observed.  This might be due to the overhead required in calling the `codec_encode` routine with
+    multiple parameters as the failure seems to occur when the two arguments are passed and the FULL
+    error code is returned.  
  * @return Void
  */
 void build_adc_packet(void)
@@ -132,7 +139,11 @@ void build_adc_packet(void)
 }
 
 /**
- * @brief build an counter packet
+ * @brief build a counter packet from the two counter channel values.  We do not use the generic
+    codec routine here due firmware bug.  If the `codec_encode` routine is invoked then a hang is
+    observed.  This might be due to the overhead required in calling the `codec_encode` routine with
+    multiple parameters as the failure seems to occur when the two arguments are passed and the FULL
+    error code is returned.  
  * @return Void
  */
 void build_counter_packet(void)
@@ -142,7 +153,8 @@ void build_counter_packet(void)
 
 	int32_t counter_chan0;
 	int32_t counter_chan1;
-	
+	uint8_t max_offset;
+    
 	//P3 = P3 & ~0x40;
 	if ((!buddy_ctx.m_chan_enable[COUNTER_CHANNEL_0]) && (!buddy_ctx.m_chan_enable[COUNTER_CHANNEL_1])) {
 		// TODO: verbose exit with failure
@@ -150,33 +162,38 @@ void build_counter_packet(void)
 	}
 	
 	if (buddy_ctx.m_chan_enable[COUNTER_CHANNEL_0]) {
-		counter_chan0 = counter_get_chan0();
-
+		//counter_chan0 = counter_get_chan0();
+        counter_chan0 = 0xFF;
+        
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET) = ((counter_chan0 & 0xFF000000) >> 24);
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 1) = ((counter_chan0 & 0x00FF0000) >> 16);
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 2) = ((counter_chan0 & 0x0000FF00) >> 8);
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 3) = (counter_chan0 & 0xFF);
 
-		encode_count++;
 		in_packet_offset += COUNTER_ITEM_SIZE;
 	}
 	
 	if (buddy_ctx.m_chan_enable[COUNTER_CHANNEL_1]) {
-		counter_chan1 = counter_get_chan1();
-
+		//counter_chan1 = counter_get_chan1();
+         counter_chan1 = 0xEE;
+        
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET) = ((counter_chan1 & 0xFF000000) >> 24);
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 1) = ((counter_chan1 & 0x00FF0000) >> 16);
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 2) = ((counter_chan1 & 0x0000FF00) >> 8);
 		*(P_IN_PACKET_RECORD + in_packet_offset + BUDDY_APP_VALUE_OFFSET + 3) = (counter_chan1 & 0xFF);
 		
-		encode_count++;
 		in_packet_offset += COUNTER_ITEM_SIZE;
 	}
 	
-	// check if subsequent packet will overflow buffer
-	if ((buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
-		  ((in_packet_offset + (buddy_ctx.m_data_size * buddy_ctx.m_chan_number)) > (MAX_REPORT_SIZE - 3))) {
-		*(P_IN_PACKET_RECORD + BUDDY_APP_INDIC_OFFSET) = encode_count;
+    max_offset = in_packet_offset + (buddy_ctx.m_data_size * buddy_ctx.m_chan_number);
+    
+    if (buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
+        encode_count++;
+    }
+    
+    if ((buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
+        (max_offset >= (MAX_REPORT_SIZE - BUDDY_APP_VALUE_OFFSET))) {
+        *(P_IN_PACKET_RECORD + BUDDY_APP_INDIC_OFFSET) = encode_count;
 		P_IN_PACKET_SEND = P_IN_PACKET_RECORD;
 		
 		if (in_packet_record_cycle) {
@@ -187,172 +204,84 @@ void build_counter_packet(void)
 			in_packet_record_cycle = 1;
 		}
 				
-	  encode_count = 0;
+        encode_count = 0;
 		
 		in_packet_ready = true;
 		in_packet_offset = 0;
-	}
+	} else {
+        encode_count++;
+    }
 	
 	//P3 = P3 | 0x40;
 }
 
 /**
- * @brief runs only for ADC and PWM modes.  only for stream mode when the
- * 	stream timer has elapsed. 
- * @return Void.
+ * @brief called only for DAC and PWM modes of operation.  Runs a decode operation
+    and writes the DAC or PWM output.  If immediate mode is enabled, then the codec
+    is reset after each call.  
+ * @param immediate boolean indicating the codec should be reset after run operation.
  */
-void execute_out_stream(void)
-{
-	static uint8_t decode_count = 0;
-	uint8_t i;
-	uint32_t value;
-	uint8_t count;
-	uint8_t *frame;
+void execute_out(bool immediate) {
+    int decode_status;
+    int i;
+    uint32_t value;
+    uint8_t *frame;
+    general_packet_t packet;
+    
+    frame = (uint8_t *) &OUT_PACKET[0];
+    decode_status = codec_decode(frame, &packet);
 
-	//P3 = P3 & ~0x40;
-	count = OUT_PACKET[BUDDY_APP_INDIC_OFFSET];
-	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
-	
-	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (buddy_ctx.m_chan_enable[i]) {
-			if (buddy_ctx.m_resolution == RESOLUTION_CTRL_SUPER) {
-				value = (( ((uint32_t) (*(frame + codec_byte_offset)) ) << 24) | 
-									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) ) << 16) | 
-									 ( ((uint32_t) (*(frame + codec_byte_offset + 2)) ) << 8) | 
-									 (  (uint32_t) (*(frame + codec_byte_offset + 3)) ));
-			} else if (buddy_ctx.m_resolution == RESOLUTION_CTRL_HIGH) {
-				value =  ( ((uint32_t) (*(frame + codec_byte_offset)) << 8) | 
-								 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) )));
-			} else if (buddy_ctx.m_resolution == RESOLUTION_CTRL_LOW) {
-				value = (uint32_t) (*(frame + codec_byte_offset));
-			} else {
-				return;
-			}
-			
-			if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
-				if (buddy_ctx.m_resolution == RESOLUTION_CTRL_LOW) {
-					// if low resolution mode enabled, then shift values
-					// up to equivalent native TLV563x size
-					switch (fw_info.type_dac) {
-						case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
-							value = value << 4;
-							break;
+    for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+        if (!buddy_ctx.m_chan_enable[i]) {
+            continue;
+        }
+        
+        value = packet.channels[i];
+        if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
+            if (buddy_ctx.m_resolution == RESOLUTION_CTRL_LOW) {
+                // if low resolution mode enabled, then shift values
+				// up to equivalent native TLV563x size
+				switch (fw_info.type_dac) {
+                    case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
+                        value = value << 4;
+						break;
 					
-						case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
-							value = value << 2;
-							break;
+                    case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
+						value = value << 2;
+						break;
 					
-						case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
-						default:
-							// do nothing, already in 8-bit
-							break;
-					}
-				}
-
-                // printf("write ch %d with %d\n", i, value);
-				tlv563x_write(i, (uint16_t) value);
-			} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
-				if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
-					pwm_set_frequency(i, value);
-				} else if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
-					pwm_set_duty_cycle(i, (uint16_t) value);
+					case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
+					default:
+						// do nothing, already in 8-bit
+						break;
 				}
 			}
-			
-			codec_byte_offset += buddy_ctx.m_data_size;
+
+            //printf("write ch %d with %d\n", i, value);
+            tlv563x_write(i, (uint16_t) value);
+		} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
+			if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
+                pwm_set_frequency(i, value);
+			} else if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
+				pwm_set_duty_cycle(i, (uint16_t) value);
+			}
 		}
-	}
-	
-	decode_count++;
-
-	// check if the next packet can fit in the packed array
-	if (((codec_byte_offset + (buddy_ctx.m_data_size * buddy_ctx.m_chan_number)) > (MAX_REPORT_SIZE - 3)) ||
-     	 (decode_count >= count))	{
-		codec_byte_offset = 0;
-		
-		if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
+    }
+    
+    if ((decode_status == CODEC_STATUS_FULL) || (immediate == true)) {
+        // @todo: this can be removed, the offset is reset to 0 in the decode for full
+        codec_reset();
+        
+        if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
 			new_dac_packet = 0;
 		} else if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
 			new_pwm_packet = 0;
 		}
-				 
-		decode_count = 0;		 
-		Enable_Out1();
-	}
-	
-	//P3 = P3 | 0x40;
-	return;	
-}
-
-/**
- * @brief runs only for DAC and PWM modes.  if immediate mode then the DAC or PWM
- *  value is set immediately.  the codec byte offset is advanced for processing of
- *  the next values. 
- * @return Void.
- */
-void execute_out(void)
-{
-	uint8_t i;
-	uint8_t *frame;
-	uint32_t value;
-
-	//P3 = P3 & ~0x40;
-	frame = (uint8_t *) &OUT_PACKET[BUDDY_APP_VALUE_OFFSET];
-	if (buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
-		// decode packet, don't process the return code but immediately
-		// pull the buffer and send update
-		
-		for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-			if (buddy_ctx.m_chan_enable[i]) {
-				if (buddy_ctx.m_resolution == RESOLUTION_CTRL_SUPER) {
-					value = (( ((uint32_t) (*(frame + codec_byte_offset)) ) << 24) | 
-									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) ) << 16) | 
-									 ( ((uint32_t) (*(frame + codec_byte_offset + 2)) ) << 8) | 
-									 ( (uint32_t) (*(frame + codec_byte_offset + 3)) ));
-				} else if (buddy_ctx.m_resolution == RESOLUTION_CTRL_HIGH) {
-					value =  ( ((uint32_t) (*(frame + codec_byte_offset)) << 8) | 
-									 ( ((uint32_t) (*(frame + codec_byte_offset + 1)) )));
-					
-				} else if (buddy_ctx.m_resolution == RESOLUTION_CTRL_LOW) {
-					value = (uint32_t) (*(frame + codec_byte_offset));
-				}
-				
-				if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
-					if (buddy_ctx.m_resolution == RESOLUTION_CTRL_LOW) {
-						// if low resolution mode enabled, then shift values
-						// up to equivalent native TLV563x size
-						switch (fw_info.type_dac) {
-							case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
-								value = value << 4;
-								break;
-					
-							case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
-								value = value << 2;
-								break;
-					
-							case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
-							default:
-								// do nothing, already in 8-bit
-								break;
-						}	
-					}
-					
-					tlv563x_write(i, (uint16_t) value);
-				} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
-					if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
-						pwm_set_frequency(i, value);
-					} else if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
-						pwm_set_duty_cycle(i, (uint16_t) value);
-					}
-				}
-				
-				codec_byte_offset += buddy_ctx.m_data_size;
-			}
-		}
-		
-		codec_byte_offset = 0;
-		flag_usb_out = 0;
-		Enable_Out1();
-		//P3 = P3 | 0x40;
-	}
+        
+        Enable_Out1();
+    }
+    
+    if (immediate) {
+        flag_usb_out = 0;
+    }
 }

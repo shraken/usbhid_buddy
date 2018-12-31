@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <i2c.h>
-#include <globals.h>
-
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
+#include "i2c.h"
 
 //-----------------------------------------------------------------------------
 // Global Variables

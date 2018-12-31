@@ -13,8 +13,28 @@
 #define  _PROCESS_H_
 
 #include <stdint.h>
-#include <adc.h>
+#include <string.h>
+#include <stdio.h>
+#include <c8051f3xx.h>
+#include <math.h>
+
+#include "F3xx_USB0_InterruptServiceRoutine.h"
+#include "F3xx_USB0_ReportHandler.h"
+#include "globals.h"
+#include "support.h"
+#include "timers.h"
+#include "adc.h"
+#include "gpio.h"
+#include "pwm.h"
+#include "adc.h"
+#include "counter.h"
+#include "tlv563x.h"
+#include "io.h"
+#include "utility.h"
+#include "poncho.h"
+#include "codec.h"
 #include "buddy_common.h"
+
 
 extern bit SendPacketBusy;
 extern uint8_t timer2_flag;
@@ -22,16 +42,6 @@ extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata *P_IN_PACKET_SEND;
 
 extern code firmware_info_t fw_info;
-
-extern int16_t data adc_results[MAX_ANALOG_INPUTS];
-extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
-extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
-extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
-extern uint8_t adc_channel_count;
-extern uint8_t adc_int_dec_max;
-extern uint8_t data adc_channel_index;
-extern uint8_t adc_int_dec;
-extern uint16_t adc_timer_count;
 
 int8_t process_ctrl_function(ctrl_general_t *p_general);
 int8_t process_ctrl_runtime(ctrl_runtime_t *p_runtime);

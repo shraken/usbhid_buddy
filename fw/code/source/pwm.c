@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <C8051F3xx.h>
-#include <pwm.h>
+#include "pwm.h"
 
 static uint32_t pwm_timebase = BUDDY_SYSCLK;
 static uint32_t pwm_cex[NUMBER_PCA_CHANNELS];

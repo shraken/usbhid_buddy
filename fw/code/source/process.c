@@ -1,21 +1,4 @@
-#include <string.h>
-#include <stdio.h>
-#include <c8051f3xx.h>
-#include <math.h>
-#include <F3xx_USB0_InterruptServiceRoutine.h>
-#include <F3xx_USB0_ReportHandler.h>
-#include <process.h>
-#include <support.h>
-#include <timers.h>
-#include <adc.h>
-#include <gpio.h>
-#include <pwm.h>
-#include <counter.h>
-#include <tlv563x.h>
-#include <io.h>
-#include <globals.h>
-#include <utility.h>
-#include <poncho.h>
+#include "process.h"
 
 uint8_t flag_usb_out = 0;
 uint8_t new_dac_packet = 0;
@@ -31,7 +14,7 @@ buddy_ctx_t buddy_ctx;
  *  @return 0 on sucess, -1 on error.
  */
 int8_t process_ctrl_function(ctrl_general_t *p_general)
-{
+{    
 	debug(("process_ctrl_function()\r\n"));
 	
 	// check if requested DAQ function value is in boundary
@@ -41,9 +24,10 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 	  
 		// error: requested function outside bounds
   } else {
-		buddy_ctx.daq_state = p_general->function;
-	}
-	
+      codec_init(p_general->channel_mask, p_general->resolution);      
+      buddy_ctx.daq_state = p_general->function;
+  }
+  
 	switch (p_general->function) {
 		case GENERAL_CTRL_DAC_ENABLE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_DAC_ENABLE\r\n"));
@@ -85,7 +69,8 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 		case GENERAL_CTRL_COUNTER_ENABLE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_COUNTER_ENABLE\r\n"));
 			disable_all();
-		
+            usb_buffer_clear();
+        
 			io_init();
 			in_packet_ready = false;
 		
@@ -95,7 +80,7 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 			
 			counter_enable();
 			break;
-			
+            
 		default:
 		case GENERAL_CTRL_NONE:
 			debug(("CTRL_GENERAL = GENERAL_CTRL_NONE\r\n"));
@@ -213,7 +198,7 @@ int8_t process_ctrl_chan_res(ctrl_general_t *p_general)
 	}
 	
 	// expander check
-	process_ctrl_chan_expander(p_general);
+	// process_ctrl_chan_expander(p_general);
 	
 	return 0;
 }
@@ -425,7 +410,7 @@ void process_out()
 			case APP_CODE_DAC:
 				new_dac_packet = 1;
 				if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
-					execute_out();
+					execute_out(true);
 				}
 				
 				rx_led_toggle();
@@ -434,7 +419,7 @@ void process_out()
 			case APP_CODE_PWM:
 				new_pwm_packet = 1;
 				if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
-					execute_out();
+					execute_out(true);
 				}
 				
 				rx_led_toggle();
@@ -483,8 +468,8 @@ void process_out()
 		
 		if (((buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) ||
 			  ((buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet))) {
-			execute_out_stream();		
-		}
+			execute_out(false);		
+        }
 	}
 }
 

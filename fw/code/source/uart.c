@@ -1,6 +1,4 @@
-#include <c8051f3xx.h>
-#include <uart.h>
-#include <globals.h>
+#include "uart.h"
 
 /** @brief Sets up the UART device by configuring the crossbar for UART operation pin
  *         pin mode on pins P0.5/P0.4 with baudrate provided by BAUDRATE define.  Uses

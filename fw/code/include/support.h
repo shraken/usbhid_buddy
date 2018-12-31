@@ -7,6 +7,14 @@
  *			
  */
 
+#include <stdint.h>
+#include "globals.h"
+#include "gpio.h"
+#include "tlv563x.h"
+#include "pwm.h"
+#include "adc.h"
+#include "counter.h"
+
 #ifndef  _SUPPORT_H_
 #define  _SUPPORT_H_
 

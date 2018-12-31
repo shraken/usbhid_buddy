@@ -21,6 +21,10 @@
 #define BUDDY_OUT_DATA_ID 0x01
 #define BUDDY_IN_DATA_ID  0x02
 
+// USB HID uses a 64-byte endpoint for comms.  1 byte is reserved for
+// the HID ReportID to indicate IN/OUT packet.  2 other bytes must be
+// used for control information with the value always encoded at the
+// 4th byte.  This allows 61 bytes of data in each HID packet
 #define BUDDY_TYPE_OFFSET 0        // USB HID (IN/OUT)
 #define BUDDY_APP_CODE_OFFSET 1    // APP (Application)
 #define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type

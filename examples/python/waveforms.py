@@ -9,7 +9,7 @@ import signal
 import numpy as np
 from scipy import signal as scisig
 
-BUDDY_TEST_DAC_FREQ = 1000     # 1000 Hz
+BUDDY_TEST_DAC_FREQ = 1500     # 1000 Hz
 WAVEFORM_TIME = 20             # 20 seconds
 WAVEFORM_FREQUENCY = 1         # 1 Hz
 
@@ -63,11 +63,11 @@ def test_waveform_dac(handle, fw_info, sample_rate, wave_type, streaming, poncho
     t = np.linspace(0, WAVEFORM_TIME, sample_rate * WAVEFORM_TIME, endpoint=False)
 
     if wave_type == 'square':    
-        y = ((scisig.square(np.pi * 2 * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
+        y = ((scisig.square(np.pi * 2.0 * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
     elif wave_type == 'sine':
-        y = ((np.sin(np.pi * 2 * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
+        y = ((np.sin(np.pi * (1 / 2.0) * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
     elif wave_type == 'sawtooth':
-        y = ((scisig.sawtooth(np.pi * 2 * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
+        y = ((scisig.sawtooth(np.pi * (1 / 2.0) * WAVEFORM_FREQUENCY * t) + 1) / 2) * y_mag
     else:
         return -1
 

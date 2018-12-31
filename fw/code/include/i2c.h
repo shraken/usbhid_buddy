@@ -13,6 +13,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include "globals.h"
 
 typedef enum _I2C_ERROR_CODE {
 	I2C_ERROR_CODE_OK = 0,

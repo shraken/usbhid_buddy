@@ -1,10 +1,4 @@
-#include <init.h>
-#include <C8051F3xx.h>
-#include <F3xx_USB0_InterruptServiceRoutine.h>
-#include <F3xx_USB0_ReportHandler.h>
-#include <F3xx_USB0_Register.h>
-#include <gpio.h>
-#include <globals.h>
+#include "init.h"
 
 /** @brief This top-level initialization routine calls all support routine.
  *  @return Void.

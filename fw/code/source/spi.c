@@ -1,12 +1,4 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
-#include <c8051f3xx.h>
-#include <spi.h>
-#include <gpio.h>
-#include <globals.h>
+#include "spi.h"
 
 //-----------------------------------------------------------------------------
 // Global Variables

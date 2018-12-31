@@ -1,27 +1,8 @@
-#include <stdio.h>
-#include <string.h>
-#include <c8051f3xx.h>
-#include <main.h>
-#include <gpio.h>
-#include <init.h>
-#include <uart.h>
-#include <spi.h>
-#include <adc.h>
-#include <timers.h>
-#include <process.h>
-#include <tlv563x.h>
-#include <utility.h>
-#include <pwm.h>
-#include <i2c.h>
-#include <tca9555.h>
-#include <poncho.h>
-#include <globals.h>
+#include "main.h"
 
 //-----------------------------------------------------------------------------
 // Definitions
 //-----------------------------------------------------------------------------
-
-extern buddy_ctx_t buddy_ctx;
 
 /** firmware info structure that identifies serial, version,
  *   and hardware specific (DAC & expander) types. */
@@ -50,12 +31,12 @@ void print_device_info(void)
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");
     printf("|____/ \__,_|\__,_|\__,_|\__, |  \r\n");
     printf("                         |___/   \r\n");
-		printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
-				fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
-		printf("   serial id: %lu (%08lx)\r\n", 
-				fw_info.serial, fw_info.serial);
-		printf("   build datetime: %lu (%08lx)\r\n", 
-				fw_info.flash_datetime, fw_info.flash_datetime);
+	printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
+			fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
+	printf("   serial id: %lu (%08lx)\r\n", 
+			fw_info.serial, fw_info.serial);
+	printf("   build datetime: %lu (%08lx)\r\n", 
+			fw_info.flash_datetime, fw_info.flash_datetime);
 	
 	switch (fw_info.type_dac) {
 		case FIRMWARE_INFO_DAC_TYPE_TLV5630:
@@ -89,7 +70,7 @@ void contexts_init(void)
 {
 	buddy_ctx.daq_state         = GENERAL_CTRL_NONE;
 	buddy_ctx.m_ctrl_mode       = MODE_CTRL_IMMEDIATE;
-	buddy_ctx.m_adc_mode          = RUNTIME_ADC_MODE_SINGLE_ENDED;
+	buddy_ctx.m_adc_mode        = RUNTIME_ADC_MODE_SINGLE_ENDED;
 	buddy_ctx.m_pwm_mode        = RUNTIME_PWM_MODE_FREQUENCY;
 	buddy_ctx.m_pwm_timebase    = RUNTIME_PWM_TIMEBASE_SYSCLK;
 	buddy_ctx.m_counter_control = RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH;
@@ -113,21 +94,21 @@ void main(void)
 	
 	gpio_init();
 	
-  usb_init();
-  spi_init();
+    usb_init();
+    spi_init();
     
-  adc_init();
-  uart_init();
+    adc_init();
+    uart_init();
 
-  timers_init();
-  tlv563x_dac_init();
+    timers_init();
+    tlv563x_dac_init();
 	
 	print_device_info();
-  debug(("tlv563x_dac_init passed\r\n"));
+    debug(("tlv563x_dac_init passed\r\n"));
 	
 	PCA0MD = 0x00;                      // Disable watchdog timer
 	EA = 1;                             // Globally enable interrupts
-		
+	
 	while (1) {
 		process();
   }

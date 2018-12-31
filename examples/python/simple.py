@@ -227,7 +227,7 @@ def test_seq_dac(handle, sample_rate, streaming, poncho_mode):
     collected before the test is terminated. 
 '''
 def test_seq_counter(handle, sample_rate, streaming, log_file, poncho_mode):
-    mask = bt.BUDDY_CHAN_0_MASK
+    mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK
     
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()

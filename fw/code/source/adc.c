@@ -1,13 +1,4 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <c8051f3xx.h>
-#include <adc.h>
-#include <utility.h>
-#include <globals.h>
-#include <gpio.h>
-#include <process.h>
-#include <io.h>
+#include "adc.h"
 
 uint8_t data adc_channel_index = 0;
 uint8_t adc_channel_count = 0;

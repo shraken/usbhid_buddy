@@ -15,9 +15,15 @@
 #define  _TIMERS_H_
 
 #include <stdint.h>
-#include <globals.h>
-#include <adc.h>
-
+#include <stdio.h>
+#include <c8051f3xx.h>
+#include "globals.h"
+#include "process.h"
+#include "adc.h"
+#include "io.h"
+#include "gpio.h"
+#include "utility.h"
+#include "process.h"
 #include "buddy_common.h"
 
 // Timer 2
@@ -31,8 +37,6 @@ extern buddy_ctx_t buddy_ctx;
 
 extern uint8_t data adc_channel_index;
 extern uint8_t adc_channel_count;
-extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
-extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
 
 extern bit SMB_BUSY;
 

@@ -519,9 +519,11 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	// so that all channels are sampling at the requested rate.  If counter mode then set
 	// period to user requested value.
 
-	if (!(general->function == GENERAL_CTRL_COUNTER_ENABLE)) {
-        timing->period = timing->period / codec_get_channel_count();
-    }
+    if (general->function == GENERAL_CTRL_COUNTER_ENABLE) {
+		timing->period = swap_uint32(timing->period);
+	} else {
+		timing->period = swap_uint32(timing->period / codec_get_channel_count());
+	}
 
 	for (i = 0; i < NUMBER_CFG_REG_ENTRIES; i++) {
         for (j = 0; j < BUDDY_MAX_IO_ATTEMPTS; j++) {

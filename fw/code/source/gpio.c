@@ -7,10 +7,7 @@
  *
  */
  
-#include <stdio.h>
-#include <stdint.h>
-#include <globals.h>
-#include <gpio.h>
+#include "gpio.h"
 
 /** @brief Explicitly initializes the GPIO pins required for
   *         "drive" functionality as open-drain. 

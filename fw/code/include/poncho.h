@@ -13,7 +13,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <poncho.h>
+#include <stdbool.h>
+#include <string.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include "globals.h"
+#include "tca9555.h"
 
 /**
  * @brief Poncho Expander driver error codes

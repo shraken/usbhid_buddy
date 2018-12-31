@@ -36,6 +36,8 @@ void codec_set_channel_active(const uint8_t channel, bool state);
 bool codec_is_channel_active(const uint8_t channel);
 
 int codec_encode(uint8_t *frame, general_packet_t *packet);
+int codec_encode_imm(void);
 int codec_decode(uint8_t *frame, general_packet_t *packet);
+int codec_decode_imm(void);
 
 #endif

@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <poncho.h>
-#include <tca9555.h>
-#include <globals.h>
-
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
+#include "poncho.h"
 
 extern void Delay(void);
 

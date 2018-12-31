@@ -14,6 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include <c8051f3xx.h>
+#include "globals.h"
+#include "gpio.h"
 
 //-----------------------------------------------------------------------------
 // Global Constants
