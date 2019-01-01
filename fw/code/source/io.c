@@ -113,7 +113,9 @@ void build_adc_packet(void)
 		}
 	}
 	
-	encode_count++;
+	if (buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
+        encode_count++;
+    }
 	
 	// check if subsequent packet will overflow buffer
 	if ((buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) || 
@@ -133,7 +135,9 @@ void build_adc_packet(void)
 	  encode_count = 0;
 		in_packet_ready = true;
 		in_packet_offset = 0;
-	}
+	} else {
+        encode_count++;
+    }
 	
 	//P3 = P3 | 0x40;
 }
