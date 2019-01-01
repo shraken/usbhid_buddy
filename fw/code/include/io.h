@@ -11,8 +11,8 @@
 #include "adc.h"
 #include "counter.h"
 #include "pwm.h"
-#include "tlv563x.h"
 #include "codec.h"
+#include "drivers/tlv563x.h"
 #include "buddy_common.h"
 
 extern unsigned char xdata OUT_PACKET[];
@@ -22,10 +22,7 @@ extern unsigned char xdata *P_IN_PACKET_SEND;
 
 extern buddy_ctx_t buddy_ctx;
 
-extern uint8_t data in_packet_ready;
-
 extern uint8_t new_dac_packet;
-extern uint8_t new_pwm_packet;
 extern uint8_t flag_usb_out;
 
 extern code firmware_info_t fw_info;

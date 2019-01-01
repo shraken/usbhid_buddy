@@ -101,7 +101,6 @@ void usb_init(void)
                                        // Enable USB0 by clearing the USB
                                        // Inhibit bit
    POLL_WRITE_BYTE(POWER,  0x01);      // and enable suspend detection
-   //Setup_IN_BUFFER();
 }
 
 /** @brief Busy wait delay routine used for USB timing.

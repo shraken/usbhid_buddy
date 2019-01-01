@@ -312,7 +312,7 @@
               <MiscControls></MiscControls>
               <Define>C8051</Define>
               <Undefine></Undefine>
-              <IncludePath>..\code\include;..\code\include\drivers;..\code\A51;..\..\lib\libbuddy\common;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
+              <IncludePath>..\code\include;..\code\A51;..\..\lib\libbuddy\common;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -430,14 +430,14 @@
               <FilePath>..\code\source\spi.c</FilePath>
             </File>
             <File>
-              <FileName>support.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\source\support.c</FilePath>
-            </File>
-            <File>
               <FileName>timers.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>support.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\support.c</FilePath>
             </File>
             <File>
               <FileName>uart.c</FileName>
@@ -470,11 +470,6 @@
               <FilePath>..\code\source\i2c.c</FilePath>
             </File>
             <File>
-              <FileName>poncho.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\source\poncho.c</FilePath>
-            </File>
-            <File>
               <FileName>codec.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\lib\libbuddy\common\codec.c</FilePath>
@@ -493,6 +488,11 @@
               <FileName>tca9555.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\source\drivers\tca9555.c</FilePath>
+            </File>
+            <File>
+              <FileName>poncho.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\source\drivers\poncho.c</FilePath>
             </File>
           </Files>
         </Group>

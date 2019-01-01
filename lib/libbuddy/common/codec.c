@@ -205,10 +205,20 @@ bool codec_is_channel_active(const uint8_t channel) {
     return m_chan_enable[channel];
 }
 
+/**
+ * @brief set the provided channel to the state parameter
+ * @param channel integer of BUDDY_CHANNELS enum type
+ * @param state true to enable given channel, false to disable
+ * @return Void.
+ */
 void codec_set_channel_active(const uint8_t channel, bool state) {
     m_chan_enable[channel] = state;
 }
 
+/**
+ * @brief check if codec has reached the end of the frame
+ * @return true if the codec offset is at the end of the frame.
+ */
 bool codec_is_full(void) {
     int max_offset;
     

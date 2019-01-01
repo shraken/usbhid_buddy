@@ -28,18 +28,22 @@
 #include "pwm.h"
 #include "adc.h"
 #include "counter.h"
-#include "tlv563x.h"
 #include "io.h"
 #include "utility.h"
-#include "poncho.h"
 #include "codec.h"
+#include "drivers/poncho.h"
+#include "drivers/tlv563x.h"
+
 #include "buddy_common.h"
 
 
 extern bit SendPacketBusy;
-extern uint8_t timer2_flag;
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata *P_IN_PACKET_SEND;
+
+extern unsigned char xdata flag_usb_out;
+extern uint8_t data in_packet_ready;
+extern uint8_t new_pwm_packet;
 
 extern code firmware_info_t fw_info;
 

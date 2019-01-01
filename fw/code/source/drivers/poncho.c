@@ -1,4 +1,4 @@
-#include "poncho.h"
+#include "drivers/poncho.h"
 
 /* This is a map specific to a hardware revision of the poncho expander
  * board.  The first field `buddy_pin` is the key specifying the Buddy DAQ
@@ -16,11 +16,9 @@ static poncho_pin_cfg_t poncho_cfg[] = {
     { BUDDY_CHAN_7, TCA9555_PIN_2, TCA9555_PIN_7 },
 };
 
-/** boolean, set to True when device initialization has run
-			otherwise set to False.  Initialization must be run before
-		  use.  
-*/
-static bool deviceInit = false;
+/// set to true when device initialization has run otherwise false.  Initialization 
+/// must be run before the driver can be used.
+static bool poncho_device_init = false;
 
 /**
  * @brief Set the operating mode (IN or OUT) of the Poncho expander board.  The IN mode is
@@ -109,7 +107,7 @@ int8_t poncho_init(void) {
 	};
 	int i;
 	
-	if (deviceInit) {
+	if (poncho_device_init) {
 		return PONCHO_ERROR_CODE_OK;
 	}
 	
@@ -125,6 +123,6 @@ int8_t poncho_init(void) {
 	}
 	
 	printf("poncho_init: expander initialized\n");
-	deviceInit = true;
+	poncho_device_init = true;
 	return PONCHO_ERROR_CODE_OK;
 }

@@ -12,13 +12,13 @@
 #include "adc.h"
 #include "timers.h"
 #include "process.h"
-#include "tlv563x.h"
 #include "utility.h"
 #include "pwm.h"
 #include "i2c.h"
-#include "tca9555.h"
-#include "poncho.h"
 #include "io.h"
+#include "drivers/tlv563x.h"
+#include "drivers/tca9555.h"
+#include "drivers/poncho.h"
 
 /*
 	Firmware Info Structure values.  In future

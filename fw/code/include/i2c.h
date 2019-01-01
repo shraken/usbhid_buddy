@@ -26,6 +26,8 @@ typedef enum _I2C_ERROR_CODE {
     I2C_ERROR_CODE_INIT_DONE = -3,
 } I2C_ERROR_CODE;
 
+extern bit SMB_BUSY;
+
 #define  WRITE          0x00           // SMBus WRITE command
 #define  READ           0x01           // SMBus READ command
 

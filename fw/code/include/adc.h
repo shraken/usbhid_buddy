@@ -4,7 +4,7 @@
  *
  * @date 2017-09-26
  * @brief Analog to digital converter (ADC) configuration and
- *				data retrieval routines.
+ *  data retrieval routines.
  *			
  */
 

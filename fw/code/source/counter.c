@@ -1,7 +1,12 @@
 #include "counter.h"
 
+/// array to indicate which channels have counter enabled on them
 static uint8_t counter_chan_enable[BUDDY_CHAN_LENGTH] = { 0 };
+
+/// counter INT0 count variable.  This value is incremented on each interrupt for the INT0
 static int32_t counter_int0_count = 0;
+
+/// counter INT1 count variable.  This value is incremented on each interrupt for the INT1
 static int32_t counter_int1_count = 0;
 
 /** @brief Get the tick counts for channel0 tick counter.

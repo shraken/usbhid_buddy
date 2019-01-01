@@ -20,6 +20,10 @@
 #include "globals.h"
 #include "gpio.h"
 
+extern uint8_t spi_data_rx[];
+extern uint8_t spi_data_tx[];
+extern uint8_t spi_bytes_trans;
+
 //-----------------------------------------------------------------------------
 // Global Constants
 //-----------------------------------------------------------------------------

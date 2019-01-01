@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <string.h>
-#include <gpio.h>
-#include <globals.h>
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
+#include "gpio.h"
+#include "globals.h"
+#include "process.h"
 
 // ----------------------------------------------------------------------------
 // Local Function Prototypes
@@ -28,8 +29,6 @@ void OUT_DATA_ROUTINE(void);
 // ----------------------------------------------------------------------------
 // Local Definitions
 // ----------------------------------------------------------------------------
-
-extern unsigned char xdata flag_usb_out;
 
 unsigned char xdata OUT_PACKET[64];
 unsigned char xdata IN_PACKET[64 * 2];

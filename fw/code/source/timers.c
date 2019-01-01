@@ -1,10 +1,15 @@
 #include "timers.h"
 
+/// set whenever the stream timer has expired
 uint8_t timer2_flag = 0;
 
+/// high and low byte reload register values for the timer2.  These are
+/// computed in the initial configuration and must be used to reload
+/// timer2 in the timer2 interrupt.
 static uint8_t timer2_low_set;
 static uint8_t timer2_high_set;
 
+/// chip timer assignments
 // timer0 - i2c clock source
 // timer1 - uart0
 // timer2 - stream mode interrupt
@@ -206,7 +211,6 @@ void timer2_isr(void) interrupt 5
 		}
   } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
 		build_counter_packet();
-        //build_counter_packet2();
 	}
 }
 

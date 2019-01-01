@@ -1,7 +1,7 @@
-#include <io.h>
+#include "io.h"
 
+/// offset byte counter into the codec frame where decoding or encoding is occuring
 static uint8_t data in_packet_offset = 0;
-static uint8_t data codec_byte_offset = 0;
 
 /**
  * @brief initialize the io subsystem.  set the initial USB
