@@ -1,7 +1,5 @@
 #include "simple.h"
 
-extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
-
 static hid_device* hid_handle;
 static bool active = false;
 

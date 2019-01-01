@@ -556,7 +556,7 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	return BUDDY_ERROR_CODE_OK; 
 }
 
-int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length)
+int buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	uint16_t copy_length;

@@ -30,11 +30,11 @@ void OUT_DATA_ROUTINE(void);
 // Local Definitions
 // ----------------------------------------------------------------------------
 
-unsigned char xdata OUT_PACKET[64];
-unsigned char xdata IN_PACKET[64 * 2];
+unsigned char xdata OUT_PACKET[MAX_REPORT_SIZE];
+unsigned char xdata IN_PACKET[MAX_REPORT_SIZE * 2];
 
-unsigned char xdata *P_IN_PACKET_SEND = &IN_PACKET[0];
-unsigned char xdata *P_IN_PACKET_RECORD = &IN_PACKET[0];
+unsigned char xdata *P_IN_PACKET_SEND = &IN_PACKET[BUFFER0_BASE_OFFSET];
+unsigned char xdata *P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
 unsigned char xdata in_packet_record_cycle = 0;
 
 // ----------------------------------------------------------------------------

@@ -123,10 +123,10 @@ void build_adc_packet(void)
 		
 	  // USB double buffer assignment for future build_adc_packet calls
 		if (in_packet_record_cycle) {
-			P_IN_PACKET_RECORD = &IN_PACKET[0];
+			P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
 			in_packet_record_cycle = 0;
 		} else {
-			P_IN_PACKET_RECORD = &IN_PACKET[64];
+			P_IN_PACKET_RECORD = &IN_PACKET[BUFFER1_BASE_OFFSET];
 			in_packet_record_cycle = 1;
 		}
 				
@@ -197,10 +197,10 @@ void build_counter_packet(void)
 		P_IN_PACKET_SEND = P_IN_PACKET_RECORD;
 		
 		if (in_packet_record_cycle) {
-			P_IN_PACKET_RECORD = &IN_PACKET[0];
+			P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
 			in_packet_record_cycle = 0;
 		} else {
-			P_IN_PACKET_RECORD = &IN_PACKET[64];
+			P_IN_PACKET_RECORD = &IN_PACKET[BUFFER1_BASE_OFFSET];
 			in_packet_record_cycle = 1;
 		}
 				
