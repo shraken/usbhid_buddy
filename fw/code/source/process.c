@@ -417,7 +417,7 @@ void process_out()
 				err_code = process_ctrl();
             
                 //debug(("sent response frame\r\n"));
-                Delay();
+                //Delay();
 				respond_status(err_code);
 				break;
 						
