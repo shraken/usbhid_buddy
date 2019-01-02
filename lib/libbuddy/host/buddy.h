@@ -60,26 +60,38 @@ typedef struct _buddy_hid_info_t {
 	char *str_index_1;
 } buddy_hid_info_t;
 
-/** @struct 
+/** @struct buddy_driver_context_t
+ *  @brief Stores the configuration context for the current instance.
+ *   These structure fields are set when the configuration is sent to
+ *   the hardware device.
  */
-typedef struct _buddy_driver_context {
+typedef struct _buddy_driver_context_t {
 	ctrl_general_t general;
 	ctrl_runtime_t runtime;
 	ctrl_timing_t timing;	
-} buddy_driver_context;
+} buddy_driver_context_t;
 
+/** @struct buddy_cfg_reg_t
+ *  @brief helper structure to store the three configuration entires
+ *   that must be sent to the device during initialization.
+ */
 typedef struct _buddy_cfg_reg_t {
 	uint8_t type_indic;
 	uint8_t *record_cfg;
 	uint8_t record_len;	
 } buddy_cfg_reg_t;
 
+/// attached to a USB HID IN message response from the device arriving
+/// to the host.  Specifies if the IN message contains data or a status
+/// message.  Status messages are returned after configuration and data
+/// messages are returned otherwise.
 typedef enum _BUDDY_RESPONSE_DRV_TYPE {
     BUDDY_RESPONSE_DRV_TYPE_INTERNAL = 0,
     BUDDY_RESPONSE_DRV_TYPE_STATUS,
     BUDDY_RESPONSE_DRV_TYPE_DATA
 } BUDDY_RESPONSE_DRV_TYPE;
 
+/// number of buddy_cfg_reg_t structures in the table
 #define NUMBER_CFG_REG_ENTRIES 3
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];

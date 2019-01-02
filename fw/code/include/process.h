@@ -24,6 +24,7 @@
 #include "support.h"
 #include "timers.h"
 #include "adc.h"
+#include "init.h"
 #include "gpio.h"
 #include "pwm.h"
 #include "adc.h"

@@ -62,12 +62,12 @@ void respond_data(uint8_t *buffer, uint8_t length)
  */
 void respond_status(int8_t error_code)
 {
-		IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_STATUS;
-		IN_PACKET[BUDDY_APP_INDIC_OFFSET] = error_code;
+	IN_PACKET[BUDDY_APP_CODE_OFFSET] = BUDDY_RESPONSE_TYPE_STATUS;
+	IN_PACKET[BUDDY_APP_INDIC_OFFSET] = error_code;
 	
-		P_IN_PACKET_SEND = &IN_PACKET[0];
-		SendPacket(IN_DATA);
-		return;
+	P_IN_PACKET_SEND = &IN_PACKET[0];
+	SendPacket(IN_DATA);
+	return;
 }
 
 /**

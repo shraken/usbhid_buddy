@@ -17,9 +17,14 @@
 #include "codec.h"
 #include "support.h"
 
+/// workspace buffer used for sending HID OUT messages to the device
 static uint8_t out_hold_buf[MAX_OUT_SIZE] = { 0 };
-static buddy_driver_context driver_ctx = { 0 };
 
+/// context defines configuration parameters
+static buddy_driver_context_t driver_ctx = { 0 };
+
+/// short look-up table to convert FIRMWARE_INFO_DAC_TYPE enum type indices
+/// to equivalent C string name of the Buddy DAQ device
 char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH] = {
 	"None",
 	"TI TLV5630 (12-bit)",
@@ -226,18 +231,35 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 	}
 }
 
+/**
+ * @brief blocking generic HID read routine used by the ADC and counter modes to read
+ *  data from the hardware device.  
+ * 
+ * @param handle hidapi handle pointer
+ * @param packet pointer to general_packet_t structure with DAC values to be sent
+ * @param streaming boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+ * @return int BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming)
 {
 	return buddy_read_generic_noblock(handle, packet, streaming, BUDDY_WAIT_LONGEST);
 }
 
+/**
+ * @brief non-blocking generic HID read routine used by the ADC and counter modes to read
+ *  data from the hardware device. 
+ * 
+ * @param handle hidapi handle pointer
+ * @param packet pointer to general_packet_t structure with DAC values to be sent
+ * @param streaming boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+ * @param timeout integer msec for the read operation to try before giving up
+ * @return int BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout)
 {
 	static int decode_status = CODEC_STATUS_FULL;
 	static uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int err_code;
-	int res;
-	int i;
 
 	// 
 	// 1. if streaming off/immediate on then read a HID IN packet and decode
@@ -285,6 +307,16 @@ int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, boo
 	return err_code;
 }
 
+/** @brief does some boundary checking on the PWM duty cycle or frequency values
+ *   requested.  Translates the requested duty cycle or frequency to the equivalent
+ *   PWM reload high and low count values to be sent to the device.  Encodes the packet 
+ *   using codec and sends either immediately or if using streaming then waits for codec 
+ *   buffer to be full before sending.
+*   @param hidapi handle pointer
+*   @param pointer to general_packet_t structure with DAC values to be sent
+*	@param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+*   @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+*/
 int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 {
 	int i;
@@ -338,19 +370,19 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 			}
 
 			if (driver_ctx.runtime.pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
-				float check_value;
+				double check_value;
 
 				switch (driver_ctx.runtime.pwm_timebase) {
 					case RUNTIME_PWM_TIMEBASE_SYSCLK:
-						check_value	= (BUDDY_SYSCLK / (2 * packet->channels[i]));
+						check_value	= (BUDDY_SYSCLK / (2.0 * (double) packet->channels[i]));
 						break;
 
 					case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_4:
-						check_value = ((BUDDY_SYSCLK / 4.0) / (2 * packet->channels[i]));
+						check_value = ((BUDDY_SYSCLK / 4.0) / (2.0 * (double) packet->channels[i]));
 						break;
 
 					case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12:
-						check_value = ((BUDDY_SYSCLK / 12.0) / (2 * packet->channels[i]));
+						check_value = ((BUDDY_SYSCLK / 12.0) / (2.0 * (double) packet->channels[i]));
 						break;
 
 					case RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW:
@@ -385,15 +417,22 @@ int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming)
 	return buddy_send_generic(handle, packet, streaming, APP_CODE_DAC);
 }
 
+/**
+ * @brief blocking read counter values from the hardware device.
+ * 
+ * @param hidapi handle pointer
+ * @param pointer to general_packet_t structure where counter values to be received 
+ * @param streaming boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+ * @return int BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming)
 {
 	return buddy_read_generic(handle, packet, streaming);
 }
 
-/** @brief if streaming mode is on then a packet is decoded from the current frame, if
-*			the frame buffer is empty then a new HID IN packet is received and decoded.
-*   @param hidapi handle pointer
-*   @param pointer to general_packet_t structure with ADC values to be received
+/** @brief blocking read ADC values from the hardware device.
+ *  @param hidapi handle pointer
+*   @param pointer to general_packet_t structure where ADC values to be received
 *	@param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
 *   @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
 */
@@ -402,6 +441,15 @@ int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming)
 	return buddy_read_generic(handle, packet, streaming);
 }
 
+/**
+ * @brief non-blocking read ADC values from the hardware device.
+ * 
+ * @param hidapi handle pointer
+*  @param pointer to general_packet_t structure where ADC values to be received
+*  @param boolean indicating if stream mode is MODE_CTRL_STREAM or MODE_CTRL_IMMEDIATE
+*  @param timeout integer msec for the ADC operation to try before giving up
+*  @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_read_adc_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout)
 {
 	return buddy_read_generic_noblock(handle, packet, streaming, timeout);
@@ -483,7 +531,6 @@ int buddy_flush(hid_device *handle)
 // EXPORT
 int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing)
 {
-	char buffer[128];
 	int i;
 	int j;
     uint8_t resp_type;
@@ -532,15 +579,14 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 						        	    cfg_regs[i].type_indic, 
 							            cfg_regs[i].record_cfg, 
 							            cfg_regs[i].record_len) == BUDDY_ERROR_CODE_OK) {
-			    short_sleep(100);
-
+                                            
                 err_code = buddy_get_response(handle, &resp_type, NULL, 0);
 
                 if ((resp_type != BUDDY_ERROR_CODE_OK) || (err_code != BUDDY_RESPONSE_DRV_TYPE_STATUS)) {
                     printf("buddy_configure(): malformed status packet detected\n");
                     printf("resp_type = %d\n", resp_type);
                     printf("err_code = %d\n", err_code);
-                    short_sleep(100);
+                    short_sleep(10);
                     continue;
                 } else {
                     printf("buddy_configure(): buddy_get_response detected\n");
@@ -553,15 +599,32 @@ int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t 
 	    }
 	}
 
+    #if 0
+     if (buddy_write_raw(handle, APP_CODE_CTRL, cfg_regs[i].type_indic, 
+				cfg_regs[i].record_cfg, cfg_regs[i].record_len) != BUDDY_ERROR_CODE_OK) {
+		critical(("buddy_configure(): failed on buddy_write_raw\n"));
+		return BUDDY_ERROR_CODE_PROTOCOL;
+    }
+    #endif
+
 	return BUDDY_ERROR_CODE_OK; 
 }
 
+/**
+ * @brief get a response packet from the hardware device.
+ * 
+ * @param handle hidapi internal handle returned from buddy_init
+ * @param res_type integer of enum BUDDY_ERROR_CODE describing success or failure
+ * @param buffer pointer location where the frame will be read into
+ * @param length size of the location pointer to by the `buffer` parameter
+ * @return int BUDDY_RESPONSE_DRV_TYPE_INTERNAL on error, BUDDY_RESPONSE_DRV_TYPE_DATA for
+ *  data and BUDDY_RESPONSE_DRV_TYPE_STATUS for status messages
+ */
 int buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	uint16_t copy_length;
 	int res;
-    int j;
 	int response_count = 0;
 
     debug(("buddy_get_response() enter\n"));
@@ -629,6 +692,12 @@ int buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, u
 	return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
 }
 
+/**
+ * @brief reset the hardware device.
+ * 
+ * @param handle hidapi internal handle returned from buddy_init
+ * @return int BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_reset_device(hid_device *handle)
 {
 	return buddy_write_raw(handle, APP_CODE_RESET, 0x00, (uint8_t *) NULL, 0);
@@ -644,7 +713,6 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	uint8_t resp_type;
-    int res;
 	int i;
 	int err_code;
 	
@@ -697,7 +765,6 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 {
 	hid_device* handle;
-	char buffer[128];
 
 	handle = hidapi_init(hid_info);
 	if (!handle) {
@@ -709,9 +776,23 @@ hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
     buddy_empty(handle);
 
 	buddy_get_firmware_info(handle, fw_info);
+    buddy_empty(handle);
+
 	return handle;
 }
 
+/**
+ * @brief close down the connection.  Free any data structures and call the
+ *  underlying hidapi close on the handle.
+ * 
+ * @param handle hidapi internal handle returned from buddy_init
+ * @param hid_info pointer to structure to store USB device information
+ * @param device_disable boolean set to True if the device should not be reset
+ *  into the idle state, otherwise False.  We use this to keep the hardware device
+ *  in a fixed mode, for instance to keep the DAC on and the channel value active
+ *  even after driver session ends.
+ * @return BUDDY_ERROR_CODE_OK on success, BUDDY_ERROR_CODE_GENERAL on failure.
+ */
 int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_disable)
 {
 	ctrl_general_t general_settings = { 0 };

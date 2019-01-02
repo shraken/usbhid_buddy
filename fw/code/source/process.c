@@ -415,6 +415,9 @@ void process_out()
 			case APP_CODE_CTRL:
 				debug(("APP_CODE_CTRL\r\n"));
 				err_code = process_ctrl();
+            
+                //debug(("sent response frame\r\n"));
+                Delay();
 				respond_status(err_code);
 				break;
 						
