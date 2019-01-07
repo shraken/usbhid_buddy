@@ -13,7 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <poncho.h>
+#include <stdbool.h>
+#include <string.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include "globals.h"
+#include "tca9555.h"
+#include "init.h"
 
 /**
  * @brief Poncho Expander driver error codes
@@ -35,6 +41,8 @@ typedef struct _poncho_pin_cfg_t {
     uint8_t ctrl_b_pin;    /* the PCA9555 CTRL_B numbered pin */
 } poncho_pin_cfg_t;
 
+int8_t poncho_init(void);
+int8_t poncho_configure(uint8_t mode, uint8_t pin_state);
 int8_t poncho_set_mode(uint8_t pin, uint8_t pos);
 int8_t poncho_set_out_mode(uint8_t pin);
 int8_t poncho_set_in_mode(uint8_t pin);

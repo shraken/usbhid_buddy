@@ -1,11 +1,4 @@
-#include <stdint.h>
-#include <support.h>
-#include <gpio.h>
-#include <globals.h>
-#include <tlv563x.h>
-#include <pwm.h>
-#include <adc.h>
-#include <counter.h>
+#include "support.h"
 
 /**
  * @brief disable all subsystem functions.  Will turn off

@@ -7,6 +7,25 @@
 	or make modifiable by a binary editor script. 
  */
 
+#include <stdio.h>
+#include <string.h>
+#include <c8051f3xx.h>
+#include "globals.h"
+#include "gpio.h"
+#include "init.h"
+#include "uart.h"
+#include "spi.h"
+#include "adc.h"
+#include "timers.h"
+#include "process.h"
+#include "utility.h"
+#include "pwm.h"
+#include "i2c.h"
+#include "io.h"
+#include "drivers/tlv563x.h"
+#include "drivers/tca9555.h"
+#include "drivers/poncho.h"
+
 #define BUDDY_FW_INFO_SERIAL 0x12345678
 #define BUDDY_FW_INFO_DATETIME 0x00000000
 

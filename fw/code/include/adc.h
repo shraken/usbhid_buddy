@@ -1,10 +1,11 @@
+
 /**
  * @file adc.h
  * @author Nicholas Shrake <shraken@gmail.com>
  *
  * @date 2017-09-26
  * @brief Analog to digital converter (ADC) configuration and
- *				data retrieval routines.
+ *  data retrieval routines.
  *			
  */
 
@@ -12,10 +13,29 @@
 #define  _ADC_H
 
 #include <stdint.h>
-#include <buddy.h>
+#include <string.h>
+#include <stdio.h>
+#include <c8051f3xx.h>
+#include "utility.h"
+#include "globals.h"
+#include "gpio.h"
+#include "process.h"
+#include "io.h"
+#include "buddy.h"
 
 #define ADC_BIT_SIZE 10
 #define MAX_ANALOG_INPUTS 8
+
+/// ADC0 start-of-conversion source is overflow of Timer 2
+#define DEFAULT_ADC0CN 0x02
+
+/// 1x gain, VDD used as voltage reference, temperature sensor ON,
+/// internal bias generator on, on-chip reference buffer on.
+#define DEFAULT_REF0CN 0x8F
+
+/// ADC0 SAR conversion clock period bits
+/// Data is right justified
+#define DEFAULT_ADC0CF (((BUDDY_SYSCLK/8000000)-1)<<3)
 
 // CTRL0 register bits, pg. 12
 typedef enum _ADC_REF0CN_BITMASK {
@@ -69,9 +89,20 @@ typedef enum _ADC_REF0CN_BITMASK {
 #define ADC_GND 0x1F  // 011111b
 #define ADC_VREF 0x1E // 011110b
 
-int8_t adc_init(void);
-int8_t adc_enable(void);
-int8_t adc_disable(void);
-int8_t adc_set_reference(uint8_t value);
+extern int16_t data adc_results[MAX_ANALOG_INPUTS];
+
+extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
+extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
+extern uint8_t adc_channel_count;
+extern uint8_t adc_int_dec_max;
+extern uint8_t data adc_channel_index;
+extern uint8_t adc_int_dec;
+extern uint16_t adc_timer_count;
+extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
+
+void adc_init(void);
+void adc_enable(void);
+void adc_disable(void);
+void adc_set_reference(uint8_t value);
 
 #endif

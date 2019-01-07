@@ -1,10 +1,4 @@
-#include <init.h>
-#include <C8051F3xx.h>
-#include <F3xx_USB0_InterruptServiceRoutine.h>
-#include <F3xx_USB0_ReportHandler.h>
-#include <F3xx_USB0_Register.h>
-#include <gpio.h>
-#include <globals.h>
+#include "init.h"
 
 /** @brief This top-level initialization routine calls all support routine.
  *  @return Void.
@@ -107,7 +101,6 @@ void usb_init(void)
                                        // Enable USB0 by clearing the USB
                                        // Inhibit bit
    POLL_WRITE_BYTE(POWER,  0x01);      // and enable suspend detection
-   //Setup_IN_BUFFER();
 }
 
 /** @brief Busy wait delay routine used for USB timing.

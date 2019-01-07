@@ -10,10 +10,13 @@
 #endif
 */
 
-// C8051 System Clock Frequency
-#define SYSCLK     48000000
+// C8051 microcontroller System Clock Frequency
+#define BUDDY_SYSCLK     48000000
 
 #define MAX_REPORT_SIZE 63
+#define BUFFER0_BASE_OFFSET 0
+#define BUFFER1_BASE_OFFSET 64
+
 #define MAX_OUT_SIZE MAX_REPORT_SIZE
 #define MAX_IN_SIZE MAX_REPORT_SIZE
 
@@ -22,29 +25,16 @@
 #define BUDDY_OUT_DATA_ID 0x01
 #define BUDDY_IN_DATA_ID  0x02
 
+/// USB HID uses a 64-byte endpoint for comms.  1 byte is reserved for
+/// the HID ReportID to indicate IN/OUT packet.  2 other bytes must be
+/// used for control information with the value always encoded at the
+/// 4th byte.  This allows 61 bytes of data in each HID packet
 #define BUDDY_TYPE_OFFSET 0        // USB HID (IN/OUT)
 #define BUDDY_APP_CODE_OFFSET 1    // APP (Application)
 #define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type
 #define BUDDY_APP_VALUE_OFFSET 3   // CTRL (Control) Value
 
-// ADC0 start-of-conversion source is overflow of Timer 2
-#define DEFAULT_ADC0CN 0x02
-
-// 1x gain, VDD used as voltage reference, temperature sensor ON,
-// internal bias generator on, on-chip reference buffer on.
-#define DEFAULT_REF0CN 0x8F
-
-// ADC0 SAR conversion clock period bits
-// Data is right justified
-#define DEFAULT_ADC0CF (((SYSCLK/8000000)-1)<<3)
-
-#define BUDDY_BIT_SIZE 8
 #define BUDDY_MAX_COUNTER 0x7F
-
-//typedef int bool;
-#define bool int
-#define false 0
-#define true 1
 
 /**
  * \enum APP_CODE 
@@ -124,6 +114,7 @@ typedef enum _CODEC_STATUS {
 	CODEC_STATUS_FULL = 1,
 	CODEC_STATUS_NOERR = 0,
 	CODEC_STATUS_ERROR = -1,
+    CODEC_STATUS_UNINITIALIZED = -2,
 } CODEC_STATUS;
 
 /**

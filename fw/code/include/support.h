@@ -10,6 +10,14 @@
 #ifndef  _SUPPORT_H_
 #define  _SUPPORT_H_
 
+#include <stdint.h>
+#include "globals.h"
+#include "gpio.h"
+#include "pwm.h"
+#include "adc.h"
+#include "counter.h"
+#include "drivers/tlv563x.h"
+
 void disable_all(void);
 
 void txrx_leds_off(void);

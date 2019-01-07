@@ -6,17 +6,13 @@
  *
  */
 
-#include <spi.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <c8051f3xx.h>
-#include <buddy.h>
-#include <tlv563x.h>
-#include <utility.h>
+#include "drivers/tlv563x.h"
 
 // shraken TODO: make this configurable as build directive
 static uint8_t tlv563x_resolution = TLV5630_RESOLUTION_TYPE;
 
+/// TLV563X SPI DAC chip CTRL0 and CTRL1 register values
+/// consult pg. 11 of the TLV563x datasheet
 static uint8_t tlv563x_ctrl0_reg = DEFAULT_TLV563X_CTRL0_REG;
 static uint8_t tlv563x_ctrl1_reg = DEFAULT_TLV563X_CTRL1_REG;
 
@@ -32,12 +28,12 @@ void tlv563x_write(uint8_t reg_channel, uint16_t reg_value)
 {
 	spi_select();
 	
-	SPI_Data_Tx_Array[0] = (reg_channel << 4);
-	SPI_Data_Tx_Array[0] |= ((reg_value & 0x0F00) >> 8);
-	SPI_Data_Tx_Array[1] = (reg_value & 0xFF);
+	spi_data_tx[0] = (reg_channel << 4);
+	spi_data_tx[0] |= ((reg_value & 0x0F00) >> 8);
+	spi_data_tx[1] = (reg_value & 0xFF);
 	
 	//debug(("TLV5630_write_block: writing %02bx:%02bx\r\n", SPI_Data_Array[0], SPI_Data_Array[1]));
-	bytes_trans = 2;
+	spi_bytes_trans = 2;
 	spi_array_readwrite();
 
 	return;

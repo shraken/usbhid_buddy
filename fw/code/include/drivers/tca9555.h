@@ -12,8 +12,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <i2c.h>
+#include "i2c.h"
+#include "init.h"
 
 /**
  * @brief TCA9555 driver error codes

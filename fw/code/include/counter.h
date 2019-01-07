@@ -12,9 +12,13 @@
 #ifndef  _COUNTER_H
 #define  _COUNTER_H
 
-#include <buddy.h>
 #include <stdint.h>
-#include <utility.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <C8051F3xx.h>
+#include "utility.h"
+#include "buddy.h"
+#include "utility.h"
 
 #define RUNTIME_DEFAULT_COUNTER_CONTROL \
 	((RUNTIME_COUNTER_CONTROL_ACTIVE_HIGH << RUNTIME_COUNTER_CONTROL_ACTIVE_BITPOS) | \

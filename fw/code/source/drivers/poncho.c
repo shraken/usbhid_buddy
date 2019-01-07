@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <poncho.h>
-#include <tca9555.h>
-#include <globals.h>
-
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
+#include "poncho.h"
 
 extern void Delay(void);
 
@@ -27,11 +18,9 @@ static poncho_pin_cfg_t poncho_cfg[] = {
     { BUDDY_CHAN_7, TCA9555_PIN_2, TCA9555_PIN_7 },
 };
 
-/** boolean, set to True when device initialization has run
-			otherwise set to False.  Initialization must be run before
-		  use.  
-*/
-static bool deviceInit = false;
+/// set to true when device initialization has run otherwise false.  Initialization 
+/// must be run before the driver can be used.
+static bool poncho_device_init = false;
 
 /**
  * @brief Set the operating mode (IN or OUT) of the Poncho expander board.  The IN mode is
@@ -81,6 +70,15 @@ int8_t poncho_set_in_mode(uint8_t pin) {
     return poncho_set_mode(pin, TCA9555_PIN_VALUE_HIGH);
 }
 
+/**
+ * @brief configure the poncho expander board
+ * 
+ * @param mode enum of type BUDDY_EXPANDER_PONCHO_MODE specifying if poncho
+ *  expander pins are to be treated as out or inputs.
+ * @param pin_state bitmask describing channels to activate for the given
+ *  functionality specified in the mode output parameter.
+ * @return int8_t PONCHO_ERROR_CODE_OK on success, otherwise error.
+ */
 int8_t poncho_configure(uint8_t mode, uint8_t pin_state) {
 		int i;
 
@@ -94,7 +92,7 @@ int8_t poncho_configure(uint8_t mode, uint8_t pin_state) {
 			} else if (mode == BUDDY_EXPANDER_PONCHO_MODE_IN) {
 				poncho_set_in_mode(i);
 			} else {
-		    return PONCHO_ERROR_CODE_UNKNOWN;
+                return PONCHO_ERROR_CODE_GENERAL_ERROR;
 			}
 		}
 		
@@ -120,7 +118,7 @@ int8_t poncho_init(void) {
 	};
 	int i;
 	
-	if (deviceInit) {
+	if (poncho_device_init) {
 		return PONCHO_ERROR_CODE_OK;
 	}
 	
@@ -136,6 +134,6 @@ int8_t poncho_init(void) {
 	}
 	
 	printf("poncho_init: expander initialized\n");
-	deviceInit = true;
+	poncho_device_init = true;
 	return PONCHO_ERROR_CODE_OK;
 }

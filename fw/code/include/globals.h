@@ -1,7 +1,7 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
-#include <buddy.h>
+#include "buddy.h"
 
 //#define ADC_TEST
 

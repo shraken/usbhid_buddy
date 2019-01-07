@@ -13,12 +13,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include "globals.h"
+
+extern bit SMB_BUSY;
 
 typedef enum _I2C_ERROR_CODE {
 	I2C_ERROR_CODE_OK = 0,
 	I2C_ERROR_CODE_GENERAL_ERROR = -1,
 	I2C_ERROR_CODE_BAD_MEMORY = -2,
-    I2C_ERROR_CODE_INIT_DONE = -3,
+    I2C_ERROR_CODE_UNINITIALIZED = -3,
 } I2C_ERROR_CODE;
 
 #define  WRITE          0x00           // SMBus WRITE command
