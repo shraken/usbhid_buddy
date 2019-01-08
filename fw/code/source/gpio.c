@@ -9,12 +9,11 @@
  
 #include "gpio.h"
 
-/** @brief Explicitly initializes the GPIO pins required for
-  *         "drive" functionality as open-drain. 
-  *
-  *  @return error_t enum indicating success or error.
+/**
+ * @brief initialize GPIO functionality
+ * 
  */
-int8_t gpio_init()
+void gpio_init()
 {
 	// red and green LEDs used to indicate RX/TX
 	gpio_set_pin_mode(STATUS_TX_LED_PIN, GPIO_MODE_PUSH_PULL);
@@ -34,8 +33,6 @@ int8_t gpio_init()
 	// test/debug GPIO for measuring execution time
 	gpio_set_pin_mode(TEST_STATUS_PIN, GPIO_MODE_PUSH_PULL);
 	gpio_set_pin_value(TEST_STATUS_PIN, GPIO_VALUE_HIGH);
-	
-  return GPIO_ERROR_CODE_SUCCESS;
 }
 
 /** @brief Sets the pin value to high or low state.

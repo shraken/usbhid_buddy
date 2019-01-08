@@ -374,15 +374,15 @@ int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming)
 
 				switch (driver_ctx.runtime.pwm_timebase) {
 					case RUNTIME_PWM_TIMEBASE_SYSCLK:
-						check_value	= (BUDDY_SYSCLK / (2.0 * (double) packet->channels[i]));
+						check_value	= (BUDDY_SYSCLK / (2 * packet->channels[i]));
 						break;
 
 					case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_4:
-						check_value = ((BUDDY_SYSCLK / 4.0) / (2.0 * (double) packet->channels[i]));
+						check_value = ((BUDDY_SYSCLK / 4.0) / (2 * packet->channels[i]));
 						break;
 
 					case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12:
-						check_value = ((BUDDY_SYSCLK / 12.0) / (2.0 * (double) packet->channels[i]));
+						check_value = ((BUDDY_SYSCLK / 12.0) / (2 * packet->channels[i]));
 						break;
 
 					case RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW:

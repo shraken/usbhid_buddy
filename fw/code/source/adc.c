@@ -16,17 +16,17 @@ uint8_t adc_int_dec = 1;
 uint8_t adc_int_dec_max = 1;
 
 /// measured ADC count array for the different channel inputs
-int16_t data adc_results[MAX_ANALOG_INPUTS];            
+int16_t data adc_results[BUDDY_CHAN_LENGTH];            
 
 /// table of AMX0 negative channel register values for
 /// corresponding channel index as specified by the array
 /// index
-uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS] = { 0 };
+uint8_t adc_mux_tbl_n[BUDDY_CHAN_LENGTH] = { 0 };
 
 /// table of AMX0 positive channel register values for
 /// corresponding channel index as specified by the array
 /// index
-uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS] = { 0 };
+uint8_t adc_mux_tbl_p[BUDDY_CHAN_LENGTH] = { 0 };
 
 /// counter variable used to test ADC data path.  This counter is set
 /// to ADC channels and observed on the host side
@@ -34,7 +34,7 @@ uint16_t adc_timer_count;
 
 /// reference table of ADC0 mux register values.  These values are
 /// the ADC mux register value that must be used to measure the ADC value
-uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
+uint8_t code adc_mux_ref_tbl[BUDDY_CHAN_LENGTH] = {
 	ADC_P2_0,	// ADC0_IN
 	ADC_P2_1,	// ADC1_IN
 	ADC_P2_2,	// ADC2_IN
@@ -46,29 +46,21 @@ uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS] = {
 };
 
 /** @brief Enable the ADC.
- *  @return 0 on sucess, -1 on error.
  */
-int8_t adc_enable(void)
-{
+void adc_enable(void) {
 	AD0EN = 1;
-	return 0;
 }
 
 /** @brief Disable the ADC.
- *  @return 0 on sucess, -1 on error.
  */
-int8_t adc_disable(void)
-{
+void adc_disable(void) {
 	AD0EN = 0;
-	return 0;
 }
 
 /** @brief Disables ADC, sets a default single ended conversion, sets up default ADC conversion
  *				 register values, and enables the ADC interrupt.
- *  @return 0 on sucess, -1 on error.
  */
-int8_t adc_init(void)
-{	
+void adc_init(void) {	
 	AD0EN = 0;
 		
 	ADC0CN = DEFAULT_ADC0CN;
@@ -79,20 +71,15 @@ int8_t adc_init(void)
 	AMX0N = ADC_GND;
 	
 	EIE1 |= 0x08;
-
-	return 0;
 }
 
 /** @brief Sets the reference voltage used for the ADC.  The value is controlled by
  *				 the host driver and can be VDD, bandgap, or external reference.  
- *  @return 0 on sucess, -1 on error.
+ *  @param register reference REF0CN value to be set
  */
-int8_t adc_set_reference(uint8_t value)
-{
+void adc_set_reference(uint8_t value) {
 	debug(("adc_set_reference(): value = %bd (%bx)\r\n", value, value));
 	REF0CN |= value;
-	
-	return 0;
 }
 
 /** @brief ADC interrupt.  Save ADC channel value to accumulator storage.

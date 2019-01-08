@@ -1,3 +1,4 @@
+
 /**
  * @file adc.h
  * @author Nicholas Shrake <shraken@gmail.com>
@@ -11,9 +12,9 @@
 #ifndef  _ADC_H
 #define  _ADC_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include <c8051f3xx.h>
 #include "utility.h"
 #include "globals.h"
@@ -99,9 +100,9 @@ extern uint8_t adc_int_dec;
 extern uint16_t adc_timer_count;
 extern uint8_t code adc_mux_ref_tbl[MAX_ANALOG_INPUTS];
 
-int8_t adc_init(void);
-int8_t adc_enable(void);
-int8_t adc_disable(void);
-int8_t adc_set_reference(uint8_t value);
+void adc_init(void);
+void adc_enable(void);
+void adc_disable(void);
+void adc_set_reference(uint8_t value);
 
 #endif

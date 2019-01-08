@@ -28,7 +28,6 @@ void spi_isr(void) interrupt 6
 		
 			SPI0DAT = spi_data_tx[array_index];
 			
-			// spi_bytes_trans = 2, 2 -1 = 1
             if (array_index >= (spi_bytes_trans - 1)) {
 				state = 1;
             }
@@ -92,8 +91,6 @@ void spi_array_readwrite(void)
     while (!NSSMD0);                    
 	
     NSSMD0 = 0;
-
-    //SPI0DAT = Command;
     SPI0DAT = spi_data_tx[0];
 	
     // Wait for SPI transcation to complete

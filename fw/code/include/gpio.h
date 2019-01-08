@@ -130,7 +130,7 @@ typedef enum _gpio_pin_value gpio_value;
 typedef enum _gpio_major_type gpio_major_pin;
 typedef enum _gpio_minor_type gpio_minor_pin;
 
-int8_t gpio_init();
+void gpio_init();
 int8_t gpio_set_pin_value(gpio_pin pin, gpio_value value);
 int8_t gpio_set_pin_mode(gpio_pin pin, gpio_mode mode);
 uint8_t gpio_get_pin_value(gpio_pin pin);

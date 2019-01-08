@@ -105,6 +105,14 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 	return 0;
 }
 
+/**
+ * @brief configure expander hardware boards
+ * 
+ * @param p_general structure passed from host with expander type, mode
+ *  and pin configurations.
+ * @return int8_t BUDDY_ERROR_CODE_OK on success, otherwise self describing
+ *  error code.
+ */
 int8_t process_ctrl_chan_expander(ctrl_general_t *p_general) {
 	printf("process_ctrl_chan_expander invoked\n");
 	

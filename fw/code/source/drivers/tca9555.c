@@ -149,8 +149,8 @@ int8_t tca9555_set_port_polarity(uint8_t port_num, uint8_t pin_num, uint8_t pol)
 
 		/*
     printf("tca9555_set_port_polarity invoked\r\n");
-    printf("tca9555_reg_cfg_0 = %bx\r\n", tca9555_reg_cfg_0);
-    printf("tca9555_reg_cfg_1 = %bx\r\n", tca9555_reg_cfg_1);
+    printf("tca9555_reg_polinv_0 = %bx\r\n", tca9555_reg_polinv_0);
+    printf("tca9555_reg_polinv_1 = %bx\r\n", tca9555_reg_polinv_1);
 		*/
 		
     i2c_write(tbuf, 2);

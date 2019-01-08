@@ -68,6 +68,15 @@ int8_t poncho_set_in_mode(uint8_t pin) {
     return poncho_set_mode(pin, TCA9555_PIN_VALUE_HIGH);
 }
 
+/**
+ * @brief configure the poncho expander board
+ * 
+ * @param mode enum of type BUDDY_EXPANDER_PONCHO_MODE specifying if poncho
+ *  expander pins are to be treated as out or inputs.
+ * @param pin_state bitmask describing channels to activate for the given
+ *  functionality specified in the mode output parameter.
+ * @return int8_t PONCHO_ERROR_CODE_OK on success, otherwise error.
+ */
 int8_t poncho_configure(uint8_t mode, uint8_t pin_state) {
 		int i;
 
@@ -81,7 +90,7 @@ int8_t poncho_configure(uint8_t mode, uint8_t pin_state) {
 			} else if (mode == BUDDY_EXPANDER_PONCHO_MODE_IN) {
 				poncho_set_in_mode(i);
 			} else {
-		    return PONCHO_ERROR_CODE_UNKNOWN;
+                return PONCHO_ERROR_CODE_GENERAL_ERROR;
 			}
 		}
 		

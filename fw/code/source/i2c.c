@@ -33,7 +33,11 @@ static uint8_t TARGET = 0x00;
  *  bad buffer.
  */
 int8_t i2c_write(uint8_t *buffer, uint16_t len) {
-	if (!buffer) {
+	if (!i2c_initialized) {
+        return I2C_ERROR_CODE_UNINITIALIZED;
+    }
+    
+    if (!buffer) {
 		return I2C_ERROR_CODE_BAD_MEMORY;
 	}
 	

@@ -14,7 +14,10 @@
 // C8051 microcontroller System Clock Frequency
 #define BUDDY_SYSCLK     48000000
 
-#define MAX_REPORT_SIZE 64
+// C8051 microcontroller System Clock Frequency
+#define BUDDY_SYSCLK     48000000
+
+#define MAX_REPORT_SIZE 63
 #define BUFFER0_BASE_OFFSET 0
 #define BUFFER1_BASE_OFFSET 64
 
@@ -24,10 +27,10 @@
 #define BUDDY_OUT_DATA_ID 0x01
 #define BUDDY_IN_DATA_ID  0x02
 
-// USB HID uses a 64-byte endpoint for comms.  1 byte is reserved for
-// the HID ReportID to indicate IN/OUT packet.  2 other bytes must be
-// used for control information with the value always encoded at the
-// 4th byte.  This allows 61 bytes of data in each HID packet
+/// USB HID uses a 64-byte endpoint for comms.  1 byte is reserved for
+/// the HID ReportID to indicate IN/OUT packet.  2 other bytes must be
+/// used for control information with the value always encoded at the
+/// 4th byte.  This allows 61 bytes of data in each HID packet
 #define BUDDY_TYPE_OFFSET 0        // USB HID (IN/OUT)
 #define BUDDY_APP_CODE_OFFSET 1    // APP (Application)
 #define BUDDY_APP_INDIC_OFFSET 2   // CTRL (Control) Type
@@ -113,7 +116,7 @@ typedef enum _CODEC_STATUS {
 	CODEC_STATUS_FULL = 1,
 	CODEC_STATUS_NOERR = 0,
 	CODEC_STATUS_ERROR = -1,
-	CODEC_STATUS_UNINITIALIZED = -2,
+    CODEC_STATUS_UNINITIALIZED = -2,
 } CODEC_STATUS;
 
 /**

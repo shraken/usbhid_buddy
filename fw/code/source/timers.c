@@ -38,7 +38,7 @@ void timer0_init(void)
 #if ((BUDDY_SYSCLK/SMB_FREQUENCY/3) < 255)
    #define SCALE 1
       CKCON |= 0x04;                   // Timer0 clock source = SYSCLK
-#elif ((SYSCLK/SMB_FREQUENCY/4/3) < 255)
+#elif ((BUDDY_SYSCLK/SMB_FREQUENCY/4/3) < 255)
    #define SCALE 4
       // Timer1 clock source = SYSCLK / 4
     
@@ -214,6 +214,10 @@ void timer2_isr(void) interrupt 5
 	}
 }
 
+/**
+ * @brief Timer3.  I2C timeout detection
+ * 
+ */
 void timer3_isr(void) interrupt 14
 {
    SMB0CF &= ~0x80;                    // Disable SMBus
