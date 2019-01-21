@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <C8051F3xx.h>
 #include "utility.h"
-#include "buddy.h"
+#include "buddy_common.h"
 
 #define NUMBER_PCA_CHANNELS 5
 #define DEFAULT_FREQUENCY 50000

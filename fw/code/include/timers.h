@@ -25,7 +25,7 @@
 #include "gpio.h"
 #include "utility.h"
 #include "process.h"
-#include "buddy.h"
+#include "buddy_common.h"
 
 // Timer 2
 #define TIMER2_LOW_PERIOD 21		    // in nsec, 21 nsec

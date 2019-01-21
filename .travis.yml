@@ -109,4 +109,4 @@ jobs:
 
       after_success:
         - cd ../../
-        - coveralls -i lib/libbuddy -e lib/libbuddy/bindings --gcov-options '\-lp'
+        - coveralls -i lib/libbuddy/common -ilib/libbuddy/host -e lib/libbuddy/bindings --gcov-options '\-lp'

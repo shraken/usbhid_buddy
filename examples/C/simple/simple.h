@@ -9,8 +9,9 @@
 #include <stdlib.h>
 #include <sys/timeb.h>
 
+#include "buddy_common.h"
+#include "codec.h"
 #include "buddy.h"
-#include "usbhid_buddy.h"
 #include "support.h"
 
 #include "hidapi.h"

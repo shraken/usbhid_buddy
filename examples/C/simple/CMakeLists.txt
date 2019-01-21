@@ -3,12 +3,22 @@ cmake_minimum_required(VERSION 2.8)
 
 # header files
 set (MAIN_INCLUDE ${PROJECT_SOURCE_DIR}) 
-set (LIBBUDDY_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy) 
+set (LIBBUDDY_COMMON_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/common)
+set (LIBBUDDY_HOST_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/host)
 set (HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/../../../lib/hidapi/hidapi) 
-set (BUDDY_INCLUDE_DIRS ${MAIN_INCLUDE} ${LIBBUDDY_INCLUDE} ${HIDAPI_INCLUDE})
+set (BUDDY_INCLUDE_DIRS 
+        ${MAIN_INCLUDE} 
+        ${LIBBUDDY_COMMON_INCLUDE}
+        ${LIBBUDDY_HOST_INCLUDE}
+        ${HIDAPI_INCLUDE}
+)
 
 # source files
-file(GLOB_RECURSE LIBBUDDY_SOURCES ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/*.c)
+set( LIBBUDDY_SOURCES
+    ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/common/codec.c
+    ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/common/support.c
+    ${PROJECT_SOURCE_DIR}/../../../lib/libbuddy/host/buddy.c
+)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../../../lib/hidapi/windows/hid.c)
@@ -29,10 +39,10 @@ endif()
 set (BUDDY_SOURCES ${LIBBUDDY_SOURCES} ${HIDAPI_SOURCES})
 
 # debug: print variables to screen
-get_cmake_property(_variableNames VARIABLES)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
 include_directories(${BUDDY_INCLUDE_DIRS})
 add_executable (simple simple.c ${BUDDY_SOURCES})

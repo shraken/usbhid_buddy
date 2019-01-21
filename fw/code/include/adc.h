@@ -12,6 +12,7 @@
 #ifndef  _ADC_H
 #define  _ADC_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -21,7 +22,7 @@
 #include "gpio.h"
 #include "process.h"
 #include "io.h"
-#include "buddy.h"
+#include "buddy_common.h"
 
 #define ADC_BIT_SIZE 10
 #define MAX_ANALOG_INPUTS 8

@@ -34,17 +34,18 @@
 #include "poncho.h"
 #include "drivers/poncho.h"
 #include "drivers/tlv563x.h"
-
-#include "buddy.h"
+#include "buddy_common.h"
+#include "codec.h"
 
 extern bit SendPacketBusy;
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata *P_IN_PACKET_SEND;
 
-extern code firmware_info_t fw_info;
-
-extern data uint8_t in_packet_ready;
+extern unsigned char xdata flag_usb_out;
+extern uint8_t data in_packet_ready;
 extern uint8_t new_pwm_packet;
+
+extern code firmware_info_t fw_info;
 
 int8_t process_ctrl_function(ctrl_general_t *p_general);
 int8_t process_ctrl_runtime(ctrl_runtime_t *p_runtime);

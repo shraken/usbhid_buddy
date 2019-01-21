@@ -20,19 +20,19 @@ else:
     sys.exit()
 
 buddy_module = Extension('_buddy',
-                         sources=['usbhid_buddy_wrap.c',
-                                  '../../usbhid_buddy.c',
-                                  '../../support.c',
-                                  '../../buddy.c',
-                                  '../../utility.c',
+                         sources=['buddy_wrap.c',
+                                  '../../common/codec.c',
+                                  '../../common/support.c',
+                                  '../../host/buddy.c',
                                   hidapi_src_path],
-                         include_dirs=['../../',
+                         include_dirs=['../../common',
+                                       '../../host',
                                        '../../../hidapi/hidapi'],
                          libraries=lib_list)
 
 setup (name='buddy',
        version='0.1',
        author='Wiggle Labs',
-       description='Python binding for USBHID Buddy DAQ device',
+       description='Python binding for Buddy DAQ device',
        ext_modules=[buddy_module],
        py_modules=['buddy'])

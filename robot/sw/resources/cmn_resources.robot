@@ -35,7 +35,7 @@ Buddy Static Counter Check
     \   Sleep  0.s
     \   ${result}=  Buddy Get Counter Channel Value  ${channel}
     \   ${result_float}=  Convert to Number  ${result}
-    #\   Log  ${counter_count}  console=yes
+    \   Log  ${result}  console=yes
     #\   Log  ${result}  console=yes
     \   ${min} =      Evaluate    ${counter_count} - ${BUDDY_THRESH_PWM_SET_FREQ_PLUSMINUS}
     \   ${max} =      Evaluate    ${counter_count} + ${BUDDY_THRESH_PWM_SET_FREQ_PLUSMINUS}

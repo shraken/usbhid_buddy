@@ -2,5 +2,5 @@
 
 ## Building
 
-`swig -I../../ -python usbhid_buddy.i`
+`swig -I../../common -I../../host -python buddy.i`
 `python setup.py build`
