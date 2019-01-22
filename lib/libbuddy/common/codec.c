@@ -101,6 +101,15 @@ void codec_set_data_size(const uint8_t data_size) {
 }
 
 /**
+ * @brief get the codec resolution
+ * 
+ * @return int enum of type RESOLUTION_CTRL
+ */
+int codec_get_resolution(void) {
+    return m_resolution;
+}
+
+/**
  * @brief get the data size used in advancing the frame buffer on each
  *  invocation of the encode/decode functions.
  * 

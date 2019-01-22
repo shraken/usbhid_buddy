@@ -10,12 +10,15 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "buddy_common.h"
 
 #define CODEC_FIXED_SIZE 2
 
 int codec_init(uint8_t chan_mask, uint8_t resolution);
 void codec_reset(void);
+
+int codec_get_resolution(void);
 
 void codec_set_data_size(const uint8_t data_size);
 uint8_t codec_get_data_size(void);

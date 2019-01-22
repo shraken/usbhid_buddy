@@ -34,9 +34,8 @@
 #include "codec.h"
 #include "drivers/poncho.h"
 #include "drivers/tlv563x.h"
-
 #include "buddy_common.h"
-
+#include "codec.h"
 
 extern bit SendPacketBusy;
 extern unsigned char xdata OUT_PACKET[];

@@ -312,7 +312,7 @@
               <MiscControls></MiscControls>
               <Define>C8051</Define>
               <Undefine></Undefine>
-              <IncludePath>..\code\include;..\code\A51;..\..\lib\libbuddy\common;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
+              <IncludePath>..\code\include;..\code\A51;..\code\include;..\code\include\drivers;..\..\lib\libbuddy\common;C:\Keil_v5\C51\INC\SiLABS\shared\si8051Base</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>

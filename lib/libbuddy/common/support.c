@@ -1,5 +1,4 @@
 #include <stdint.h>
-
 #include "support.h"
 
 /** @brief swap the endian byte order of a unsigned 16-bit integer

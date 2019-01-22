@@ -11,8 +11,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// C8051 microcontroller System Clock Frequency
-#define BUDDY_SYSCLK     48000000
+#if defined(__GNUC__)
+#define PACKED __attribute__((packed))
+#else
+#define PACKED
+#endif
 
 // C8051 microcontroller System Clock Frequency
 #define BUDDY_SYSCLK     48000000
@@ -360,6 +363,9 @@ typedef enum _FIRMWARE_INFO_DAC_TYPE {
  *			on boot to determine serial number, revision, and the
  *			DAC and memory types supported.
  */
+#if defined(_MSC_VER)
+#pragma pack(push, 1)
+#endif
 typedef struct _firmware_info_t {
 	uint32_t serial;
 	uint32_t flash_datetime;
@@ -370,7 +376,11 @@ typedef struct _firmware_info_t {
 	uint8_t bootl_rev_minor;
 	uint8_t bootl_rev_tiny;
 	uint8_t type_dac;
-} firmware_info_t;
+} PACKED firmware_info_t;
+
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
 
 /**
  * \struct ctrl_general_t

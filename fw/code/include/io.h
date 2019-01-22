@@ -14,6 +14,7 @@
 #include "codec.h"
 #include "drivers/tlv563x.h"
 #include "buddy_common.h"
+#include "codec.h"
 
 extern unsigned char xdata OUT_PACKET[];
 extern unsigned char xdata IN_PACKET[];

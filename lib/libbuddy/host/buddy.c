@@ -11,6 +11,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <utility.h>
+#include <support.h>
+#include <time.h>
+#include <utility.h>
 
 #include "buddy.h"
 #include "buddy_common.h"
@@ -134,6 +138,30 @@ int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *ra
 	}
 
 	return BUDDY_ERROR_CODE_OK;
+}
+
+/**
+ * @brief clear the USB HID read buffer
+ * 
+ * @param handle internal handle returned from buddy_init
+ * @return int BUDDY_ERROR_CODE_OK on success, otherwise self-describing error code.
+ */
+int buddy_empty(hid_device *handle)
+{
+    uint8_t temp_buffer[MAX_IN_SIZE];
+    int res;
+
+    while (1) {
+        res = buddy_read_packet(handle, temp_buffer, MAX_IN_SIZE);
+
+        if (res == -1) {
+            return BUDDY_ERROR_CODE_PROTOCOL; 
+        } else if (res == 0) {
+            break;
+        }
+    }
+
+    return BUDDY_ERROR_CODE_OK;
 }
 
 /** @brief use the hidapi library to write a USBHID packet
@@ -532,8 +560,6 @@ int buddy_flush(hid_device *handle)
 int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing)
 {
 	int i;
-	int j;
-    uint8_t resp_type;
 	int8_t err_code;
 
 	buddy_cfg_reg_t cfg_regs[NUMBER_CFG_REG_ENTRIES] = {
@@ -772,10 +798,7 @@ hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info)
 		return NULL;
 	}
 
-    printf("handle = %p\r\n", handle);
-    buddy_empty(handle);
-
-	buddy_get_firmware_info(handle, fw_info);
+	buddy_get_firmware_info(hanadle, fw_info);
     buddy_empty(handle);
 
 	return handle;

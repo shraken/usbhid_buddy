@@ -9,10 +9,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <wchar.h>
-
 #include "hidapi.h"
 #include "buddy_common.h"
-#include "utility.h"
+#include "utiliaty.h"
 #include "support.h"
 
 //#define LABVIEW_BUILD _USRDLL
@@ -72,7 +71,7 @@ typedef struct _buddy_driver_context_t {
 	ctrl_timing_t timing;	
 } buddy_driver_context_t;
 
-/** @struct buddy_cfg_reg_t
+/** @struct buddy_cfg_areg_t
  *  @brief helper structure to store the three configuration entires
  *   that must be sent to the device during initialization.
  */
@@ -97,6 +96,9 @@ typedef enum _BUDDY_RESPONSE_DRV_TYPE {
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
 
+int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length);
+int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length);
+int buddy_empty(hid_device *handle);
 hid_device* hidapi_init(buddy_hid_info_t *hid_info);
 BUDDY_EXPORT hid_device* buddy_init(buddy_hid_info_t *hid_info, firmware_info_t *fw_info);
 BUDDY_EXPORT int buddy_configure(hid_device *handle, ctrl_general_t *general, ctrl_runtime_t *runtime, ctrl_timing_t *timing);
