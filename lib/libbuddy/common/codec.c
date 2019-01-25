@@ -36,7 +36,7 @@ static bool m_initialized = false;
 
 /// channel enable bit array.  There are N positions for each of the N channels
 /// with 1 = active and 0 = inactive indication
-static uint8_t m_chan_enable[BUDDY_CHAN_LENGTH];
+static bool m_chan_enable[BUDDY_CHAN_LENGTH];
 
 /// pre-computed offset advance for encode and deocde operations
 static uint8_t m_advance = 0;
@@ -148,9 +148,11 @@ void codec_count_channels(void)
     m_chan_number = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_chan_mask & (1 << i)) {
-			m_chan_enable[i] = 1;
+			m_chan_enable[i] = true;
             m_chan_number++;
-		}
+		} else {
+            m_chan_enable[i] = false;
+        }
 	}
 }
 
@@ -265,11 +267,7 @@ int codec_encode(uint8_t *frame, general_packet_t *packet)
 	}
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (m_chan_enable[i]) {
-            //printf("chan %bu with offset %bu\r\n", i, m_offset);
-            //printf("m_advance = %bu\r\n", m_advance);
-            
-            #if 1
+		if (codec_is_channel_active(i)) {
 			if (m_resolution == RESOLUTION_CTRL_SUPER) {
 				*(frame + BUDDY_APP_VALUE_OFFSET + m_offset) = ((packet->channels[i] & 0xFF000000) >> 24);
 				*(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 1) = ((packet->channels[i] & 0xFF0000) >> 16);
@@ -284,7 +282,6 @@ int codec_encode(uint8_t *frame, general_packet_t *packet)
 				// resolution not defined, return error
 				return CODEC_STATUS_ERROR;
 			}
-            #endif
 			
 			m_offset += codec_get_data_size();
 		}
@@ -292,7 +289,6 @@ int codec_encode(uint8_t *frame, general_packet_t *packet)
 
 	// check if subsequent packet will overflow buffer
     encode_max_offset = m_offset + m_advance;
-    //printf("encode_max_offset = %bu\r\n", encode_max_offset);
 
     // encode_max_offset is the future offset for the next run of the encode routine
     // so we check if future offset exceeds the max report byte size minus the offset
@@ -303,7 +299,7 @@ int codec_encode(uint8_t *frame, general_packet_t *packet)
     
 	if (codec_is_full()) {
         *(frame + BUDDY_APP_INDIC_OFFSET) = codec_get_encode_count();
-        m_offset = 0;
+        codec_set_offset_count(0);
 		return CODEC_STATUS_FULL;
 	} else {
         m_encode_count++;
@@ -341,7 +337,7 @@ int codec_decode(uint8_t *frame, general_packet_t *packet)
 	count = *(frame + BUDDY_APP_INDIC_OFFSET);
 
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
-		if (m_chan_enable[i]) {
+		if (codec_is_channel_active(i)) {
 			if (m_resolution == RESOLUTION_CTRL_SUPER) {
 				packet->channels[i] = (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset) << 24);
 				packet->channels[i] |= (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 1) << 16);
