@@ -36,7 +36,7 @@ static bool m_initialized = false;
 
 /// channel enable bit array.  There are N positions for each of the N channels
 /// with 1 = active and 0 = inactive indication
-static bool m_chan_enable[BUDDY_CHAN_LENGTH];
+static uint8_t m_chan_enable[BUDDY_CHAN_LENGTH];
 
 /// pre-computed offset advance for encode and deocde operations
 static uint8_t m_advance = 0;
@@ -148,10 +148,10 @@ void codec_count_channels(void)
     m_chan_number = 0;
 	for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
 		if (m_chan_mask & (1 << i)) {
-			m_chan_enable[i] = true;
+			m_chan_enable[i] = 1;
             m_chan_number++;
 		} else {
-            m_chan_enable[i] = false;
+            m_chan_enable[i] = 0;
         }
 	}
 }
