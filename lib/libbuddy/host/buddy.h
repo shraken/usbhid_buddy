@@ -121,6 +121,5 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 int buddy_reset_device(hid_device *handle);
 int buddy_read_generic(hid_device *handle, general_packet_t *packet, bool streaming);
 int buddy_read_generic_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
-
-					   
+				   
 #endif
