@@ -491,6 +491,16 @@
             </File>
           </Files>
         </Group>
+        <Group>
+          <GroupName>Codec</GroupName>
+          <Files>
+            <File>
+              <FileName>codec.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\lib\libbuddy\common\codec.c</FilePath>
+            </File>
+          </Files>
+        </Group>
       </Groups>
     </Target>
   </Targets>

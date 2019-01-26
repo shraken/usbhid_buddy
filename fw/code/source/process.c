@@ -34,9 +34,10 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 		buddy_ctx.daq_state = GENERAL_CTRL_NONE;
 	  
 		// error: requested function outside bounds
-  } else {
-		buddy_ctx.daq_state = p_general->function;
-	}
+    }
+    
+    codec_init(p_general->channel_mask, p_general->resolution);      
+    buddy_ctx.daq_state = p_general->function;
 	
 	switch (p_general->function) {
 		case GENERAL_CTRL_DAC_ENABLE:

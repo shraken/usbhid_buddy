@@ -11,6 +11,7 @@
 #include "adc.h"
 #include "counter.h"
 #include "pwm.h"
+#include "codec.h"
 #include "drivers/tlv563x.h"
 #include "buddy_common.h"
 #include "codec.h"
