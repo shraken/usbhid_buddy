@@ -344,6 +344,7 @@ int codec_decode(uint8_t *frame, general_packet_t *packet)
 				packet->channels[i] |= (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 2) << 8);
 				packet->channels[i] |= *(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 3);
 			} else if (m_resolution == RESOLUTION_CTRL_HIGH) {
+                /*
 				if ((*(frame + BUDDY_APP_VALUE_OFFSET + m_offset)) & 0x80) {
 					packet->channels[i] = ((*(frame + BUDDY_APP_VALUE_OFFSET + m_offset)) << 8);
 					packet->channels[i] |= *(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 1);
@@ -354,6 +355,13 @@ int codec_decode(uint8_t *frame, general_packet_t *packet)
 					packet->channels[i] = (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset) << 8);
 					packet->channels[i] |= *(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 1);
 				}
+                */
+                
+                packet->channels[i] =  ( ((uint32_t) (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset)) << 8) | 
+									       ( ((uint32_t) (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 1)) )));
+
+                //packet->channels[i] = (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset) << 8);
+				//packet->channels[i] |= *(frame + BUDDY_APP_VALUE_OFFSET + m_offset + 1);
 			} else if (m_resolution == RESOLUTION_CTRL_LOW) {
 				packet->channels[i] = (*(frame + BUDDY_APP_VALUE_OFFSET + m_offset));
 			} else {

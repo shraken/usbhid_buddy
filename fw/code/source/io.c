@@ -9,7 +9,7 @@ static uint8_t data codec_byte_offset = 0;
  */
 void io_init(void)
 {
-    P_IN_PACKET_RECORD = &IN_PACKET[0];
+    P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
 	in_packet_offset = 0;
 }
 
@@ -252,6 +252,7 @@ void execute_out_stream(void)
 					}
 				}
 
+                printf("execute_out_stream: tlv5630 write %lu for channel %bu\n", value, i);
 				tlv563x_write(i, (uint16_t) value);
 			} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
 				if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
@@ -339,6 +340,7 @@ void execute_out(void)
 						}	
 					}
 					
+                    printf("execute_out: tlv5630 write %lu for channel %bu\n", value, i);
 					tlv563x_write(i, (uint16_t) value);
 				} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
 					if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
@@ -357,4 +359,79 @@ void execute_out(void)
 		Enable_Out1();
 		//P3 = P3 | 0x40;
 	}
+}
+
+/**
+ * @brief perform a DAC or PWM update cycle.  Enable the USB OUT endpoint buffer
+ *  for the next data.
+ * @param immediate bool specify if decode should be done single time and the USB
+ *  buffer endpoint immediately armed, otherwise continue decoding till reach end
+ *  of buffer and then arm the USB endpoint buffer.
+ * @return Void.
+ */
+void execute_out_new(bool immediate) {
+    int decode_status;
+    uint8_t i;
+    uint32_t value;
+    uint8_t *frame;
+    general_packet_t packet;
+    
+    frame = (uint8_t *) &OUT_PACKET[BUFFER0_BASE_OFFSET];
+    decode_status = codec_decode(frame, &packet);
+
+    for (i = BUDDY_CHAN_0; i <= BUDDY_CHAN_7; i++) {
+        if (!codec_is_channel_active(i)) {
+            continue;
+        }
+        
+        value = packet.channels[i];
+        //printf("value = %lu\r\n", value);
+        if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
+            if (buddy_ctx.m_resolution == RESOLUTION_CTRL_LOW) {
+                // if low resolution mode enabled, then shift values
+				// up to equivalent native TLV563x size
+				switch (fw_info.type_dac) {
+                    case FIRMWARE_INFO_DAC_TYPE_TLV5630: // 12-bit
+                        value = value << 4;
+						break;
+					
+                    case FIRMWARE_INFO_DAC_TYPE_TLV5631: // 10-bit
+						value = value << 2;
+						break;
+					
+					case FIRMWARE_INFO_DAC_TYPE_TLV5632: // 8-bit
+					default:
+						// do nothing, already in 8-bit
+						break;
+				}
+			}
+
+            //printf("tlv5630 write %lu for channel %bu\n", value, i);
+            //printf("execute_out_new: tlv5630 write %lu for channel %bu\n", value, i);
+            tlv563x_write(i, (uint16_t) value);
+		} else if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
+			if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_FREQUENCY) {
+                pwm_set_frequency(i, value);
+			} else if (buddy_ctx.m_pwm_mode == RUNTIME_PWM_MODE_DUTY_CYCLE) {
+				pwm_set_duty_cycle(i, (uint16_t) value);
+			}
+		}
+    }
+    
+    if ((decode_status == CODEC_STATUS_FULL) || (immediate == true)) {
+        // @todo: this can be removed, the offset is reset to 0 in the decode for full
+        codec_set_offset_count(0);
+        
+        if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
+			new_dac_packet = 0;
+		} else if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
+			new_pwm_packet = 0;
+		}
+        
+        Enable_Out1();
+    }
+    
+    if (immediate) {
+        flag_usb_out = 0;
+    }
 }

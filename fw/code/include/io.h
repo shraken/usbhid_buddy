@@ -39,5 +39,6 @@ void build_adc_packet(void);
 void build_counter_packet(void);
 void execute_out_stream(void);
 void execute_out(void);
+void execute_out_new(bool immediate);
 
 #endif

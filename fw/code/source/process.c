@@ -34,6 +34,8 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 		buddy_ctx.daq_state = GENERAL_CTRL_NONE;
 	  
 		// error: requested function outside bounds
+        debug(("error could not set DAQ state, exiting..\r\n"));
+        return -1;
     }
     
     codec_init(p_general->channel_mask, p_general->resolution);      
@@ -427,9 +429,12 @@ void process_out()
 						
 			case APP_CODE_DAC:
 				new_dac_packet = 1;
-				if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
-					execute_out();
-				}
+				//if (buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) {
+                if (buddy_ctx.m_ctrl_mode == MODE_CTRL_IMMEDIATE) {
+                    printf("APP_CODE_DAC HIT invoked\r\n");
+					//execute_out();
+                    execute_out_new(true);
+                }
 				
 				rx_led_toggle();
 				break;
@@ -437,8 +442,9 @@ void process_out()
 			case APP_CODE_PWM:
 				new_pwm_packet = 1;
 				if (buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) {
-					execute_out();
-				}
+					//execute_out();
+                    execute_out_new(true);
+                }
 				
 				rx_led_toggle();
 				break;
@@ -486,8 +492,9 @@ void process_out()
 		
 		if (((buddy_ctx.daq_state == GENERAL_CTRL_DAC_ENABLE) && (new_dac_packet)) ||
 			  ((buddy_ctx.daq_state == GENERAL_CTRL_PWM_ENABLE) && (new_pwm_packet))) {
-			execute_out_stream();		
-		}
+			//execute_out_stream();		
+            execute_out_new(false);
+        }
 	}
 }
 
