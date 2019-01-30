@@ -213,8 +213,9 @@ void timer2_isr(void) interrupt 5
 			AMX0N = adc_mux_tbl_p[adc_channel_index + 1];
 		}
   } else if (buddy_ctx.daq_state == GENERAL_CTRL_COUNTER_ENABLE) {
-		build_counter_packet();
-	}
+	  build_counter_packet();
+      //build_counter_packet_new();
+  }
 }
 
 /**

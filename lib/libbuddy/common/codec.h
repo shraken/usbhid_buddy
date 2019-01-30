@@ -9,6 +9,7 @@
  * 
  */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "buddy_common.h"

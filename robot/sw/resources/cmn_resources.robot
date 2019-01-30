@@ -13,7 +13,7 @@ ${BUDDY_MIN_DAC}  0                           # 0 counts =    0 V
 ${BUDDY_MAX_DAC}  100                         # 2700 counts = 3.29 V
 ${BUDDY_THRESH_PWM_MODE_PLUSMINUS}  0.05      # 50 msec
 ${BUDDY_THRESH_PWM_FREQ_PLUSMINUS}  1000      # 1kHz
-${BUDDY_THRESH_PWM_SET_FREQ_PLUSMINUS}  3000  # 1kHz
+${BUDDY_THRESH_PWM_SET_FREQ_PLUSMINUS}  6000  # 1kHz
 
 ${BUDDY_THRESH_SINE_WAVE_THRESHOLD}  4
 
@@ -22,8 +22,9 @@ ${BUDDY_THRESH_SINE_WAVE_THRESHOLD}  4
 Buddy Static Counter Check
     [Arguments]  ${channel}
 
-    @{counter_values}    Create List    1000  5000  10000  25000  50000  75000  100000
-    
+    #@{counter_values}    Create List    1000  5000  10000  25000  50000  75000  100000
+    @{counter_values}    Create List    100000  75000  50000  25000  10000  5000  1000
+
     # TODO: hack to for DAC mux onto unused channel
     Teensy Set DAC Channel Value  7  2048
 

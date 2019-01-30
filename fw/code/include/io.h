@@ -36,9 +36,10 @@ void usb_buffer_clear(void);
 void respond_data(uint8_t *buffer, uint8_t length);
 void respond_status(int8_t error_code);
 void build_adc_packet(void);
+
 void build_counter_packet(void);
-void execute_out_stream(void);
-void execute_out(void);
-void execute_out_new(bool immediate);
+//void build_counter_packet_new(void);
+
+void execute_out(bool immediate);
 
 #endif
