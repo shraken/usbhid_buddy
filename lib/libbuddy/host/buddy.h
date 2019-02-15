@@ -82,6 +82,8 @@ typedef struct _buddy_cfg_reg_t {
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
 
+uint8_t *get_buffer(void);
+buddy_driver_context *buddy_get_context(void);
 int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length);
 int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length);
 int buddy_empty(hid_device *handle);
@@ -93,15 +95,14 @@ BUDDY_EXPORT int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, b
 BUDDY_EXPORT int buddy_send_pwm(hid_device *handle, general_packet_t *packet, bool streaming);
 BUDDY_EXPORT int buddy_send_dac(hid_device *handle, general_packet_t *packet, bool streaming);
 BUDDY_EXPORT int buddy_read_adc(hid_device *handle, general_packet_t *packet, bool streaming);
-BUDDY_EXPORT int buddy_read_adc_noblock(hid_device *handle, general_packet_t *packet, bool streaming, int timeout);
 BUDDY_EXPORT int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming);
 BUDDY_EXPORT int buddy_flush(hid_device *handle);
 BUDDY_EXPORT int buddy_clear(hid_device *handle);
 
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info);
 int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *raw, uint8_t length);
+int buddy_write_config(hid_device *handle, int control, uint8_t *buffer, int len);
 int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool streaming, uint8_t type);
-int buddy_count_channels(uint8_t chan_mask);
 int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length);
 
 int buddy_reset_device(hid_device *handle);

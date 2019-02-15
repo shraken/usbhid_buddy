@@ -64,6 +64,8 @@ examples/C/simple/build/*
 fw/bootload/build/*
 fw/standard/build/*
 
+tests/build
+
 robot/sw/reports/
 
 *.pyc

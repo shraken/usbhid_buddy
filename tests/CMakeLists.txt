@@ -7,12 +7,12 @@ set (CMAKE_CXX_STANDARD 11)
 set (MAIN_INCLUDE ${PROJECT_SOURCE_DIR}) 
 set (LIBBUDDY_COMMON_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/libbuddy/common)
 set (LIBBUDDY_HOST_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/libbuddy/host)
-set (HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/hidapi/hidapi) 
+set (DUMMY_HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/dummy_hidapi) 
 set (BUDDY_INCLUDE_DIRS 
         ${MAIN_INCLUDE} 
         ${LIBBUDDY_COMMON_INCLUDE}
         ${LIBBUDDY_HOST_INCLUDE}
-        ${HIDAPI_INCLUDE}
+        ${DUMMY_HIDAPI_INCLUDE}
 )
 
 # source files
@@ -22,21 +22,7 @@ set( LIBBUDDY_SOURCES
     ${PROJECT_SOURCE_DIR}/../lib/libbuddy/host/buddy.c
 )
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../lib/hidapi/windows/hid.c)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} setupapi.lib)
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../lib/hidapi/linux/hid.c)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} udev)
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../lib/hidapi/mac/hid.c)
-    find_library(IOKIT_LIBRARY IOKit)
-    find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
-    mark_as_advanced(IOKIT_LIBRARY CORE_FOUNDATION_LIBRARY)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} ${CORE_FOUNDATION_LIBRARY})
-else ()
-    message( FATAL_ERROR "The host build platform is not supported." )
-endif()
+set( HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/dummy_hidapi/hid.c )
 
 set (BUDDY_SOURCES ${LIBBUDDY_SOURCES} ${HIDAPI_SOURCES})
 

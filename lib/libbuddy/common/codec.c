@@ -49,6 +49,8 @@ void codec_reset(void) {
 	m_offset = 0;
 	m_encode_count = 0;
 	m_decode_count = 0;
+
+	m_initialized = false;
 }
 
 /**
@@ -79,7 +81,7 @@ int codec_init(uint8_t chan_mask, uint8_t resolution) {
     		break;
 
     	default:
-    		return -1;
+    		return CODEC_STATUS_ERROR;
     }
 
     // pre-compute number of channels for future encode/decode ops
@@ -107,6 +109,13 @@ void codec_set_data_size(const uint8_t data_size) {
  */
 int codec_get_resolution(void) {
     return m_resolution;
+}
+
+/**
+ * @brief set the codec resolution
+ */
+void codec_set_resolution(const uint8_t resolution) {
+	m_resolution = resolution;
 }
 
 /**
