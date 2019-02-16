@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/shraken/usbhid_buddy.svg?branch=master)](https://travis-ci.org/shraken/usbhid_buddy)
 
-[![Coverage Status](https://coveralls.io/repos/github/shraken/usbhid_buddy/badge.svg)](https://coveralls.io/github/shraken/usbhid_buddy)
+[![Coverage Status](https://coveralls.io/repos/github/shraken/usbhid_buddy/badge.svg?branch=master)](https://coveralls.io/github/shraken/usbhid_buddy?branch=master)
 
 # Buddy DAQ
 
