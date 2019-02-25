@@ -127,10 +127,8 @@ typedef enum _gpio_minor_type gpio_minor_pin;
 
 /** @brief Explicitly initializes the GPIO pins required for
   *         "drive" functionality as open-drain. 
-  *
-  *  @return error_t enum indicating success or error.
  */
-int8_t gpio_init(void);
+void gpio_init(void);
 
 /** @brief Sets the pin value to high or low state.
   *

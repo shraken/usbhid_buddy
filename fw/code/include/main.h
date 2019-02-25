@@ -10,6 +10,9 @@
 #include <c8051f380.h>
 #include <globals.h>
 
+#include "io.h"
+#include "uart.h"
+
 /*
 	Firmware Info Structure values.  In future
 	and for production define this in the makefile 

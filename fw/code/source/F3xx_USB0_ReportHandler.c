@@ -73,15 +73,11 @@ void OUT_DATA_ROUTINE(void);
 // Global Constant Declaration
 // ----------------------------------------------------------------------------
 
-unsigned char __xdata OUT_PACKET[MAX_REPORT_SIZE];
-unsigned char __xdata IN_PACKET[MAX_REPORT_SIZE * 2];
+unsigned char OUT_PACKET[MAX_REPORT_SIZE];
+unsigned char IN_PACKET[MAX_REPORT_SIZE * 2];
 
-unsigned char xda__xdatata *P_IN_PACKET_SEND = &IN_PACKET[BUFFER0_BASE_OFFSET];
-unsigned char __xdata *P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
-unsigned char __xdata in_packet_record_cycle = 0;
-
-unsigned char *P_IN_PACKET_SEND = &IN_PACKET[0];
-unsigned char *P_IN_PACKET_RECORD = &IN_PACKET[0];
+unsigned char *P_IN_PACKET_SEND = &IN_PACKET[BUFFER0_BASE_OFFSET];
+unsigned char *P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
 unsigned char in_packet_record_cycle = 0;
 
 // ****************************************************************************

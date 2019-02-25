@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "main.h"
 
 #include "c8051f3xx.h"

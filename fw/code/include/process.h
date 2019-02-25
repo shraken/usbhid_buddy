@@ -41,7 +41,6 @@
 
 extern bit SendPacketBusy;
 extern unsigned char __xdata OUT_PACKET[];
-extern unsigned char __xdata *P_IN_PACKET_SEND;
 
 extern unsigned char __xdata flag_usb_out;
 extern uint8_t __data in_packet_ready;

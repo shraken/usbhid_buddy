@@ -1,11 +1,12 @@
 CC = sdcc
-INCLUDE_DIRS = -Icode/include -I../lib/libbuddy
+LIBBUDDY_PATH = ../lib/libbuddy
+INCLUDE_DIRS = -Icode/include -Icode/include/drivers -I$(LIBBUDDY_PATH)/common
 SOURCE_DIR = code/source
 BUILD_DIR = build
 EXECUTABLE = buddy
 
-SOURCES = $(wildcard $(SOURCE_DIR)/*.c)
-OBJECTS = $(patsubst $(SOURCE_DIR)/%.c,$(BUILD_DIR)/%.rel,$(SOURCES))
+SOURCES = $(shell find $(SOURCE_DIR) -type f -name '*.c')
+OBJECTS = $(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.rel, $(SOURCES))
 
 CFLAGS = --model-large --std-sdcc99 -c
 CFLAGS += $(INCLUDE_DIRS)
@@ -17,6 +18,7 @@ all: directories $(BUILD_DIR)/$(EXECUTABLE)
     
 directories: 
 	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/drivers
 	$(info $$SOURCES is [${SOURCES}])
 	$(info $$OBJECTS is [${OBJECTS}])
 
