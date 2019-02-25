@@ -78,12 +78,6 @@ typedef struct _buddy_cfg_reg_t {
 	uint8_t record_len;	
 } buddy_cfg_reg_t;
 
-typedef enum _BUDDY_RESPONSE_DRV_TYPE {
-    BUDDY_RESPONSE_DRV_TYPE_INTERNAL = 0,
-    BUDDY_RESPONSE_DRV_TYPE_STATUS,
-    BUDDY_RESPONSE_DRV_TYPE_DATA
-} BUDDY_RESPONSE_DRV_TYPE;
-
 #define NUMBER_CFG_REG_ENTRIES 3
 
 extern char *fw_info_dac_type_names[FIRMWARE_INFO_DAC_TYPE_LENGTH];
@@ -104,16 +98,6 @@ BUDDY_EXPORT int buddy_read_adc(hid_device *handle, general_packet_t *packet, bo
 BUDDY_EXPORT int buddy_read_counter(hid_device *handle, general_packet_t *packet, bool streaming);
 BUDDY_EXPORT int buddy_flush(hid_device *handle);
 BUDDY_EXPORT int buddy_clear(hid_device *handle);
-
-/** @brief returns the number of active channels by looking at the channel_mask
-*			and counting them.
-*   @param number of channels activated in the current request
-*/
-int buddy_count_channels(uint8_t chan_mask);
-
-int buddy_empty(hid_device *handle);
-
-int8_t buddy_get_response(hid_device *handle, uint8_t *res_type, uint8_t *buffer, uint8_t length);
 
 int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info);
 int buddy_write_raw(hid_device *handle, uint8_t code, uint8_t indic, uint8_t *raw, uint8_t length);

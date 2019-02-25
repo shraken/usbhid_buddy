@@ -66,9 +66,7 @@ hid_device* hidapi_init(buddy_hid_info_t *hid_info)
 	if (!handle) {
 		critical(("hidapi_init(): unable to open device\n"));
 		return NULL;
-    }
-    
-    printf("hidpai_init(): handle = %p\r\n", handle);
+	}
 
 	// allocate hidinfo_t strings for USB device information
 	hid_info->str_mfr = (char *) malloc(MAX_CHAR_LENGTH);
@@ -184,8 +182,8 @@ int buddy_write_packet(hid_device *handle, unsigned char *buffer, int length)
 
 	res = hid_write(handle, buffer, length);
 	if (res < 0) {
-		critical(("buddy_write_packet: hid_write call failed, error = %d (%ls) handle = %p\n", 
-			res, hid_error(handle), handle));
+		critical(("buddy_write_packet: hid_write call failed, error = %ls handle = %p\n", 
+			hid_error(handle), handle));
 		return BUDDY_ERROR_CODE_GENERAL;
 	}
 
@@ -204,24 +202,6 @@ int buddy_read_packet(hid_device *handle, unsigned char *buffer, int length)
 
 	res = hid_read(handle, buffer, length);
 	return res;
-}
-
-int buddy_empty(hid_device *handle)
-{
-    uint8_t temp_buffer[MAX_IN_SIZE];
-    int res;
-
-    while (1) {
-        res = buddy_read_packet(handle, temp_buffer, MAX_IN_SIZE);
-
-        if (res == -1) {
-            return BUDDY_ERROR_CODE_PROTOCOL; 
-        } else if (res == 0) {
-            break;
-        }
-    }
-
-    return BUDDY_ERROR_CODE_OK;
 }
 
 /** @brief 
@@ -254,7 +234,7 @@ int buddy_send_generic(hid_device *handle, general_packet_t *packet, bool stream
 	} else if (err_code == CODEC_STATUS_CONTINUE) {
 		return BUDDY_ERROR_CODE_OK;
 	} else {
-		printf("buddy_send_generic: err_code = BUDDY_ERROR_CODE_GENERAL\n");
+		printf("buddy_send_pwm: err_code = BUDDY_ERROR_CODE_GENERAL\n");
 		return BUDDY_ERROR_CODE_GENERAL;
 	}
 }
@@ -526,7 +506,7 @@ int buddy_flush(hid_device *handle)
 		out_hold_buf[BUDDY_TYPE_OFFSET] = BUDDY_OUT_DATA_ID;
         out_hold_buf[BUDDY_APP_INDIC_OFFSET] = codec_get_encode_count();
 
-		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == BUDDY_ERROR_CODE_GENERAL) {
+		if (buddy_write_packet(handle, &out_hold_buf[0], MAX_OUT_SIZE) == -1) {
 			critical(("buddy_flush: buddy_write_packet call failed\n"));
 			return BUDDY_ERROR_CODE_GENERAL;
 		}
@@ -631,7 +611,7 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	uint16_t copy_length;
 	int res;
-    int j;
+	int err_code = BUDDY_ERROR_CODE_OK;
 	int response_count = 0;
 
 	if ((!buffer) || (length <= 0)) {
@@ -644,23 +624,19 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
 
 		if (res == 0) {
 			if (response_count >= BUDDY_MAX_IO_ATTEMPTS) {
-                debug(("buddy_get_response(): BUDDY_MAX_IO_ATTEMPTS reached\n"));
-
-                printf("buddy_get_response(): timeout in config item request.\n");
-                *res_type = BUDDY_ERROR_CODE_TIMEOUT;
-                return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
+				err_code = BUDDY_ERROR_CODE_TIMEOUT;
+				break;
 			}
 
 			response_count++;
-			short_sleep(100);
+			short_sleep(1);
 			continue;
 		}
 
 		if (res < 0) {
-			//critical(("buddy_get_response: could not buddy_read_packet\n"));
-			debug(("buddy_get_response(): could not buddy_read_packet\n"));
-            *res_type = BUDDY_ERROR_CODE_PROTOCOL;
-			return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
+			critical(("buddy_get_response: could not buddy_read_packet\n"));
+			err_code = BUDDY_ERROR_CODE_PROTOCOL;
+			break;
 		} else if (res >= 0) {
 			if (in_buf[BUDDY_APP_CODE_OFFSET] & BUDDY_RESPONSE_TYPE_DATA) {
 				copy_length = (length > (MAX_IN_SIZE - BUDDY_APP_INDIC_OFFSET)) ? (MAX_IN_SIZE - BUDDY_APP_INDIC_OFFSET) : length;
@@ -674,9 +650,7 @@ int8_t buddy_get_response(hid_device *handle, uint8_t *buffer, uint8_t length)
 		}
 	}
 
-    debug(("buddy_get_response() exit\n"));
-    *res_type = BUDDY_ERROR_CODE_OK;
-	return BUDDY_RESPONSE_DRV_TYPE_INTERNAL;
+	return err_code;
 }
 
 /**
@@ -700,7 +674,7 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 {
 	uint8_t in_buf[MAX_IN_SIZE] = { 0 };
 	int i;
-	int err_code;
+	int err_code = BUDDY_ERROR_CODE_OK;
 	
 	if ((!handle) || (!fw_info)) {
 		return BUDDY_ERROR_CODE_MEMORY;
@@ -732,8 +706,7 @@ int buddy_get_firmware_info(hid_device *handle, firmware_info_t *fw_info)
 		}
 	}
 
-    printf("buddy_get_firmware_info() exit\n");
-	return BUDDY_ERROR_CODE_INVALID;
+	return err_code;
 }
 
 /** @brief initialize the USB HID connection and get the remote firmware device
@@ -771,8 +744,6 @@ int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_di
 
 	ctrl_general_t general_settings = { 0 };
 
-    debug(("buddy_cleanup entered\n"));
-
 	//debugf("buddy_cleanup entered\n");
 
 #if !defined(LABVIEW_BUILD)
@@ -809,8 +780,6 @@ int buddy_cleanup(hid_device *handle, buddy_hid_info_t *hid_info, bool device_di
 
 	hid_close(handle);
 	hid_exit();
-
-    debug(("buddy_cleanup exit\n"));
 
 	return BUDDY_ERROR_CODE_OK;
 }
