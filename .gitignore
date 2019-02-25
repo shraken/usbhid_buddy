@@ -68,6 +68,9 @@ tests/build
 
 robot/sw/reports/
 
+build/
+.vscode/
+
 *.pyc
 *.csv
 *.gcov

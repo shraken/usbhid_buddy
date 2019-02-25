@@ -92,7 +92,7 @@ jobs:
             - srecord
       
       before_install:
-        - pip install --user pyyaml cpp-coveralls
+        - pip install --user pyyaml cpp-coveralls gcovr
         
       before_script:
         - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
