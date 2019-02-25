@@ -1,7 +1,8 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "stdafx.h"
 #include <hidapi.h>
-#include <usbhid_buddy.h>
+#include <buddy_common.h>
+#include <buddy.h>
 #include <utility.h>
 
 BOOL APIENTRY DllMain( HMODULE hModule,

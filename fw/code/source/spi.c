@@ -1,23 +1,18 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
-#include <c8051f3xx.h>
-#include <spi.h>
-#include <gpio.h>
-#include <globals.h>
+#include "spi.h"
 
-//-----------------------------------------------------------------------------
-// Global Variables
-//-----------------------------------------------------------------------------
-uint8_t SPI_Data_Rx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
-uint8_t SPI_Data_Tx_Array[SPI_MAX_BUFFER_SIZE] = { 0 };
+/// SPI receive data buffer 
+uint8_t spi_data_rx[SPI_MAX_BUFFER_SIZE] = { 0 };
 
-uint8_t bytes_trans;
+/// SPI transmit data buffer
+uint8_t spi_data_tx[SPI_MAX_BUFFER_SIZE] = { 0 };
+
+/// number of bytes to be read and written during the SPI transaction
+uint8_t spi_bytes_trans;
 
 /**
- * @brief SPI interrupt
+ * @brief SPI interrupt.  Simple state machine exists to read and write
+ *   SPI data.  When all the bytes have been written over the SPI interface
+ *   a chip-select deassert is used to end the transaction.
  * 
  */
 void spi_isr(void) __interrupt (INTERRUPT_SPI0)
@@ -28,13 +23,12 @@ void spi_isr(void) __interrupt (INTERRUPT_SPI0)
 	switch (state) {
 		// continue sending
 		case 0:
-			SPI_Data_Rx_Array[array_index] = SPI0DAT;
+			spi_data_rx[array_index] = SPI0DAT;
 			array_index++;
 		
-			SPI0DAT = SPI_Data_Tx_Array[array_index];
+			SPI0DAT = spi_data_tx[array_index];
 			
-			// bytes_trans = 2, 2 -1 = 1
-            if (array_index >= (bytes_trans - 1)) {
+            if (array_index >= (spi_bytes_trans - 1)) {
 				state = 1;
             }
 		
@@ -43,7 +37,7 @@ void spi_isr(void) __interrupt (INTERRUPT_SPI0)
 		// copy off last byte in SPI RX buffer and
 		// deselect chip select
 		case 1:
-			SPI_Data_Rx_Array[array_index] = SPI0DAT;
+			spi_data_rx[array_index] = SPI0DAT;
 		
 			// De-select the Slave
 			NSSMD0 = 1;
@@ -71,21 +65,20 @@ void spi_isr(void) __interrupt (INTERRUPT_SPI0)
 void spi_init(void)
 {
    // set the number of bytes in transcation to zero
-   bytes_trans = 0;
+   spi_bytes_trans = 0;
 	
    SPI0CFG = 0x50;
 
    SPI0CN    = 0x0D;                   // 4-wire Single Master, SPI enabled
 
    // SPI clock frequency equation from the datasheet
-   SPI0CKR   = (SYSCLK/(2*SPI_CLOCK))-1;
+   SPI0CKR   = (BUDDY_SYSCLK/(2*SPI_CLOCK))-1;
 
    ESPI0 = 1;                          // Enable SPI interrupts
 }
 
 /**
- * @brief Preforms a SPI read/write transaction of length `bytes_trans`.  Feed the
- *  first byte into the buffer and then let the SPI ISR 
+ * @brief Preforms a SPI read/write transaction of length `spi_bytes_trans`.
  *
  * @return Void.
  */
@@ -98,8 +91,7 @@ void spi_array_readwrite(void)
 	
     NSSMD0 = 0;
 
-    //SPI0DAT = Command;
-    SPI0DAT = SPI_Data_Tx_Array[0];
+    SPI0DAT = spi_data_tx[0];
 	
     // Wait for SPI transcation to complete
     while (!NSSMD0);

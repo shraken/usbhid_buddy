@@ -5,31 +5,24 @@ set (CMAKE_CXX_STANDARD 11)
 
 # header files
 set (MAIN_INCLUDE ${PROJECT_SOURCE_DIR}) 
-set (LIBBUDDY_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/libbuddy) 
-set (HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/hidapi/hidapi) 
-set (BUDDY_INCLUDE_DIRS ${MAIN_INCLUDE} ${LIBBUDDY_INCLUDE} ${HIDAPI_INCLUDE})
-
-set( LIBBUDDY_SOURCES
-    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/support.c
-    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/utility.c
-    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/usbhid_buddy.c
+set (LIBBUDDY_COMMON_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/libbuddy/common)
+set (LIBBUDDY_HOST_INCLUDE ${PROJECT_SOURCE_DIR}/../lib/libbuddy/host)
+set (DUMMY_HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/dummy_hidapi) 
+set (BUDDY_INCLUDE_DIRS 
+        ${MAIN_INCLUDE} 
+        ${LIBBUDDY_COMMON_INCLUDE}
+        ${LIBBUDDY_HOST_INCLUDE}
+        ${DUMMY_HIDAPI_INCLUDE}
 )
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../lib/hidapi/windows/hid.c)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} setupapi.lib)
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../lib/hidapi/linux/hid.c)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} udev)
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/../lib/hidapi/mac/hid.c)
-    find_library(IOKIT_LIBRARY IOKit)
-    find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
-    mark_as_advanced(IOKIT_LIBRARY CORE_FOUNDATION_LIBRARY)
-    set(EXTRA_LIBS ${IOKIT_LIBRARY} ${CORE_FOUNDATION_LIBRARY})
-else ()
-    message( FATAL_ERROR "The host build platform is not supported." )
-endif()
+# source files
+set( LIBBUDDY_SOURCES
+    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/common/codec.c
+    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/common/support.c
+    ${PROJECT_SOURCE_DIR}/../lib/libbuddy/host/buddy.c
+)
+
+set( HIDAPI_SOURCES ${PROJECT_SOURCE_DIR}/dummy_hidapi/hid.c )
 
 set (BUDDY_SOURCES ${LIBBUDDY_SOURCES} ${HIDAPI_SOURCES})
 
@@ -39,5 +32,16 @@ add_executable (testLibBuddy testLibBuddy.cpp ${BUDDY_SOURCES})
 target_link_libraries(testLibBuddy ${EXTRA_LIBS})
 target_link_libraries(testLibBuddy ${EXTRA_LIBS} --coverage)
 
-target_compile_options( testLibBuddy PRIVATE -O0 -g --coverage)
-set_target_properties( testLibBuddy PROPERTIES COMPILE_FLAGS "-O0 -g --coverage" )
+target_compile_options( testLibBuddy PRIVATE -fprofile-arcs -ftest-coverage -O0 -g --coverage)
+set_target_properties( testLibBuddy PROPERTIES COMPILE_FLAGS "-fprofile-arcs -ftest-coverage -O0 -g --coverage" )
+
+# generate coverage report
+add_custom_command(OUTPUT html
+   COMMAND mkdir -p html
+)
+
+add_custom_target(
+   build_coverage_report ALL
+   COMMAND gcovr -r ../../ -e /docker/tests --html --html-details -o html/coverage.html
+   DEPENDS html
+)

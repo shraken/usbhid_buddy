@@ -10,10 +10,16 @@
 #ifndef _INIT_H
 #define _INIT_H
 
-#include <compiler_defs.h>
-#include <c8051f380.h>
-#include <globals.h>
+#include <C8051F3xx.h>
+#include <F3xx_USB0_InterruptServiceRoutine.h>
+#include <F3xx_USB0_ReportHandler.h>
+#include <F3xx_USB0_Register.h>
+#include "globals.h"
+#include "gpio.h"
 
+//-----------------------------------------------------------------------------
+// Definitions
+//-----------------------------------------------------------------------------
 // USB clock selections (SFR CLKSEL)
 #define USB_4X_CLOCK       0x00        // Select 4x clock multiplier, for USB
 #define USB_INT_OSC_DIV_2  0x10        // Full Speed

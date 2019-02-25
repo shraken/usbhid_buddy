@@ -14,6 +14,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <compiler_defs.h>
+#include <C8051F380_defs.h>
+#include <c8051f3xx.h>
+#include "globals.h"
+#include "gpio.h"
+
+extern uint8_t spi_data_rx[];
+extern uint8_t spi_data_tx[];
+extern uint8_t spi_bytes_trans;
 
 #include <compiler_defs.h>
 #include <c8051f380.h>

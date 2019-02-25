@@ -13,9 +13,11 @@
 #define _PWM_H
 
 #include <stdint.h>
-#include <buddy.h>
-#include <utility.h>
-#include <c8051f3xx.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <C8051F3xx.h>
+#include "utility.h"
+#include "buddy_common.h"
 
 #define NUMBER_PCA_CHANNELS 5
 #define DEFAULT_FREQUENCY 50000

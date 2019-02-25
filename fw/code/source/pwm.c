@@ -1,13 +1,21 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <C8051F3xx.h>
-#include <pwm.h>
+#include "pwm.h"
 
-static uint32_t pwm_timebase = SYSCLK;
+/// base clock frequency used for subsequent operations.  This is
+/// is dynamically chosen when the pwm init routine is run
+static uint32_t pwm_timebase = BUDDY_SYSCLK;
+
+/// PWM capture module high and low bytes.  These are stored and
+/// reloaded in the PWM interrupt.
 static uint32_t pwm_cex[NUMBER_PCA_CHANNELS];
-static uint8_t pwm_chan_mask;
+
+/// array to indicate which channels have PWM enabled on them
 static uint8_t pwm_chan_enable[BUDDY_CHAN_LENGTH] = { 0 };
+
+/// enum of type RUNTIME_PWM_MODE indicating if the PWM operates in a
+/// frequency or duty cycle mode.
 static uint8_t pwm_mode;
+
+/// the resolution used with the PWM
 static uint8_t pwm_resolution = RESOLUTION_CTRL_HIGH;
 
 /** @brief Configures pins for PWM operation crossbar mode with as a push/pull output. 
@@ -138,8 +146,6 @@ int8_t pwm_init(uint8_t mode, uint8_t resolution, uint8_t chan_mask)
     // reconfigure pins allowing for 5 PWM outputs
 	pwm_pin_init();
 
-    // save off state context
-	pwm_chan_mask = chan_mask;
 	pwm_mode = mode;
 	pwm_resolution = resolution;
 	
@@ -237,17 +243,17 @@ int8_t pwm_set_timebase(uint8_t value)
 		switch (value) {
 			case RUNTIME_PWM_TIMEBASE_SYSCLK:
 				PCA0MD |= 0x08;
-				pwm_timebase = SYSCLK;
+				pwm_timebase = BUDDY_SYSCLK;
 				break;
 			
 			case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_4:
 				PCA0MD |= 0x02;
-				pwm_timebase = (SYSCLK / 4);
+				pwm_timebase = (BUDDY_SYSCLK / 4);
 				break;
 			
 			case RUNTIME_PWM_TIMEBASE_SYSCLK_DIV_12:
 				PCA0MD |= 0x00;
-				pwm_timebase = (SYSCLK / 12);
+				pwm_timebase = (BUDDY_SYSCLK / 12);
 				break;
 			
 			case RUNTIME_PWM_TIMEBASE_TIMER0_OVERFLOW:

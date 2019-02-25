@@ -1,5 +1,19 @@
-//#include <stdbool.h>
-#include <usbhid_buddy.h>
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <wchar.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/timeb.h>
+
+#include "buddy_common.h"
+#include "codec.h"
+#include "buddy.h"
+#include "support.h"
+
 #include "hidapi.h"
 
 #define BUDDY_TEST_ADC_FREQ 1000		// 1 kHz

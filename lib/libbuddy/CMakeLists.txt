@@ -4,14 +4,20 @@ cmake_minimum_required(VERSION 3.1)
 set (CMAKE_CXX_STANDARD 11)
 
 # header files
-set (LIBBUDDY_INCLUDE ${PROJECT_SOURCE_DIR}) 
+set (LIBBUDDY_COMMON_INCLUDE ${PROJECT_SOURCE_DIR}/common)
+set (LIBBUDDY_HOST_INCLUDE ${PROJECT_SOURCE_DIR}/host)
 set (HIDAPI_INCLUDE ${PROJECT_SOURCE_DIR}/../hidapi/hidapi) 
-set (BUDDY_INCLUDE_DIRS ${LIBBUDDY_INCLUDE} ${HIDAPI_INCLUDE})
+
+set (BUDDY_INCLUDE_DIRS 
+    ${LIBBUDDY_COMMON_INCLUDE}
+    ${LIBBUDDY_HOST_INCLUDE}
+    ${HIDAPI_INCLUDE}
+)
 
 set( LIBBUDDY_SOURCES
-    ${PROJECT_SOURCE_DIR}/support.c
-    ${PROJECT_SOURCE_DIR}/utility.c
-    ${PROJECT_SOURCE_DIR}/usbhid_buddy.c
+    ${PROJECT_SOURCE_DIR}/common/codec.c
+    ${PROJECT_SOURCE_DIR}/common/support.c
+    ${PROJECT_SOURCE_DIR}/host/buddy.c
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -32,10 +38,10 @@ endif()
 
 set (BUDDY_SOURCES ${LIBBUDDY_SOURCES} ${HIDAPI_SOURCES})
 
-get_cmake_property(_variableNames VARIABLES)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
 include_directories(${BUDDY_INCLUDE_DIRS})
 add_library(buddy SHARED ${BUDDY_SOURCES})

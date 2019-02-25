@@ -1,20 +1,41 @@
 [![Build Status](https://travis-ci.org/shraken/usbhid_buddy.svg?branch=master)](https://travis-ci.org/shraken/usbhid_buddy)
 
-[![Coverage Status](https://coveralls.io/repos/github/shraken/usbhid_buddy/badge.svg)](https://coveralls.io/github/shraken/usbhid_buddy)
+[![Coverage Status](https://coveralls.io/repos/github/shraken/usbhid_buddy/badge.svg?branch=master)](https://coveralls.io/github/shraken/usbhid_buddy?branch=master)
 
 # Buddy DAQ
 
 Buddy is a free, open source, and low-cost data acquisition (DAQ) instrument.  It has 8 configurable
 IO that can be configured for ADC, DAC, PWM, or counter operation.  The device uses USB HID with a 
 custom descriptor for communication with the hidapi library on the host system.  The device can be 
-configured as either a host polled or asynchronous update mode for maximum flexibility.  
+configured as either a host polled or asynchronous update mode for maximum flexibility.  Buddy works
+on linux, windows, and macOS systems.  
+
+## Docker
+
+Usage of docker is recommended for building the entire project.  A CMakeList file is provided in the head
+directory to build the project and generate all support files (documentation, coverage reports). 
+
+```shell
+docker build -t buddy_docker .
+docker run -v /path/to/usbhid_buddy:/docker -it buddy_docker /bin/bash
+```
+
+this will launch a Docker bash shell and then you build.
+
+```shell
+cd /docker
+mkdir -p build
+cd build
+cmake ..
+make
+```
 
 ## Firmware
 
-The firmware is written in C for the Silicon Labs C8051F380/EFM8UB2 chip.  
+The firmware is written in C for the Silicon Labs C8051F380/EFM8UB2 chip and is in the `fw` directory.  The
+firmware requires a Keil C51 compiler to be used for building.  
 
-The open-source gboot bootloader is used.  Support is provided for the Windows, mac OS,
-and Linux platforms.
+The open-source [gboot](https://github.com/shraken/gboot) bootloader written by Gabriele Gorla of gglabs (http://gglabs.us) is used for the buddy device. 
 
 ## Hardware
 

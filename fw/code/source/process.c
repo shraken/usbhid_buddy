@@ -1,29 +1,22 @@
-#include <string.h>
-#include <stdio.h>
-#include <c8051f3xx.h>
-#include <math.h>
-#include <F3xx_USB0_InterruptServiceRoutine.h>
-#include <F3xx_USB0_ReportHandler.h>
-#include <buddy.h>
-#include <process.h>
-#include <support.h>
-#include <timers.h>
-#include <adc.h>
-#include <gpio.h>
-#include <pwm.h>
-#include <counter.h>
-#include <tlv563x.h>
-#include <io.h>
-#include <globals.h>
-#include <utility.h>
-#include <poncho.h>
+#include "process.h"
 
+/// set equal to 1 when a new USB HID OUT packet arrives from the host
 uint8_t flag_usb_out = 0;
+
+/// set equal to 1 when a new DAC packet frame data arrives over the USB
+/// HID OUT packet.
 uint8_t new_dac_packet = 0;
+
+/// set equal to 1 when a new PWM packet frame data arrives over the USB
+/// HID OUT packet.
 uint8_t new_pwm_packet = 0;
 
-uint8_t in_packet_ready = false;
+/// set equal to 1 when a USB HID IN packet can be sent to the host
+uint8_t __data in_packet_ready = false;
 
+/// context of the current firmware.  the context is set in an initial
+/// configuration step.  The context specifies resolution, mode, and
+/// other config parameters.
 buddy_ctx_t buddy_ctx;
 
 /** @brief determines function of DAQ device (DAC, ADC, etc.) from the
@@ -112,6 +105,14 @@ int8_t process_ctrl_function(ctrl_general_t *p_general)
 	return 0;
 }
 
+/**
+ * @brief configure expander hardware boards
+ * 
+ * @param p_general structure passed from host with expander type, mode
+ *  and pin configurations.
+ * @return int8_t BUDDY_ERROR_CODE_OK on success, otherwise self describing
+ *  error code.
+ */
 int8_t process_ctrl_chan_expander(ctrl_general_t *p_general) {
 	printf("process_ctrl_chan_expander invoked\n");
 	

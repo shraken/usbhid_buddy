@@ -7,10 +7,11 @@
 #ifndef  _GPIO_H_
 #define  _GPIO_H_
 
+#include <stdio.h>
 #include <stdint.h>
 #include <compiler_defs.h>
-#include <c8051f380.h>
-#include <globals.h>
+#include <C8051F380_defs.h>
+#include "globals.h"
 
 #define LED_STATUS_PIN GPIO_P2_0
 #define LED_HEARTBEAT_PIN GPIO_P2_1

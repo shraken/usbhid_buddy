@@ -391,7 +391,7 @@ def test_seq_adc(handle, sample_rate, streaming, log_file, poncho_mode):
         if ((recv_packets % 10) == 0):
             print('got packet {}'.format(recv_packets))
 
-        err_code = bt.buddy_read_adc_noblock(handle, packet, streaming, 1000)
+        err_code = bt.buddy_read_generic_noblock(handle, packet, streaming, 1000)
 
         if err_code == bt.BUDDY_ERROR_CODE_OK:
             if first_packet:

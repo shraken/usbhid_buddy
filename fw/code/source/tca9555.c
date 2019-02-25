@@ -1,24 +1,25 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <tca9555.h>
-#include <i2c.h>
+#include "drivers/tca9555.h"
 
-static uint8_t reg_out_0 = 0;
-static uint8_t reg_out_1 = 0;
+/// output port bit assignments.  Allows control of the P00 - P07
+/// and P10 - P17 pins.  These values map directly to the TCA9555
+/// chip output port 0 and port 1 registers described on pg 23 of
+/// TCA9555 datasheet.  A bit position with '1' indicates the pin
+/// is configured as an output pin.
+static uint8_t tca9555_reg_out_0 = 0;
+static uint8_t tca9555_reg_out_1 = 0;
 
-static uint8_t reg_polinv_0 = 0;
-static uint8_t reg_polinv_1 = 0;
+/// polarity inversion bit assignments.  A bit position with '1' inverts
+/// the logic state for the OUT and IN registers.
+static uint8_t tca9555_reg_polinv_0 = 0;
+static uint8_t tca9555_reg_polinv_1 = 0;
 
-static uint8_t reg_cfg_0 = 0;
-static uint8_t reg_cfg_1 = 0;
+/// controls if the expander pin is configured as an OUT or IN pin.  
+static uint8_t tca9555_reg_cfg_0 = 0;
+static uint8_t tca9555_reg_cfg_1 = 0;
 
-extern void Delay(void);
-
-/** boolean, set to True when device initialization has run
-			otherwise set to False.  Initialization must be run before
-		  use.  
-*/
-static bool deviceInit = false;
+/// set to true when device initialization has run otherwise false.  Initialization 
+/// must be run before the driver can be used.
+static bool tca9555_device_init = false;
 
 /**
  * @brief Initialize the TCA9555 I2C device.
@@ -28,7 +29,7 @@ int8_t tca9555_init(void)
 {
     int i;
         
-		if (deviceInit) {
+		if (tca9555_device_init) {
 			return TCA9555_ERROR_CODE_OK;
 		}
 		
@@ -52,7 +53,7 @@ int8_t tca9555_init(void)
         tca9555_set_port_pin(TCA9555_PORT_1, i, TCA9555_PIN_VALUE_HIGH);
     }
 
-		deviceInit = true;
+		tca9555_device_init = true;
 		return TCA9555_ERROR_CODE_OK;
 }
 
@@ -72,34 +73,34 @@ int8_t tca9555_set_port_direction(uint8_t port_num, uint8_t pin_num, uint8_t dir
     
     if (port_num == TCA9555_PORT_0) {
         if (dir == TCA9555_PIN_STATE_OUT) {
-            reg_cfg_0 &= ~(1 << pin_num);
+            tca9555_reg_cfg_0 &= ~(1 << pin_num);
         } else if (dir == TCA9555_PIN_STATE_IN) {
-            reg_cfg_0 |= (1 << pin_num);
+            tca9555_reg_cfg_0 |= (1 << pin_num);
         } else {
             return TCA9555_ERROR_INDEX_OUT_RANGE;
         }
 
         tbuf[0] = TCA9555_REGISTER_CFG_PORT_0;
-        tbuf[1] = reg_cfg_0;
+        tbuf[1] = tca9555_reg_cfg_0;
     } else if (port_num == TCA9555_PORT_1) {
         if (dir == TCA9555_PIN_STATE_OUT) {
-            reg_cfg_1 &= ~(1 << pin_num);
+            tca9555_reg_cfg_1 &= ~(1 << pin_num);
         } else if (dir == TCA9555_PIN_STATE_IN) {
-            reg_cfg_1 |= (1 << pin_num);
+            tca9555_reg_cfg_1 |= (1 << pin_num);
         } else {
             return TCA9555_ERROR_INDEX_OUT_RANGE;
         }
         
         tbuf[0] = TCA9555_REGISTER_CFG_PORT_1;
-        tbuf[1] = reg_cfg_1;
+        tbuf[1] = tca9555_reg_cfg_1;
     } else {
         return TCA9555_ERROR_CODE_GENERAL_ERROR;
     }
 
 		/*
     printf("tca9555_set_port_direction invoked\r\n");
-    printf("reg_cfg_0 = %bx\r\n", reg_cfg_0);
-    printf("reg_cfg_1 = %bx\r\n", reg_cfg_1);
+    printf("tca9555_reg_cfg_0 = %bx\r\n", tca9555_reg_cfg_0);
+    printf("tca9555_reg_cfg_1 = %bx\r\n", tca9555_reg_cfg_1);
 		*/
 		
     i2c_write(tbuf, 2);
@@ -122,34 +123,34 @@ int8_t tca9555_set_port_polarity(uint8_t port_num, uint8_t pin_num, uint8_t pol)
     
 	if (port_num == TCA9555_PORT_0) {
         if (pol == TCA9555_POL_INV_STATE_DISABLE) {
-            reg_polinv_0 &= ~(1 << pin_num);
+            tca9555_reg_polinv_0 &= ~(1 << pin_num);
         } else if (pol == TCA9555_POL_INV_STATE_ENABLE) {
-            reg_polinv_0 |= (1 << pin_num);
+            tca9555_reg_polinv_0 |= (1 << pin_num);
         } else {
             return TCA9555_ERROR_INDEX_OUT_RANGE;
         }
 
         tbuf[0] = TCA9555_REGISTER_POL_INV_PORT_0;
-        tbuf[1] = reg_polinv_0;
+        tbuf[1] = tca9555_reg_polinv_0;
     } else if (port_num == TCA9555_PORT_1) {
         if (pol == TCA9555_POL_INV_STATE_DISABLE) {
-            reg_polinv_1 &= ~(1 << pin_num);
+            tca9555_reg_polinv_1 &= ~(1 << pin_num);
         } else if (pol == TCA9555_POL_INV_STATE_ENABLE) {
-            reg_polinv_1 |= (1 << pin_num);
+            tca9555_reg_polinv_1 |= (1 << pin_num);
         } else {
             return TCA9555_ERROR_INDEX_OUT_RANGE;
         }
         
         tbuf[0] = TCA9555_REGISTER_POL_INV_PORT_1;
-        tbuf[1] = reg_polinv_1;
+        tbuf[1] = tca9555_reg_polinv_1;
     } else {
         return TCA9555_ERROR_CODE_GENERAL_ERROR;
     }
 
 		/*
     printf("tca9555_set_port_polarity invoked\r\n");
-    printf("reg_cfg_0 = %bx\r\n", reg_cfg_0);
-    printf("reg_cfg_1 = %bx\r\n", reg_cfg_1);
+    printf("tca9555_reg_polinv_0 = %bx\r\n", tca9555_reg_polinv_0);
+    printf("tca9555_reg_polinv_1 = %bx\r\n", tca9555_reg_polinv_1);
 		*/
 		
     i2c_write(tbuf, 2);
@@ -172,34 +173,34 @@ int8_t tca9555_set_port_pin(uint8_t port_num, uint8_t pin_num, uint8_t value)
     
     if (port_num == TCA9555_PORT_0) {
         if (value == TCA9555_PIN_VALUE_LOW) {
-            reg_out_0 &= ~(1 << pin_num);
+            tca9555_reg_out_0 &= ~(1 << pin_num);
         } else if (value == TCA9555_PIN_VALUE_HIGH) {
-            reg_out_0 |= (1 << pin_num);
+            tca9555_reg_out_0 |= (1 << pin_num);
         } else {
             return TCA9555_ERROR_INDEX_OUT_RANGE;
         }
 
         tbuf[0] = TCA9555_REGISTER_OUT_PORT_0;
-        tbuf[1] = reg_out_0;
+        tbuf[1] = tca9555_reg_out_0;
     } else if (port_num == TCA9555_PORT_1) {
         if (value == TCA9555_PIN_VALUE_LOW) {
-            reg_out_1 &= ~(1 << pin_num);
+            tca9555_reg_out_1 &= ~(1 << pin_num);
         } else if (value == TCA9555_PIN_VALUE_HIGH) {
-            reg_out_1 |= (1 << pin_num);
+            tca9555_reg_out_1 |= (1 << pin_num);
         } else {
             return TCA9555_ERROR_INDEX_OUT_RANGE;
         }
         
         tbuf[0] = TCA9555_REGISTER_OUT_PORT_1;
-        tbuf[1] = reg_out_1;
+        tbuf[1] = tca9555_reg_out_1;
     } else {
         return TCA9555_ERROR_CODE_GENERAL_ERROR;
     }
 
 		/*
     printf("tca9555_set_port_direction invoked\r\n");
-    printf("reg_out_0 = %bx\r\n", reg_out_0);
-    printf("reg_out_1 = %bx\r\n", reg_out_1);
+    printf("tca9555_reg_out_0 = %bx\r\n", tca9555_reg_out_0);
+    printf("tca9555_reg_out_1 = %bx\r\n", tca9555_reg_out_1);
     
     printf("tbuf[0] = %bx\r\n", tbuf[0]);
     printf("tbuf[1] = %bx\r\n", tbuf[1]);

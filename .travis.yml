@@ -92,7 +92,7 @@ jobs:
             - srecord
       
       before_install:
-        - pip install --user pyyaml cpp-coveralls
+        - pip install --user pyyaml cpp-coveralls gcovr
         
       before_script:
         - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
@@ -109,4 +109,4 @@ jobs:
 
       after_success:
         - cd ../../
-        - coveralls -i lib/libbuddy -e lib/libbuddy/bindings --gcov-options '\-lp'
+        - coveralls -i lib/libbuddy/common -ilib/libbuddy/host -e lib/libbuddy/bindings --gcov-options '\-lp'

@@ -1,25 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-
-#include <compiler_defs.h>
-#include <c8051f380.h>
-#include <c8051f3xx.h>
-
-#include <main.h>
-#include <gpio.h>
-#include <init.h>
-#include <uart.h>
-#include <spi.h>
-#include <adc.h>
-#include <timers.h>
-#include <process.h>
-#include <tlv563x.h>
-#include <utility.h>
-#include <pwm.h>
-#include <i2c.h>
-#include <tca9555.h>
-#include <poncho.h>
-#include <globals.h>
+#include "main.h"
 
 #include "c8051f3xx.h"
 #include "F3xx_USB0_InterruptServiceRoutine.h"
@@ -40,8 +19,6 @@ unsigned int *blah[] = {
 //-----------------------------------------------------------------------------
 // Definitions
 //-----------------------------------------------------------------------------
-
-extern buddy_ctx_t buddy_ctx;
 
 /** firmware info structure that identifies serial, version,
  *   and hardware specific (DAC & expander) types. */

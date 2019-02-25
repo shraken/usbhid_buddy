@@ -3,11 +3,7 @@
  * @brief Init/bringup routines
  */
 
-#include <init.h>
-#include <gpio.h>
-#include "c8051f3xx.h"
-#include "F3xx_USB0_InterruptServiceRoutine.h"
-#include "F3xx_USB0_Register.h"
+#include "init.h"
 
 void system_init(void)
 {
@@ -76,8 +72,8 @@ void usb_init(void)
    EIE1 |= 0x02;                       // Enable USB0 Interrupts
 
                                        // Enable USB0 by clearing the USB
-   POLL_WRITE_BYTE (POWER, 0x01);      // Inhibit Bit and enable suspend
-                                       // detection
+                                       // Inhibit bit
+   POLL_WRITE_BYTE(POWER,  0x01);      // and enable suspend detection
 }
 
 void Delay(void)

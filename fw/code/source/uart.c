@@ -5,8 +5,8 @@
  *
  */
 
-#include <uart.h>
-#include <globals.h>
+#include "uart.h"
+#include "buddy_common.h"
 
 /** @brief Sets up the UART device by configuring the crossbar for UART operation pin
  *         pin mode on pins P0.5/P0.4 with baudrate provided by BAUDRATE define.  Uses
@@ -21,7 +21,7 @@ void uart_init (void)
                                        //        ninth bits are zeros
                                        //        clear RI0 and TI0 bits
 
-   TH1 = -(SYSCLK/BAUDRATE/2);
+   TH1 = -(BUDDY_SYSCLK/BAUDRATE/2);
    CKCON &= ~0x0B;                     // T1M = 1; SCA1:0 = xx
    CKCON |=  0x08;
 

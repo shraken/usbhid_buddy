@@ -36,9 +36,13 @@
 // Header files
 // ----------------------------------------------------------------------------
 
-#include "F3xx_USB0_ReportHandler.h"
-#include "F3xx_USB0_InterruptServiceRoutine.h"
-
+#include <stdio.h>
+#include <string.h>
+#include <F3xx_USB0_ReportHandler.h>
+#include <F3xx_USB0_InterruptServiceRoutine.h>
+#include "gpio.h"
+#include "globals.h"
+#include "process.h"
 
 // ----------------------------------------------------------------------------
 // Local Function Prototypes
@@ -69,10 +73,12 @@ void OUT_DATA_ROUTINE(void);
 // Global Constant Declaration
 // ----------------------------------------------------------------------------
 
-extern unsigned char flag_usb_out;
+unsigned char __xdata OUT_PACKET[MAX_REPORT_SIZE];
+unsigned char __xdata IN_PACKET[MAX_REPORT_SIZE * 2];
 
-unsigned char OUT_PACKET[64];
-unsigned char IN_PACKET[64 * 2];
+unsigned char xda__xdatata *P_IN_PACKET_SEND = &IN_PACKET[BUFFER0_BASE_OFFSET];
+unsigned char __xdata *P_IN_PACKET_RECORD = &IN_PACKET[BUFFER0_BASE_OFFSET];
+unsigned char __xdata in_packet_record_cycle = 0;
 
 unsigned char *P_IN_PACKET_SEND = &IN_PACKET[0];
 unsigned char *P_IN_PACKET_RECORD = &IN_PACKET[0];

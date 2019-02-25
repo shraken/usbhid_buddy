@@ -1,26 +1,9 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <i2c.h>
-#include <globals.h>
+#include "i2c.h"
 
-#include <compiler_defs.h>
-#include <C8051F380_defs.h>
-
-//-----------------------------------------------------------------------------
-// Global Variables
-//-----------------------------------------------------------------------------
-uint8_t I2C_Rx_Array_Count = 0;
-uint8_t I2C_Tx_Array_Count = 0;
-
-uint8_t I2C_Data_Rx_Array[I2C_MAX_BUFFER_SIZE] = { 0 };
-uint8_t I2C_Data_Tx_Array[I2C_MAX_BUFFER_SIZE] = { 0 };
+uint8_t i2c_data_tx_array[I2C_MAX_BUFFER_SIZE] = { 0 };
 
 unsigned char* pSMB_DATA_IN;           // Global pointer for SMBus data
                                        // All receive data is written here
-
-unsigned char SMB_SINGLEBYTE_OUT;      // Global holder for single byte writes.
 
 unsigned char* pSMB_DATA_OUT;          // Global pointer for SMBus data.
                                        // All transmit data is read from here
@@ -29,36 +12,15 @@ unsigned char SMB_DATA_LEN;            // Global holder for number of bytes
                                        // to send or receive in the current
                                        // SMBus transfer.
 
-unsigned char WORD_ADDR;               // Global holder for the EEPROM word
-                                       // address that will be accessed in
-                                       // the next transfer
-
 bit SMB_BUSY = 0;
 bit SMB_RW;
-
-bit SMB_SENDWORDADDR;                  // When set, this flag causes the ISR
-                                       // to send the 8-bit <WORD_ADDR>
-                                       // after sending the slave address.
-     
-bit SMB_RANDOMREAD;                    // When set, this flag causes the ISR
-                                       // to send a START signal after sending
-                                       // the word address.
-                                       // For the 24LC02B EEPROM, a random read
-                                       // (a read from a particular address in
-                                       // memory) starts as a write then
-                                       // changes to a read after the repeated
-                                       // start is sent. The ISR handles this
-                                       // switchover if the <SMB_RANDOMREAD>
-                                       // bit is set.
 
 bit SMB_ACKPOLL;                       // When set, this flag causes the ISR
                                        // to send a repeated START until the
                                        // slave has acknowledged its address
                                        
 static bool i2c_initialized = false;
-static uint8_t TARGET = 0x20;
-
-static unsigned long NUM_ERRORS;
+static uint8_t TARGET = 0x00;
 
 /**
  * @brief write the buffer with length provided to the i2c slave peripheral
@@ -71,7 +33,11 @@ static unsigned long NUM_ERRORS;
  *  bad buffer.
  */
 int8_t i2c_write(uint8_t *buffer, uint16_t len) {
-	if (!buffer) {
+	if (!i2c_initialized) {
+        return I2C_ERROR_CODE_UNINITIALIZED;
+    }
+    
+    if (!buffer) {
 		return I2C_ERROR_CODE_BAD_MEMORY;
 	}
 	
@@ -79,10 +45,9 @@ int8_t i2c_write(uint8_t *buffer, uint16_t len) {
 	SMB_BUSY = 1;
     
 	//bytes_to_copy = (len >= I2C_MAX_BUFFER_SIZE) ? I2C_MAX_BUFFER_SIZE : len;
-	I2C_Tx_Array_Count = len;
-	memcpy(I2C_Data_Tx_Array, buffer, len);
+	memcpy(i2c_data_tx_array, buffer, len);
     
-    pSMB_DATA_OUT = (unsigned char *) &I2C_Data_Tx_Array;
+    pSMB_DATA_OUT = (unsigned char *) &i2c_data_tx_array;
     SMB_DATA_LEN = len;
     
 	SMB_RW = WRITE;

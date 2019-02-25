@@ -4,9 +4,17 @@
 #include <compiler_defs.h>
 #include <c8051f380.h>
 #include <stdint.h>
-#include <globals.h>
-#include <adc.h>
-#include <buddy.h>
+#include <stdio.h>
+#include <c8051f3xx.h>
+#include "globals.h"
+#include "process.h"
+#include "adc.h"
+#include "io.h"
+#include "i2c.h"
+#include "gpio.h"
+#include "utility.h"
+#include "process.h"
+#include "buddy_common.h"
 
 // Timer 2
 #define TIMER2_LOW_PERIOD 21		    // in nsec, 21 nsec
@@ -15,14 +23,7 @@
 #define DEFAULT_TIMER2_HIGH_PERIOD 0xF0
 #define DEFAULT_TIMER2_LOW_PERIOD 0x5F
 
-extern buddy_ctx_t buddy_ctx;
-
-extern uint8_t __data adc_channel_index;
-extern uint8_t adc_channel_count;
-extern uint8_t adc_mux_tbl_n[MAX_ANALOG_INPUTS];
-extern uint8_t adc_mux_tbl_p[MAX_ANALOG_INPUTS];
-
-extern bit SMB_BUSY;
+extern uint8_t timer2_flag;
 
 void timers_init(void);
 

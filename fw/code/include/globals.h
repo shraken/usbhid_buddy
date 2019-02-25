@@ -6,7 +6,7 @@
 #define _GLOBALS_H_
 
 #include <stdint.h>
-#include <buddy.h>
+#include "buddy_common.h"
 
 // I2C SCL clock frequency (in units of Hz)
 #define SMB_FREQUENCY          100000

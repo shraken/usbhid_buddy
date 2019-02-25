@@ -5,17 +5,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <buddy.h>
-#include <adc.h>
-#include <counter.h>
-#include <pwm.h>
-#include <tlv563x.h>
-
 #include <F3xx_USB0_ReportHandler.h>
 #include <F3xx_USB0_InterruptServiceRoutine.h>
 #include <c8051f3xx.h>
-
-#include <globals.h>
+#include "globals.h"
+#include "process.h"
+#include "adc.h"
+#include "counter.h"
+#include "pwm.h"
+#include "drivers/tlv563x.h"
+#include "buddy_common.h"
+#include "codec.h"
 
 extern unsigned char OUT_PACKET[];
 extern unsigned char IN_PACKET[];
@@ -24,12 +24,7 @@ extern unsigned char *P_IN_PACKET_SEND;
 
 extern buddy_ctx_t buddy_ctx;
 
-extern int16_t __data adc_results[MAX_ANALOG_INPUTS];
-
-extern uint8_t in_packet_ready;
-
 extern uint8_t new_dac_packet;
-extern uint8_t new_pwm_packet;
 extern uint8_t flag_usb_out;
 
 extern firmware_info_t __code fw_info;

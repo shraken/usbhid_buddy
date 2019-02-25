@@ -1,9 +1,10 @@
-/* usbhid_buddy.i */
+/* buddy.i */
 
  %module buddy
  %{
 #define SWIG_FILE_WITH_INIT
-#include "usbhid_buddy.h"
+#include "buddy_common.h"
+#include "codec.h"
 #include "buddy.h"
 
  %}
@@ -13,7 +14,8 @@ int FREQUENCY_TO_NSEC(int);
 %include "stdint.i"
 %include "carrays.i"
 %include <windows.i>
-%include "usbhid_buddy.h"
+%include "buddy_common.h"
+%include "codec.h"
 %include "buddy.h"
 
 %array_functions(float, float_ptr);

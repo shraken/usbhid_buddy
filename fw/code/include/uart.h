@@ -10,16 +10,11 @@
 #ifndef _UART_H
 #define _UART_H
 
-#include <compiler_defs.h>
-#include <c8051f380.h>
-#include <globals.h>
+#include <c8051f3xx.h>
+#include "globals.h"
 
 #define BAUDRATE           115200           // Baud rate of UART in bps
-/** @brief Sets up the UART device by configuring the crossbar for UART operation pin
- *         pin mode on pins P0.5/P0.4 with baudrate provided by BAUDRATE define.  Uses
- *				 timer1 for baud rate generation.
- *  @return Void.
- */
-void uart_init(void);
+
+void uart_init (void);
 
 #endif

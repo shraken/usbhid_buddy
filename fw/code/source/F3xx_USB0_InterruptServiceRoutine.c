@@ -36,7 +36,11 @@
 //-----------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------
-#include <common.h>
+#include <F3xx_USB0_Register.h>
+#include <F3xx_USB0_InterruptServiceRoutine.h>
+#include <F3xx_USB0_Descriptor.h>
+#include <F3xx_USB0_ReportHandler.h>
+#include <c8051f3xx.h>
 #include <stdio.h>
 #include "main.h"
 #include "gpio.h"
