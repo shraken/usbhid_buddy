@@ -39,7 +39,7 @@
 
 #include "compiler_defs.h"
 
-extern bit SendPacketBusy;
+extern uint8_t SendPacketBusy;
 extern unsigned char __xdata OUT_PACKET[];
 
 extern unsigned char __xdata flag_usb_out;
