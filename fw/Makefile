@@ -14,7 +14,7 @@ CFLAGS += $(INCLUDE_DIRS)
 LDFLAGS = --model-large --std-sdcc99
 LDFLAGS += $(INCLUDE_DIRS)
 
-all: directories $(BUILD_DIR)/$(EXECUTABLE)
+all: directories $(BUILD_DIR)/$(EXECUTABLE) generate
     
 directories: 
 	mkdir -p $(BUILD_DIR)
@@ -32,6 +32,9 @@ clean:
 	rm -rf flash.jlink
 	rm -rf $(BUILD_DIR)
 
+generate:
+	packihx $(BUILD_DIR)/$(EXECUTABLE).ihx > $(BUILD_DIR)/$(EXECUTABLE).hex
+
 JLINK_OPTS = -device EFM8UB20F64G -if c2 -speed 200
 # flashing windows vs. posix
 ifeq ($(OS),Windows_NT)
@@ -41,7 +44,6 @@ JLINK = JLinkExe $(JLINK_OPTS)
 endif # flashing windows vs. posix
 
 flash: flash.jlink
-	packihx $(BUILD_DIR)/$(EXECUTABLE).ihx > $(BUILD_DIR)/$(EXECUTABLE).hex
 	$(JLINK) flash.jlink
 
 flash.jlink:
