@@ -183,9 +183,6 @@ def test_seq_dac(handle, sample_rate, streaming, poncho_mode):
 
     timing_settings.period = bt.FREQUENCY_TO_NSEC(sample_rate)
 
-    print 'timing_settings.period = '
-    print timing_settings.period
-
     runtime_settings.dac_power = bt.RUNTIME_DAC_POWER_ON
     runtime_settings.dac_ref = bt.RUNTIME_DAC_REF_EXT
 
@@ -407,13 +404,11 @@ def test_seq_adc(handle, sample_rate, streaming, log_file, poncho_mode):
                     if (general_settings.channel_mask & (1 << j)):
                         value = bt.int32_t_ptr_getitem(packet.channels, j)
                         entry.append('%d' % value)
-                        #print 'ADC chan = %d with value = %d' % (j, value)
             elif runtime_settings.adc_mode == bt.RUNTIME_ADC_MODE_DIFFERENTIAL:
                 for j in range(bt.BUDDY_CHAN_0, bt.BUDDY_CHAN_3 + 1):
                     if (general_settings.channel_mask & (1 << j)):
                         value = bt.int32_t_ptr_getitem(packet.channels, j)
                         entry.append('%d' % value)
-                        #print 'ADC chan = %d with value = %d' % (j, value)
             recv_packets += 1
 
             if log_file:
@@ -486,8 +481,6 @@ if __name__ == '__main__':
                         help='enable streaming for higher throughput')
     parser.add_argument('-l,--latch', action='store_true', dest='hold_mode',
                         help='hold the last mode and value on exit')
-    parser.add_argument('-i,--info', action='store_true', dest='info_mode',
-                        help='request device info and exit')
     parser.add_argument('-f,--file', nargs=1, dest="output_file",
                         help="CSV log file to be created", required=False)
     args = parser.parse_args()
@@ -531,9 +524,6 @@ if __name__ == '__main__':
     display_usb_info(hid_info)
     display_fw_info(fw_info)
 
-    if args.info_mode:
-        sys.exit()
-
     time_start = time.time()
 
     if args.dac_mode:
@@ -576,7 +566,6 @@ if __name__ == '__main__':
     time_end = time.time()
     time_diff = time_end - time_start
     print 'Test took (%f) seconds  to run' % time_diff
-    print 'hold_mode = %d' % args.hold_mode
 
     if args.hold_mode:
         bt.buddy_cleanup(hid_handle, hid_info, False)
