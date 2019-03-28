@@ -143,7 +143,7 @@ typedef /*code*/ struct
 // "When a Get_Descriptor(Configuration) request is issued,
 // it returns the Configuration descriptor, all Interface descriptors,
 // all Endpoint descriptors, and the HID descriptor for each interface."
-typedef /*code*/ struct {
+typedef __code struct {
    configuration_descriptor   hid_configuration_descriptor;
    interface_descriptor       hid_interface_descriptor;
    class_descriptor        hid_descriptor;
