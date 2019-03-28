@@ -1,6 +1,5 @@
 *.bak
 fw/build/*
-fw/flash.jlink
 *.uvgui.*
 
 # Compiled source #
@@ -62,7 +61,6 @@ lib/libbuddy/bindings/labview/buddy/Debug/*
 lib/libbuddy/bindings/labview/buddy/ipch/*
 lib/libbuddy/bindings/labview/buddy/x64/*
 examples/C/simple/build/*
-examples/C/simple/CMakeLists.txt
 fw/bootload/build/*
 fw/standard/build/*
 
