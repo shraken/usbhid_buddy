@@ -157,7 +157,7 @@ hid_configuration_descriptor;
 
 
 
-typedef /*code*/ unsigned char hid_report_descriptor[HID_REPORT_DESCRIPTOR_SIZE];
+typedef __code unsigned char hid_report_descriptor[HID_REPORT_DESCRIPTOR_SIZE];
 
 //-----------------------------
 // SETUP Packet Type Definition

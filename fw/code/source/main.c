@@ -4,19 +4,6 @@
 #include "c8051f3xx.h"
 #include "F3xx_USB0_InterruptServiceRoutine.h"
 
-extern unsigned char String0Desc [4];
-extern unsigned char* const STRINGDESCTABLE [];
-
-int x = 10;
-int y = 20;
-int z = 30;
-
-unsigned int *blah[] = {
-    &x,
-    &y,
-    &z
-};
-
 //-----------------------------------------------------------------------------
 // Definitions
 //-----------------------------------------------------------------------------
@@ -133,24 +120,25 @@ void main(void)
 	contexts_init();
 	
 	gpio_init();
-	
+
   usb_init();
   spi_init();
     
   adc_init();
+
   uart_init();
 
   timers_init();
   tlv563x_dac_init();
-	
-	print_device_info();
+
+  print_device_info();
   debug(("tlv563x_dac_init passed\r\n"));
 	
 	PCA0MD = 0x00;                      // Disable watchdog timer
 	EA = 1;                             // Globally enable interrupts
 		
 	while (1) {
-		process();
+		// process();
   }
 }
 

@@ -63,6 +63,7 @@ void tlv563x_dac_init(void)
 			break;
 	}
 	
+	#if 0
 	// set reference select to external
 	tlv563x_ctrl0_reg |= (1 << TLV563X_CTRL0_REFERENCE_0);
 	
@@ -75,6 +76,7 @@ void tlv563x_dac_init(void)
     // Timer0_wait(1);
 	
 	tlv563x_dac_reset();
+	#endif
 	
 	return;
 }
