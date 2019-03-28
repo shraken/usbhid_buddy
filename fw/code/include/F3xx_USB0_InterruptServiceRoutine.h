@@ -11,19 +11,20 @@
 // How To Test:    See Readme.txt
 //
 //
-// FID:
+// FID:            3XX000012
 // Target:         C8051F3xx
 // Tool chain:     Keil / Raisonance
 //                 Silicon Laboratories IDE version 2.6
 // Command Line:   See Readme.txt
-// Project Name:   F3xx_MouseExample
+// Project Name:   F3xx_BlinkyExample
 //
 // Release 1.2 (ES)
 //    -Added support for Raisonance
 //    -No change to this file
 //    -02 APR 2010
 // Release 1.1
-//    -Minor code comment changes
+//    -Added feature reports for dimming controls
+//    -Added PCA dimmer functionality
 //    -16 NOV 2006
 // Release 1.0
 //    -Initial Revision (PD)
@@ -44,16 +45,6 @@
 #define _WORD_DEF_
 typedef union {unsigned int i; unsigned char c[2];} WORD;
 
-/*
-#define LSB 1                          // All words sent to and received
-                                       //from the host are
-#define MSB 0                          // little endian, this is switched
-                                       // by software when neccessary.
-                                       // These sections of code have been
-                                       // marked with "Compiler Specific"
-                                       // as above for easier modification
-*/
-
 #endif   /* _WORD_DEF_ */
 
 
@@ -72,10 +63,10 @@ typedef union {unsigned int i; unsigned char c[2];} WORD;
                                        // Little-Endian version of
                                        //  EP1_PACKET_SIZE
 
-#define  EP2_PACKET_SIZE         0x000A// Can range 0 - 1024 depending on data
+#define  EP2_PACKET_SIZE         0x0040// Can range 0 - 1024 depending on data
                                        // and transfer type
 
-#define  EP2_PACKET_SIZE_LE      0x0A00// IMPORTANT- this should be
+#define  EP2_PACKET_SIZE_LE      0x4000// IMPORTANT- this should be
                                        // Little-Endian version of
                                        // EP2_PACKET_SIZE
 
@@ -162,7 +153,7 @@ typedef union {unsigned int i; unsigned char c[2];} WORD;
 // USB Routines
 void Force_Stall(void);                // Forces a procedural stall on
                                        // Endpoint 0
-void Handle_In1(void);                 // used by SetConfiguration in
+void Handle_In2(void);                 // used by SetConfiguration in
                                        // USB_STD_REQ to initialize
                                        // ReadyToTransfer
 

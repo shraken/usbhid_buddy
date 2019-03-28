@@ -13,7 +13,7 @@
 // How To Test:    See Readme.txt
 //
 //
-// FID
+// FID             3XX000013
 // Target:         C8051F32x/C8051F340
 // Tool chain:     Keil / Raisonance
 //                 Silicon Laboratories IDE version 2.6
@@ -25,7 +25,8 @@
 //    -No change to this file
 //    -02 APR 2010
 // Release 1.1
-//    -Minor code comment changes
+//    -Added feature reports for dimming controls
+//    -Added PCA dimmer functionality
 //    -16 NOV 2006
 // Release 1.0
 //    -Initial Revision (PD)

@@ -12,19 +12,20 @@
 // How To Test:    See Readme.txt
 //
 //
-// FID
+// FID             3XX000011
 // Target:         C8051F32x/C8051F340
 // Tool chain:     Keil / Raisonance
 //                 Silicon Laboratories IDE version 2.6
 // Command Line:   See Readme.txt
-// Project Name:   F3xx_MouseExample
+// Project Name:   F3xx_BlinkyExample
 //
 // Release 1.2 (ES)
 //    -Added support for Raisonance
 //    -No change to this file
 //    -02 APR 2010
 // Release 1.1
-//    -Minor code comment changes
+//    -Added feature reports for dimming controls
+//    -Added PCA dimmer functionality
 //    -16 NOV 2006
 // Release 1.0
 //    -Initial Revision (PD)
@@ -40,22 +41,12 @@
 #define _WORD_DEF_
 typedef union {unsigned int i; unsigned char c[2];} WORD;
 
-/*
-#define LSB 1                          // All words sent to and received
-                                       // from the host are
-#define MSB 0                          // little endian, this is switched
-                                       // by software when neccessary.
-                                       // These sections of code have been
-                                       // marked with "Compiler Specific"
-                                       // as above for easier modification
-*/
-
 #endif   /* _WORD_DEF_ */
 
 //------------------------------------------
 // Standard Device Descriptor Type Defintion
 //------------------------------------------
-typedef /*code*/ struct
+typedef struct
 {
    unsigned char bLength;              // Size of this Descriptor in Bytes
    unsigned char bDescriptorType;      // Descriptor Type (=1)
