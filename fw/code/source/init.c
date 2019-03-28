@@ -33,7 +33,7 @@ void sysclk_init(void)
     Delay();                            // Delay for clock multiplier to begin
 
     while(!(CLKMUL & 0x20));            // Wait for multiplier to lock
-    CLKSEL = SYS_4x;                    // Select system clock
+    CLKSEL  = SYS_INT_OSC;              // Select system clock
     CLKSEL |= USB_4X_CLOCK;             // Select USB clock
 }
 
@@ -49,9 +49,9 @@ void port_init(void)
     P0SKIP    = 0xCF;
 	P1SKIP 	  = 0x00;
 	P2SKIP    = 0xFF;
-    P3SKIP    = 0x30;
+    P3SKIP    = 0xFC;
 	
-    XBR0      = 0x03;
+    XBR0      = 0x07;
     XBR1      = 0x40;
 	
 	// set SPI chip select DAC and external memory to be disabled by default
@@ -70,7 +70,8 @@ void usb_init(void)
                                        // mode disabled
 
    EIE1 |= 0x02;                       // Enable USB0 Interrupts
-
+   EA = 1;
+   
                                        // Enable USB0 by clearing the USB
                                        // Inhibit bit
    POLL_WRITE_BYTE(POWER,  0x01);      // and enable suspend detection

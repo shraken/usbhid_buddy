@@ -143,7 +143,7 @@ void IN_DATA_ROUTINE(void){
    IN_PACKET[0] = IN_DATA;
 	
    IN_BUFFER.Ptr = IN_PACKET;
-   IN_BUFFER.Length = IN_DATA_SIZE;
+   IN_BUFFER.Length = IN_DATA_SIZE + 1;
 }
 
 // ----------------------------------------------------------------------------

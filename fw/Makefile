@@ -29,7 +29,6 @@ $(OBJECTS): $(BUILD_DIR)/%.rel : $(SOURCE_DIR)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -rf flash.jlink
 	rm -rf $(BUILD_DIR)
 
 generate:

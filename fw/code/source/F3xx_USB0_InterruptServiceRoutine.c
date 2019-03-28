@@ -76,8 +76,8 @@ uint8_t SendPacketBusy = 0;
 void Usb_Resume (void);                // resumes USB operation
 void Usb_Reset (void);                 // Called after USB bus reset
 void Handle_Control (void);            // Handle SETUP packet on EP 0
-void Handle_In1 (void);                // Handle in packet on EP 1
-void Handle_Out1 (void);               // Handle out packet on EP 1
+void Handle_In2 (void);                // Handle in packet on EP 2
+void Handle_Out2 (void);               // Handle out packet on EP 2
 void Usb_Suspend (void);               // This routine called when
                                        // suspend signalling on bus
 void Fifo_Read (unsigned char, unsigned int, unsigned char *);
@@ -129,13 +129,13 @@ void Usb_ISR(void) __interrupt (INTERRUPT_USB0)
                                        // or packet transmitted if Endpoint 0
          Handle_Control ();            // is in transmit mode
       }
-      if (bIn & rbIN1)                 // Handle In Packet sent, put new data
+      if (bIn & rbIN2)                 // Handle In Packet sent, put new data
       {                                // on endpoint 1 fifo
-         Handle_In1 ();
+         Handle_In2 ();
       }
-      if (bOut & rbOUT1)               // Handle Out packet received, take
+      if (bOut & rbOUT2)               // Handle Out packet received, take
       {                                // data off endpoint 2 fifo
-         Handle_Out1 ();
+         Handle_Out2 ();
       }
       if (bCommon & rbSUSINT)          // Handle Suspend interrupt
       {
@@ -415,7 +415,7 @@ void Handle_Control (void)
 }
 
 //-----------------------------------------------------------------------------
-// Handle_In1
+// Handle_In2
 //-----------------------------------------------------------------------------
 //
 // Handler will be entered after the endpoint's buffer has been
@@ -423,31 +423,31 @@ void Handle_Control (void)
 // signals the foreground routine SendPacket that the Endpoint
 // is ready to transmit another packet.
 //-----------------------------------------------------------------------------
-void Handle_In1 ()
+void Handle_In2 ()
 {
     //printf("Handle_In1 invoked\r\n");
 
-      EP_STATUS[1] = EP_IDLE;
+      EP_STATUS[2] = EP_IDLE;
       SendPacketBusy = 0;
 }
 
 //-----------------------------------------------------------------------------
-// Handle_Out1
+// Handle_Out2
 //-----------------------------------------------------------------------------
 // Take the received packet from the host off the fifo and put it into
 // the Out_Packet array.
 //
 //-----------------------------------------------------------------------------
-void Handle_Out1 ()
+void Handle_Out2 ()
 {
 
    unsigned char Count = 0;
    unsigned char ControlReg;
 
-   POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
+   POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 1 registers
    POLL_READ_BYTE (EOUTCSR1, ControlReg);
 
-   if (EP_STATUS[1] == EP_HALT)        // If endpoint is halted, send a stall
+   if (EP_STATUS[2] == EP_HALT)        // If endpoint is halted, send a stall
    {
       POLL_WRITE_BYTE (EOUTCSR1, rbOutSDSTL);
    }
@@ -463,7 +463,7 @@ void Handle_Out1 ()
 
       Setup_OUT_BUFFER ();             // configure buffer to save
                                        // received data
-      Fifo_Read(FIFO_EP1, OUT_BUFFER.Length, OUT_BUFFER.Ptr);
+      Fifo_Read(FIFO_EP2, OUT_BUFFER.Length, OUT_BUFFER.Ptr);
 
       ReportHandler_OUT (OUT_BUFFER.Ptr[0]);
 
@@ -622,23 +622,23 @@ void SendPacket (unsigned char ReportID)
     EIE1 &= ~0x02;
     SendPacketBusy = 1;
 
-    POLL_WRITE_BYTE (INDEX, 1);         // Set index to endpoint 1 registers
+    POLL_WRITE_BYTE (INDEX, 2);         // Set index to endpoint 1 registers
 
     // Read contol register for EP 1
     POLL_READ_BYTE (EINCSR1, ControlReg);
 
-    if (EP_STATUS[1] == EP_HALT)        // If endpoint is currently halted,
+    if (EP_STATUS[2] == EP_HALT)        // If endpoint is currently halted,
                                        // send a stall
    {
       //printf("SendPacket, endpoint halted\n");
       POLL_WRITE_BYTE (EINCSR1, rbInSDSTL);
    }
-   else if(EP_STATUS[1] == EP_IDLE)
+   else if(EP_STATUS[2] == EP_IDLE)
    {
       //printf("SendPacket, endpoint idle\n");
 
       // the state will be updated inside the ISR handler
-      EP_STATUS[1] = EP_TX;
+      EP_STATUS[2] = EP_TX;
 
       if (ControlReg & rbInSTSTL)      // Clear sent stall if last
                                        // packet returned a stall
@@ -661,7 +661,7 @@ void SendPacket (unsigned char ReportID)
 				        P_IN_PACKET_SEND);
 		*/
 
-        Fifo_Write_Foreground (FIFO_EP1, 
+        Fifo_Write_Foreground (FIFO_EP2, 
                                (IN_DATA_SIZE + 1),
                                (unsigned char *) P_IN_PACKET_SEND);
 
