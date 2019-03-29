@@ -36,7 +36,6 @@
 // Header Files
 //-----------------------------------------------------------------------------
 #include <stdio.h>
-#include <common.h>
 #include <gpio.h>
 #include "c8051f3xx.h"
 #include "F3xx_USB0_Register.h"
