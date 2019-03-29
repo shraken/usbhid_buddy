@@ -70,12 +70,14 @@ void tlv563x_dac_init(void)
 	tlv563x_reg_write(TLV563X_REG_CTRL0, tlv563x_ctrl0_reg);
 	// Timer0_wait(1);
     
+	#if 0
     // CTRL1
 	tlv563x_reg_write(TLV563X_REG_CTRL1, tlv563x_ctrl1_reg);
     // Timer0_wait(1);
 	
 	tlv563x_dac_reset();
-	
+	#endif
+
 	return;
 }
 

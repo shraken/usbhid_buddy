@@ -1,21 +1,10 @@
 #include <stdio.h>
+#include <stdint.h>
 #include "main.h"
+#include "spi.h"
 
 #include "c8051f3xx.h"
 #include "F3xx_USB0_InterruptServiceRoutine.h"
-
-extern unsigned char String0Desc [4];
-extern unsigned char* const STRINGDESCTABLE [];
-
-int x = 10;
-int y = 20;
-int z = 30;
-
-unsigned int *blah[] = {
-    &x,
-    &y,
-    &z
-};
 
 //-----------------------------------------------------------------------------
 // Definitions
@@ -71,7 +60,7 @@ void print_device_info(void)
     printf("| |_) | |_| | (_| | (_| | |_| |  \r\n");
     printf("|____/ \__,_|\__,_|\__,_|\__, |  \r\n");
     printf("                         |___/   \r\n");
-	printf("   version %bd.%bd.%bd \r\n", fw_info.fw_rev_major,
+	printf("   version %d.%d.%d \r\n", fw_info.fw_rev_major,
 	    fw_info.fw_rev_minor, fw_info.fw_rev_tiny);
 	printf("   serial id: %lu (%08lx)\r\n", 
 		fw_info.serial, fw_info.serial);
@@ -129,26 +118,30 @@ void contexts_init(void)
 //-----------------------------------------------------------------------------
 void main(void)
 {
+	uint8_t spi_data_tx[SPI_MAX_BUFFER_SIZE];
+
 	system_init();
 	contexts_init();
 	
 	gpio_init();
 	
-  usb_init();
-  spi_init();
+  	usb_init();
+  	spi_init();
     
-  adc_init();
-  uart_init();
+  	adc_init();
 
-  timers_init();
-  tlv563x_dac_init();
-	
+  	uart_init();
+
+  	timers_init();
+
 	print_device_info();
-  debug(("tlv563x_dac_init passed\r\n"));
+  	debug(("tlv563x_dac_init passed\r\n"));
 	
 	PCA0MD = 0x00;                      // Disable watchdog timer
 	EA = 1;                             // Globally enable interrupts
 		
+	tlv563x_dac_init();
+
 	while (1) {
 		process();
   }
