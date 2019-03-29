@@ -9,7 +9,7 @@ import csv
 import buddy as bt
 
 BUDDY_TEST_ADC_FREQ = 1000        # 1 kHz
-BUDDY_TEST_DAC_FREQ = 200         # 5 Hz
+BUDDY_TEST_DAC_FREQ = 1000         # 5 Hz
 BUDDY_TEST_PWM_FREQ = 10          # 1 kHz
 BUDDY_TEST_COUNTER_FREQ = 10000   # 10 Hz
 hid_handle = None
@@ -162,7 +162,7 @@ def test_seq_pwm_duty(handle, sample_rate, streaming, poncho_mode):
     the codes for a 12-bit DAC (0 - 4095) are sent.
 '''
 def test_seq_dac(handle, sample_rate, streaming, poncho_mode):
-    mask = bt.BUDDY_CHAN_0_MASK | bt.BUDDY_CHAN_1_MASK | bt.BUDDY_CHAN_2_MASK | bt.BUDDY_CHAN_3_MASK
+    mask = bt.BUDDY_CHAN_0_MASK
     
     general_settings = bt.ctrl_general_t()
     timing_settings = bt.ctrl_timing_t()
